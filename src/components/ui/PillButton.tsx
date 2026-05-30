@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Radius, Typography } from '../../constants/theme';
+import { Colors, Radius, Typography } from '@/constants/theme';
 
 interface PillButtonProps {
   label: string;

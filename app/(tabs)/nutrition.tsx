@@ -4,11 +4,11 @@ import {
   Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GlassCard from '../../components/ui/GlassCard';
-import MacroBar from '../../components/ui/MacroBar';
-import SectionHeader from '../../components/ui/SectionHeader';
-import ProgressRing from '../../components/ui/ProgressRing';
-import { Colors, Typography, Radius } from '../../constants/theme';
+import GlassCard from '@/components/ui/GlassCard';
+import MacroBar from '@/components/ui/MacroBar';
+import SectionHeader from '@/components/ui/SectionHeader';
+import ProgressRing from '@/components/ui/ProgressRing';
+import { Colors, Typography, Radius } from '@/constants/theme';
 
 interface FoodItem {
   name: string;

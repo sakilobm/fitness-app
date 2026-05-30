@@ -5,10 +5,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Ellipse, Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
-import GlassCard from '../components/ui/GlassCard';
-import StatBadge from '../components/ui/StatBadge';
-import SectionHeader from '../components/ui/SectionHeader';
-import { Colors, Typography, Radius } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import GlassCard from '@/components/ui/GlassCard';
+import StatBadge from '@/components/ui/StatBadge';
+import SectionHeader from '@/components/ui/SectionHeader';
+import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 
 const { width: W } = Dimensions.get('window');
@@ -136,7 +137,7 @@ export default function WaterScreen() {
               onPress={() => addWater(ml)}
               activeOpacity={0.75}
             >
-              <Text style={styles.quickIcon}>💧</Text>
+              <Ionicons name="water" size={20} color={Colors.chart.water} />
               <Text style={styles.quickMl}>{ml} ml</Text>
             </TouchableOpacity>
           ))}
@@ -145,7 +146,7 @@ export default function WaterScreen() {
             onPress={() => setShowCustom(true)}
             activeOpacity={0.75}
           >
-            <Text style={styles.quickIcon}>✏️</Text>
+            <Ionicons name="create-outline" size={20} color={Colors.muted} />
             <Text style={styles.quickMl}>Custom</Text>
           </TouchableOpacity>
         </View>
@@ -156,7 +157,7 @@ export default function WaterScreen() {
         <SectionHeader title="Today's Log" />
         {log.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>💧</Text>
+            <Ionicons name="water-outline" size={44} color={Colors.muted} />
             <Text style={styles.emptyText}>No logs yet — start drinking!</Text>
           </View>
         ) : (
@@ -196,9 +197,9 @@ export default function WaterScreen() {
 
       {/* Reminder chip */}
       <TouchableOpacity style={styles.reminderChip} activeOpacity={0.8}>
-        <Text style={styles.reminderIcon}>⏰</Text>
+        <Ionicons name="alarm" size={20} color={Colors.amber} />
         <Text style={styles.reminderText}>Next reminder at 3:00 PM</Text>
-        <Text style={styles.reminderArrow}>›</Text>
+        <Ionicons name="chevron-forward" size={18} color={Colors.amber} />
       </TouchableOpacity>
 
       {/* Custom modal */}

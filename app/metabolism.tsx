@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle } from 'react-native-svg';
-import GlassCard from '../components/ui/GlassCard';
-import ProgressRing from '../components/ui/ProgressRing';
-import SectionHeader from '../components/ui/SectionHeader';
-import { Colors, Typography, Radius } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import GlassCard from '@/components/ui/GlassCard';
+import ProgressRing from '@/components/ui/ProgressRing';
+import SectionHeader from '@/components/ui/SectionHeader';
+import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 
 const { width: W } = Dimensions.get('window');
@@ -87,7 +88,7 @@ export default function MetabolismScreen() {
       {/* BMR Hero */}
       <GlassCard accentColor={Colors.amber}>
         <View style={styles.bmrHero}>
-          <Text style={styles.bmrIcon}>🔥</Text>
+          <Ionicons name="flame" size={52} color={Colors.amber} />
           <View style={styles.bmrText}>
             <Text style={styles.bmrValue}>{BMR}</Text>
             <Text style={styles.bmrLabel}>Basal Metabolic Rate</Text>
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
   title: { ...Typography.h1, color: Colors.text.primary },
 
   bmrHero: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  bmrIcon: { fontSize: 52 },
+  bmrIcon: { width: 52, alignItems: 'center' as const },
   bmrText: { flex: 1, gap: 4 },
   bmrValue: { ...Typography.hero, color: Colors.amber },
   bmrLabel: { ...Typography.h4, color: Colors.text.primary },

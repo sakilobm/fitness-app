@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle, Line, Text as SvgText } from 'react-native-svg';
-import GlassCard from '../../components/ui/GlassCard';
-import StatBadge from '../../components/ui/StatBadge';
-import SectionHeader from '../../components/ui/SectionHeader';
-import PillButton from '../../components/ui/PillButton';
-import ProgressRing from '../../components/ui/ProgressRing';
-import { Colors, Typography, Radius, Spacing } from '../../constants/theme';
+import GlassCard from '@/components/ui/GlassCard';
+import StatBadge from '@/components/ui/StatBadge';
+import SectionHeader from '@/components/ui/SectionHeader';
+import PillButton from '@/components/ui/PillButton';
+import ProgressRing from '@/components/ui/ProgressRing';
+import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
 
 const { width: W } = Dimensions.get('window');
 const CHART_W = W - 64;

@@ -1,16 +1,31 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Modal, Platform,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import GlassCard from '../../components/ui/GlassCard';
-import SectionHeader from '../../components/ui/SectionHeader';
-import { Colors, Typography, Radius } from '../../constants/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import GlassCard from '@/components/ui/GlassCard';
+import SectionHeader from '@/components/ui/SectionHeader';
+import { Colors, Typography, Radius } from '@/constants/theme';
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+type IconDef =
+  | { lib: 'Ionicons'; name: IoniconName }
+  | { lib: 'MCI'; name: MCIName };
+
+function ReminderIcon({ icon, color, size = 22 }: { icon: IconDef; color: string; size?: number }) {
+  if (icon.lib === 'MCI') {
+    return <MaterialCommunityIcons name={icon.name} size={size} color={color} />;
+  }
+  return <Ionicons name={icon.name} size={size} color={color} />;
+}
 
 interface ReminderItem {
   id: string;
   category: string;
-  icon: string;
+  icon: IconDef;
   title: string;
   time: string;
   days: string[];
@@ -23,64 +38,74 @@ const ALL_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const initialReminders: ReminderItem[] = [
   {
-    id: 'r1', category: 'Water', icon: '💧', title: 'Drink Water',
+    id: 'r1', category: 'Water',
+    icon: { lib: 'Ionicons', name: 'water' },
+    title: 'Drink Water',
     time: '08:00', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
     frequency: 'Daily', enabled: true, accentColor: Colors.chart.water,
   },
   {
-    id: 'r2', category: 'Water', icon: '💧', title: 'Afternoon Hydration',
+    id: 'r2', category: 'Water',
+    icon: { lib: 'Ionicons', name: 'water-outline' },
+    title: 'Afternoon Hydration',
     time: '15:00', days: ['M', 'T', 'W', 'T', 'F'],
     frequency: 'Weekdays', enabled: true, accentColor: Colors.chart.water,
   },
   {
-    id: 'r3', category: 'Meals', icon: '🍽', title: 'Log Breakfast',
+    id: 'r3', category: 'Meals',
+    icon: { lib: 'Ionicons', name: 'restaurant' },
+    title: 'Log Breakfast',
     time: '07:30', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
     frequency: 'Daily', enabled: true, accentColor: Colors.amber,
   },
   {
-    id: 'r4', category: 'Meals', icon: '🍽', title: 'Log Dinner',
+    id: 'r4', category: 'Meals',
+    icon: { lib: 'Ionicons', name: 'restaurant-outline' },
+    title: 'Log Dinner',
     time: '19:00', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
     frequency: 'Daily', enabled: false, accentColor: Colors.amber,
   },
   {
-    id: 'r5', category: 'Weigh-in', icon: '⚖️', title: 'Morning Weigh-in',
+    id: 'r5', category: 'Weigh-in',
+    icon: { lib: 'MCI', name: 'scale-bathroom' },
+    title: 'Morning Weigh-in',
     time: '07:00', days: ['M', 'W', 'F'],
     frequency: '3×/week', enabled: true, accentColor: Colors.lime,
   },
   {
-    id: 'r6', category: 'Body Photo', icon: '📸', title: 'Progress Photo',
+    id: 'r6', category: 'Body Photo',
+    icon: { lib: 'Ionicons', name: 'camera' },
+    title: 'Progress Photo',
     time: '08:00', days: ['M'],
     frequency: 'Weekly', enabled: true, accentColor: Colors.lime,
   },
   {
-    id: 'r7', category: 'Workout', icon: '🏋️', title: 'Strength Training',
+    id: 'r7', category: 'Workout',
+    icon: { lib: 'MCI', name: 'dumbbell' },
+    title: 'Strength Training',
     time: '18:00', days: ['M', 'W', 'F'],
     frequency: '3×/week', enabled: true, accentColor: Colors.lime,
   },
   {
-    id: 'r8', category: 'Supplements', icon: '💊', title: 'Take Vitamins',
+    id: 'r8', category: 'Supplements',
+    icon: { lib: 'MCI', name: 'pill' },
+    title: 'Take Vitamins',
     time: '08:30', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
     frequency: 'Daily', enabled: false, accentColor: Colors.chart.fibre,
   },
 ];
 
-const SMART_SUGGESTIONS = [
-  { icon: '💧', text: 'You usually forget water after 4 PM' },
-  { icon: '⚖️', text: 'Weigh-in consistency drops on weekends' },
-  { icon: '🍽', text: 'Lunch log is often skipped on Tuesdays' },
+const SMART_SUGGESTIONS: { icon: IconDef; text: string }[] = [
+  { icon: { lib: 'Ionicons', name: 'water' }, text: 'You usually forget water after 4 PM' },
+  { icon: { lib: 'MCI', name: 'scale-bathroom' }, text: 'Weigh-in consistency drops on weekends' },
+  { icon: { lib: 'Ionicons', name: 'restaurant' }, text: 'Lunch log is often skipped on Tuesdays' },
 ];
 
 function DayPills({ days, selected }: { days: string[]; selected: string[] }) {
   return (
     <View style={{ flexDirection: 'row', gap: 4 }}>
       {days.map((d, i) => (
-        <View
-          key={i}
-          style={[
-            dayS.pill,
-            selected.includes(d) && dayS.pillActive,
-          ]}
-        >
+        <View key={i} style={[dayS.pill, selected.includes(d) && dayS.pillActive]}>
           <Text style={[dayS.text, selected.includes(d) && dayS.textActive]}>{d}</Text>
         </View>
       ))}
@@ -101,10 +126,7 @@ const dayS = StyleSheet.create({
 });
 
 function ReminderCard({
-  reminder,
-  onToggle,
-  onExpand,
-  expanded,
+  reminder, onToggle, onExpand, expanded,
 }: {
   reminder: ReminderItem;
   onToggle: () => void;
@@ -115,7 +137,9 @@ function ReminderCard({
     <GlassCard noPadding style={{ marginBottom: 0 }}>
       <View style={[remS.accentBar, { backgroundColor: reminder.accentColor }]} />
       <TouchableOpacity style={remS.main} onPress={onExpand} activeOpacity={0.8}>
-        <Text style={remS.icon}>{reminder.icon}</Text>
+        <View style={[remS.iconWrap, { backgroundColor: reminder.accentColor + '18' }]}>
+          <ReminderIcon icon={reminder.icon} color={reminder.accentColor} size={20} />
+        </View>
         <View style={remS.info}>
           <Text style={remS.title}>{reminder.title}</Text>
           <Text style={remS.subtitle}>{reminder.time} · {reminder.frequency}</Text>
@@ -153,7 +177,10 @@ function ReminderCard({
 const remS = StyleSheet.create({
   accentBar: { height: 2 },
   main: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
-  icon: { fontSize: 22, width: 32, textAlign: 'center' },
+  iconWrap: {
+    width: 38, height: 38, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+  },
   info: { flex: 1 },
   title: { ...Typography.bodyBold, color: Colors.text.primary },
   subtitle: { ...Typography.caption, color: Colors.muted },
@@ -212,7 +239,6 @@ export default function RemindersScreen() {
           </View>
         </ScrollView>
 
-        {/* Reminder list */}
         <View style={styles.reminderList}>
           {filtered.map((r) => (
             <ReminderCard
@@ -225,12 +251,13 @@ export default function RemindersScreen() {
           ))}
         </View>
 
-        {/* Smart suggestions */}
         <SectionHeader title="Smart Suggestions" />
         <View style={styles.suggestionsCol}>
           {SMART_SUGGESTIONS.map((s, i) => (
             <TouchableOpacity key={i} style={styles.suggChip} activeOpacity={0.8}>
-              <Text style={styles.suggIcon}>{s.icon}</Text>
+              <View style={styles.suggIconWrap}>
+                <ReminderIcon icon={s.icon} color={Colors.lime} size={18} />
+              </View>
               <Text style={styles.suggText}>{s.text}</Text>
               <View style={styles.suggAddBtn}>
                 <Text style={styles.suggAddText}>Add</Text>
@@ -240,16 +267,15 @@ export default function RemindersScreen() {
         </View>
       </ScrollView>
 
-      {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 90 }]}
         onPress={() => setShowAdd(true)}
         activeOpacity={0.85}
       >
-        <Text style={styles.fabText}>+ Add Reminder</Text>
+        <Ionicons name="add" size={18} color={Colors.bg} />
+        <Text style={styles.fabText}>Add Reminder</Text>
       </TouchableOpacity>
 
-      {/* Add modal placeholder */}
       <Modal visible={showAdd} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
@@ -296,10 +322,13 @@ const styles = StyleSheet.create({
   suggChip: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.lime + '22',
-    padding: 14,
+    borderWidth: 1, borderColor: Colors.lime + '22', padding: 14,
   },
-  suggIcon: { fontSize: 20 },
+  suggIconWrap: {
+    width: 34, height: 34, borderRadius: 10,
+    backgroundColor: Colors.lime + '15',
+    alignItems: 'center', justifyContent: 'center',
+  },
   suggText: { ...Typography.caption, color: Colors.text.primary, flex: 1 },
   suggAddBtn: {
     backgroundColor: Colors.lime + '22', borderRadius: Radius.pill,
@@ -310,9 +339,10 @@ const styles = StyleSheet.create({
 
   fab: {
     position: 'absolute', right: 20,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: Colors.lime,
     borderRadius: Radius.pill,
-    paddingHorizontal: 24, paddingVertical: 14,
+    paddingHorizontal: 20, paddingVertical: 14,
     shadowColor: Colors.lime,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,

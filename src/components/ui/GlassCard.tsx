@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ViewStyle, StyleSheet } from 'react-native';
-import { Colors, Radius, Shadows } from '../../constants/theme';
+import { Colors, Radius, Shadows } from '@/constants/theme';
 
 interface GlassCardProps {
   children: React.ReactNode;

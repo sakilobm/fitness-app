@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect, Text as SvgText, G } from 'react-native-svg';
-import GlassCard from '../components/ui/GlassCard';
-import ProgressRing from '../components/ui/ProgressRing';
-import StatBadge from '../components/ui/StatBadge';
-import SectionHeader from '../components/ui/SectionHeader';
-import PillButton from '../components/ui/PillButton';
-import { Colors, Typography, Radius } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import GlassCard from '@/components/ui/GlassCard';
+import ProgressRing from '@/components/ui/ProgressRing';
+import StatBadge from '@/components/ui/StatBadge';
+import SectionHeader from '@/components/ui/SectionHeader';
+import PillButton from '@/components/ui/PillButton';
+import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 
 const { width: W } = Dimensions.get('window');
@@ -128,13 +129,13 @@ export default function StepsScreen() {
           <Text style={styles.stepsGoal}>/ {STEPS_GOAL.toLocaleString()} steps</Text>
           <View style={styles.ringStats}>
             <View style={styles.ringStat}>
-              <Text style={styles.ringStatIcon}>🔥</Text>
+              <Ionicons name="flame" size={14} color={Colors.amber} />
               <Text style={styles.ringStatVal}>{KCAL_BURNED}</Text>
               <Text style={styles.ringStatLabel}>kcal</Text>
             </View>
             <View style={styles.ringStatDivider} />
             <View style={styles.ringStat}>
-              <Text style={styles.ringStatIcon}>📍</Text>
+              <Ionicons name="location" size={14} color={Colors.lime} />
               <Text style={styles.ringStatVal}>{DISTANCE_KM}</Text>
               <Text style={styles.ringStatLabel}>km</Text>
             </View>
