@@ -1,0 +1,224 @@
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle } from 'react-native-svg';
+import GlassCard from '../components/ui/GlassCard';
+import ProgressRing from '../components/ui/ProgressRing';
+import SectionHeader from '../components/ui/SectionHeader';
+import { Colors, Typography, Radius } from '../constants/theme';
+import { router } from 'expo-router';
+
+const { width: W } = Dimensions.get('window');
+const CHART_W = W - 64;
+const CHART_H = 100;
+
+type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very';
+
+const ACTIVITY_LEVELS: { key: ActivityLevel; label: string; multiplier: number }[] = [
+  { key: 'sedentary', label: 'Sedentary', multiplier: 1.2 },
+  { key: 'light', label: 'Light', multiplier: 1.375 },
+  { key: 'moderate', label: 'Moderate', multiplier: 1.55 },
+  { key: 'active', label: 'Active', multiplier: 1.725 },
+  { key: 'very', label: 'Very Active', multiplier: 1.9 },
+];
+
+const BMR = 1820;
+
+const TREND_DATA = [1780, 1800, 1815, 1810, 1820, 1825, 1820];
+
+function TrendLine({ data }: { data: number[] }) {
+  const min = Math.min(...data) - 20;
+  const max = Math.max(...data) + 20;
+  const pts = data.map((v, i) => ({
+    x: (i / (data.length - 1)) * CHART_W,
+    y: CHART_H - ((v - min) / (max - min)) * CHART_H,
+  }));
+  const pathD = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
+  const areaD = `${pathD} L${CHART_W},${CHART_H} L0,${CHART_H} Z`;
+  return (
+    <Svg width={CHART_W} height={CHART_H + 8}>
+      <Defs>
+        <SvgLinearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={Colors.amber} stopOpacity="0.25" />
+          <Stop offset="1" stopColor={Colors.amber} stopOpacity="0" />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d={areaD} fill="url(#trendGrad)" />
+      <Path d={pathD} stroke={Colors.amber} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map((p, i) => (
+        <Circle key={i} cx={p.x} cy={p.y} r={i === pts.length - 1 ? 5 : 3}
+          fill={i === pts.length - 1 ? Colors.amber : Colors.amber + '88'} />
+      ))}
+    </Svg>
+  );
+}
+
+const MACRO_SPLIT = [
+  { label: 'Protein', pct: 0.3, grams: 150, color: Colors.chart.protein },
+  { label: 'Carbs', pct: 0.45, grams: 225, color: Colors.chart.carbs },
+  { label: 'Fat', pct: 0.25, grams: 56, color: Colors.amber },
+];
+
+const BODY_COMP = [
+  { label: 'Body Fat', value: 18.5, color: Colors.amber, unit: '%', progress: 0.185 },
+  { label: 'Muscle', value: 72.4, color: Colors.lime, unit: '%', progress: 0.724 },
+  { label: 'Water', value: 59.1, color: Colors.chart.water, unit: '%', progress: 0.591 },
+];
+
+export default function MetabolismScreen() {
+  const insets = useSafeAreaInsets();
+  const [actLevel, setActLevel] = useState<ActivityLevel>('moderate');
+  const mult = ACTIVITY_LEVELS.find((a) => a.key === actLevel)?.multiplier ?? 1.55;
+  const tdee = Math.round(BMR * mult);
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+          <Text style={styles.backText}>‹ Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Metabolism</Text>
+      </View>
+
+      {/* BMR Hero */}
+      <GlassCard accentColor={Colors.amber}>
+        <View style={styles.bmrHero}>
+          <Text style={styles.bmrIcon}>🔥</Text>
+          <View style={styles.bmrText}>
+            <Text style={styles.bmrValue}>{BMR}</Text>
+            <Text style={styles.bmrLabel}>Basal Metabolic Rate</Text>
+            <Text style={styles.bmrSub}>calories your body burns at rest daily</Text>
+          </View>
+        </View>
+      </GlassCard>
+
+      {/* TDEE */}
+      <GlassCard accentColor={Colors.lime}>
+        <SectionHeader title="Total Daily Energy (TDEE)" />
+        <View style={styles.activitySegment}>
+          {ACTIVITY_LEVELS.map((a) => (
+            <TouchableOpacity
+              key={a.key}
+              style={[styles.actBtn, actLevel === a.key && styles.actBtnActive]}
+              onPress={() => setActLevel(a.key)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.actBtnText, actLevel === a.key && styles.actBtnTextActive]}>
+                {a.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.tdeeResult}>
+          <Text style={styles.tdeeValue}>{tdee.toLocaleString()}</Text>
+          <Text style={styles.tdeeLabel}>kcal / day</Text>
+        </View>
+        <Text style={styles.tdeeNote}>
+          × {mult} multiplier ({ACTIVITY_LEVELS.find((a) => a.key === actLevel)?.label})
+        </Text>
+      </GlassCard>
+
+      {/* Macro split */}
+      <GlassCard>
+        <SectionHeader title="Macro Split Recommendation" />
+        <View style={styles.macroRow}>
+          {MACRO_SPLIT.map((m) => (
+            <View key={m.label} style={styles.macroItem}>
+              <ProgressRing size={80} strokeWidth={8} progress={m.pct} color={m.color}>
+                <Text style={[styles.macroPct, { color: m.color }]}>{Math.round(m.pct * 100)}%</Text>
+              </ProgressRing>
+              <Text style={styles.macroLabel}>{m.label}</Text>
+              <Text style={[styles.macroGrams, { color: m.color }]}>{m.grams}g</Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
+
+      {/* Weekly trend */}
+      <GlassCard accentColor={Colors.amber}>
+        <SectionHeader title="Weekly BMR Trend" />
+        <TrendLine data={TREND_DATA} />
+        <View style={styles.trendStats}>
+          <View style={styles.trendStat}>
+            <Text style={styles.trendVal}>{Math.max(...TREND_DATA)}</Text>
+            <Text style={styles.trendLbl}>Peak</Text>
+          </View>
+          <View style={styles.trendStat}>
+            <Text style={styles.trendVal}>{Math.min(...TREND_DATA)}</Text>
+            <Text style={styles.trendLbl}>Low</Text>
+          </View>
+          <View style={styles.trendStat}>
+            <Text style={styles.trendVal}>{Math.round(TREND_DATA.reduce((s, v) => s + v, 0) / TREND_DATA.length)}</Text>
+            <Text style={styles.trendLbl}>Average</Text>
+          </View>
+        </View>
+      </GlassCard>
+
+      {/* Body composition */}
+      <GlassCard>
+        <SectionHeader title="Body Composition" />
+        <View style={styles.bodyRow}>
+          {BODY_COMP.map((b) => (
+            <View key={b.label} style={styles.bodyCard}>
+              <ProgressRing size={72} strokeWidth={7} progress={b.progress} color={b.color}>
+                <Text style={[styles.bodyVal, { color: b.color }]}>{b.value}{b.unit}</Text>
+              </ProgressRing>
+              <Text style={styles.bodyLabel}>{b.label}</Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  content: { paddingHorizontal: 16, gap: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  back: { padding: 4 },
+  backText: { ...Typography.h4, color: Colors.lime },
+  title: { ...Typography.h1, color: Colors.text.primary },
+
+  bmrHero: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  bmrIcon: { fontSize: 52 },
+  bmrText: { flex: 1, gap: 4 },
+  bmrValue: { ...Typography.hero, color: Colors.amber },
+  bmrLabel: { ...Typography.h4, color: Colors.text.primary },
+  bmrSub: { ...Typography.caption, color: Colors.muted },
+
+  activitySegment: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
+  actBtn: {
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: Radius.pill, borderWidth: 1,
+    borderColor: Colors.cardBorder, backgroundColor: Colors.card,
+  },
+  actBtnActive: { backgroundColor: Colors.lime + '22', borderColor: Colors.lime },
+  actBtnText: { ...Typography.captionBold, color: Colors.muted },
+  actBtnTextActive: { color: Colors.lime },
+
+  tdeeResult: { alignItems: 'center', marginBottom: 4 },
+  tdeeValue: { ...Typography.hero, color: Colors.lime },
+  tdeeLabel: { ...Typography.caption, color: Colors.muted },
+  tdeeNote: { ...Typography.caption, color: Colors.muted, textAlign: 'center' },
+
+  macroRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
+  macroItem: { alignItems: 'center', gap: 6 },
+  macroPct: { ...Typography.captionBold },
+  macroLabel: { ...Typography.caption, color: Colors.muted },
+  macroGrams: { ...Typography.bodyBold },
+
+  trendStats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 12 },
+  trendStat: { alignItems: 'center', gap: 2 },
+  trendVal: { ...Typography.h4, color: Colors.amber },
+  trendLbl: { ...Typography.micro, color: Colors.muted },
+
+  bodyRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
+  bodyCard: { alignItems: 'center', gap: 8 },
+  bodyVal: { ...Typography.captionBold, fontSize: 11 },
+  bodyLabel: { ...Typography.caption, color: Colors.muted },
+});
