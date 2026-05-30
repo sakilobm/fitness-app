@@ -14,7 +14,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 interface ProgressRingProps {
   size?: number;
   strokeWidth?: number;
-  progress: number; // 0-1
+  progress: number;
   color?: string;
   trackColor?: string;
   children?: React.ReactNode;
@@ -26,7 +26,7 @@ export default function ProgressRing({
   strokeWidth = 10,
   progress,
   color = Colors.lime,
-  trackColor = 'rgba(255,255,255,0.08)',
+  trackColor = 'rgba(0,0,0,0.08)',   // light-theme: dark track on white
   children,
   glowing = false,
 }: ProgressRingProps) {
@@ -49,20 +49,12 @@ export default function ProgressRing({
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={trackColor}
-          strokeWidth={strokeWidth}
-          fill="none"
+          cx={size / 2} cy={size / 2} r={radius}
+          stroke={trackColor} strokeWidth={strokeWidth} fill="none"
         />
         <AnimatedCircle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="none"
+          cx={size / 2} cy={size / 2} r={radius}
+          stroke={color} strokeWidth={strokeWidth} fill="none"
           strokeDasharray={circumference}
           animatedProps={animatedProps}
           strokeLinecap="round"
@@ -76,8 +68,5 @@ export default function ProgressRing({
 }
 
 const styles = StyleSheet.create({
-  center: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  center: { alignItems: 'center', justifyContent: 'center' },
 });

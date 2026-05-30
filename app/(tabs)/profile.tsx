@@ -167,7 +167,7 @@ export default function ProfileScreen() {
             <Text style={styles.settingLabel}>Dark Theme</Text>
             <Switch
               value={darkTheme} onValueChange={setDarkTheme}
-              trackColor={{ false: 'rgba(255,255,255,0.1)', true: Colors.lime + '88' }}
+              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '88' }}
               thumbColor={darkTheme ? Colors.lime : Colors.muted}
             />
           </View>
@@ -209,7 +209,7 @@ export default function ProfileScreen() {
             <Text style={styles.settingLabel}>Notifications</Text>
             <Switch
               value={notifications} onValueChange={setNotifications}
-              trackColor={{ false: 'rgba(255,255,255,0.1)', true: Colors.lime + '88' }}
+              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '88' }}
               thumbColor={notifications ? Colors.lime : Colors.muted}
             />
           </View>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.lime + '44',
   },
   levelText: { ...Typography.captionBold, color: Colors.lime },
-  xpBar: { height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: Radius.pill, overflow: 'hidden' },
+  xpBar: { height: 4, backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: Radius.pill, overflow: 'hidden' },
   xpFill: { width: '71%', height: '100%', backgroundColor: Colors.lime, borderRadius: Radius.pill },
   xpSub: { ...Typography.micro, color: Colors.muted },
 
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   badgeLocked: { opacity: 0.35 },
   badgeCircle: {
     width: 54, height: 54, borderRadius: 27,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.05)',
     borderWidth: 1.5, borderColor: Colors.cardBorder,
     alignItems: 'center', justifyContent: 'center',
   },

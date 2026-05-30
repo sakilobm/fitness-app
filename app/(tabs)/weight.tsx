@@ -71,7 +71,7 @@ function CalHeatmap() {
     logged: Colors.lime + '88',
     missed: Colors.danger + '55',
     goal: Colors.lime,
-    future: 'rgba(255,255,255,0.06)',
+    future: 'rgba(0,0,0,0.06)',
   };
 
   return (
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 3,
     borderWidth: 1, borderColor: Colors.lime + '55',
   },
-  milestoneLocked: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: Colors.cardBorder },
+  milestoneLocked: { backgroundColor: 'rgba(0,0,0,0.04)', borderColor: Colors.cardBorder },
   milestoneText: { ...Typography.micro, color: Colors.lime },
   milestoneLockedText: { color: Colors.muted },
 

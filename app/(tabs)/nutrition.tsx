@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   waterChipIcon: { fontSize: 18 },
   waterChipText: { ...Typography.caption, color: Colors.text.primary, flex: 1 },
-  waterBar: { width: 60, height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 },
+  waterBar: { width: 60, height: 4, backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: 2 },
   waterFill: { height: '100%', backgroundColor: Colors.chart.water, borderRadius: 2 },
 
   summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
 
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
   modalSheet: {
-    backgroundColor: '#1A2E1C', borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
+    backgroundColor: Colors.card, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
     padding: 24, gap: 16,
     borderWidth: 1, borderColor: Colors.cardBorder,
   },

@@ -11,7 +11,7 @@ interface GlassCardProps {
 
 export default function GlassCard({ children, style, accentColor, noPadding }: GlassCardProps) {
   return (
-    <View style={[styles.card, noPadding ? null : styles.padded, style, Shadows.card]}>
+    <View style={[styles.card, noPadding ? null : styles.padded, Shadows.card, style]}>
       {accentColor && <View style={[styles.accent, { backgroundColor: accentColor }]} />}
       {children}
     </View>
@@ -34,6 +34,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 2,
+    height: 3,
   },
 });

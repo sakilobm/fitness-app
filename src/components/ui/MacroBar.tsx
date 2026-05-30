@@ -16,10 +16,7 @@ export default function MacroBar({ label, current, goal, color, unit = 'g' }: Ma
   const animWidth = useSharedValue(0);
 
   useEffect(() => {
-    animWidth.value = withTiming(progress, {
-      duration: 1000,
-      easing: Easing.out(Easing.cubic),
-    });
+    animWidth.value = withTiming(progress, { duration: 1000, easing: Easing.out(Easing.cubic) });
   }, [progress]);
 
   const barStyle = useAnimatedStyle(() => ({
@@ -50,7 +47,7 @@ const styles = StyleSheet.create({
   goal: { color: Colors.muted },
   track: {
     height: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(0,0,0,0.07)',   // light-theme track
     borderRadius: Radius.pill,
     overflow: 'hidden',
   },

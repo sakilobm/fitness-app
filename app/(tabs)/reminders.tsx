@@ -116,7 +116,7 @@ function DayPills({ days, selected }: { days: string[]; selected: string[] }) {
 const dayS = StyleSheet.create({
   pill: {
     width: 26, height: 26, borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: Colors.cardBorder,
   },
@@ -147,7 +147,7 @@ function ReminderCard({
         <Switch
           value={reminder.enabled}
           onValueChange={onToggle}
-          trackColor={{ false: 'rgba(255,255,255,0.1)', true: reminder.accentColor + '88' }}
+          trackColor={{ false: 'rgba(0,0,0,0.10)', true: reminder.accentColor + '88' }}
           thumbColor={reminder.enabled ? reminder.accentColor : Colors.muted}
         />
       </TouchableOpacity>
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
 
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
   modalSheet: {
-    backgroundColor: '#1A2E1C',
+    backgroundColor: Colors.card,
     borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
     padding: 24, gap: 16,
     borderWidth: 1, borderColor: Colors.cardBorder,

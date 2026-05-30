@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Radius, Typography } from '@/constants/theme';
+import { Colors, Radius, Typography, Shadows } from '@/constants/theme';
 
 interface StatBadgeProps {
   label: string;
@@ -12,7 +12,7 @@ interface StatBadgeProps {
 
 export default function StatBadge({ label, value, color = Colors.lime, style, compact }: StatBadgeProps) {
   return (
-    <View style={[styles.container, compact && styles.compact, style]}>
+    <View style={[styles.container, compact && styles.compact, Shadows.card, style]}>
       <Text style={[styles.value, { color }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
@@ -29,9 +29,7 @@ const styles = StyleSheet.create({
     padding: 12,
     flex: 1,
   },
-  compact: {
-    padding: 8,
-  },
+  compact: { padding: 8 },
   value: {
     ...Typography.h2,
     color: Colors.lime,

@@ -65,7 +65,7 @@ const cyS = StyleSheet.create({
     width: CYLINDER_W,
     height: CYLINDER_H,
     borderRadius: 60,
-    backgroundColor: 'rgba(77,166,255,0.08)',
+    backgroundColor: 'rgba(59,130,246,0.08)',
     borderWidth: 1.5,
     borderColor: Colors.chart.water + '66',
     overflow: 'hidden',
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
 
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
   modalSheet: {
-    backgroundColor: '#1A2E1C',
+    backgroundColor: Colors.card,
     borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
     padding: 28, gap: 16,
     borderWidth: 1, borderColor: Colors.cardBorder,

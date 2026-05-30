@@ -4,9 +4,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
+  useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius, Typography } from '@/constants/theme';
@@ -33,53 +31,21 @@ function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean
   const color = focused ? Colors.lime : Colors.muted;
   switch (name) {
     case 'index':
-      return (
-        <Ionicons
-          name={(focused ? 'home' : 'home-outline') as IoniconName}
-          size={size} color={color}
-        />
-      );
+      return <Ionicons name={(focused ? 'home' : 'home-outline') as IoniconName} size={size} color={color} />;
     case 'weight':
-      return (
-        <MaterialCommunityIcons
-          name="scale-bathroom" size={size} color={color}
-        />
-      );
+      return <MaterialCommunityIcons name="scale-bathroom" size={size} color={color} />;
     case 'nutrition':
-      return (
-        <MaterialCommunityIcons
-          name={(focused ? 'food-apple' : 'food-apple-outline') as MCIName}
-          size={size} color={color}
-        />
-      );
+      return <MaterialCommunityIcons name={(focused ? 'food-apple' : 'food-apple-outline') as MCIName} size={size} color={color} />;
     case 'reminders':
-      return (
-        <Ionicons
-          name={(focused ? 'notifications' : 'notifications-outline') as IoniconName}
-          size={size} color={color}
-        />
-      );
+      return <Ionicons name={(focused ? 'notifications' : 'notifications-outline') as IoniconName} size={size} color={color} />;
     case 'profile':
-      return (
-        <Ionicons
-          name={(focused ? 'person' : 'person-outline') as IoniconName}
-          size={size} color={color}
-        />
-      );
+      return <Ionicons name={(focused ? 'person' : 'person-outline') as IoniconName} size={size} color={color} />;
   }
 }
 
 function TabButton({
-  name,
-  focused,
-  onPress,
-  tabWidth,
-}: {
-  name: TabName;
-  focused: boolean;
-  onPress: () => void;
-  tabWidth: number;
-}) {
+  name, focused, onPress, tabWidth,
+}: { name: TabName; focused: boolean; onPress: () => void; tabWidth: number }) {
   const iconScale = useSharedValue(focused ? 1.1 : 1);
   const pressScale = useSharedValue(1);
 
@@ -90,23 +56,15 @@ function TabButton({
   const iconAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],
   }));
-
   const pressAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pressScale.value }],
   }));
 
-  const handlePressIn = () => {
-    pressScale.value = withSpring(0.88, { damping: 10, stiffness: 400 });
-  };
-  const handlePressOut = () => {
-    pressScale.value = withSpring(1, { damping: 12, stiffness: 280 });
-  };
-
   return (
     <TouchableOpacity
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPressIn={() => { pressScale.value = withSpring(0.88, { damping: 10, stiffness: 400 }); }}
+      onPressOut={() => { pressScale.value = withSpring(1, { damping: 12, stiffness: 280 }); }}
       activeOpacity={1}
       style={[styles.tabBtn, { width: tabWidth }]}
     >
@@ -124,7 +82,6 @@ function TabButton({
 
 type TabBarProps = {
   state: { index: number; routes: { key: string; name: string }[] };
-  // Use a loose type so it works with react-navigation's complex emit signature
   navigation: any;
 };
 
@@ -147,50 +104,30 @@ export default function CustomTabBar({ state, navigation }: TabBarProps) {
   }));
 
   return (
-    <View
-      style={[
-        styles.wrapper,
-        { bottom: Math.max(insets.bottom, 6) + 10 },
-      ]}
-    >
-      {/* Lime outer glow — iOS only */}
+    <View style={[styles.wrapper, { bottom: Math.max(insets.bottom, 6) + 10 }]}>
+      {/* Soft teal glow — iOS only */}
       {Platform.OS === 'ios' && <View style={styles.outerGlow} />}
 
-      {/* Glass card */}
       <View style={styles.glass}>
-        {/* Top shine line */}
+        {/* Subtle top border highlight */}
         <View style={styles.topShine} />
-
-        {/* Sliding pill indicator */}
+        {/* Sliding active pill */}
         <Animated.View style={[styles.pill, pillStyle]} />
-
-        {/* Tab row */}
+        {/* Tabs */}
         <View style={styles.row}>
-          {state.routes.map((route, index) => {
-            const focused = state.index === index;
-            return (
-              <TabButton
-                key={route.key}
-                name={route.name as TabName}
-                focused={focused}
-                tabWidth={tabWidth}
-                onPress={() => {
-                  const event = navigation.emit({
-                    type: 'tabPress',
-                    target: route.key,
-                    canPreventDefault: true,
-                  });
-                  if (!event.defaultPrevented) {
-                    navigation.navigate(route.name);
-                  }
-                }}
-              />
-            );
-          })}
+          {state.routes.map((route, index) => (
+            <TabButton
+              key={route.key}
+              name={route.name as TabName}
+              focused={state.index === index}
+              tabWidth={tabWidth}
+              onPress={() => {
+                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                if (!event.defaultPrevented) navigation.navigate(route.name);
+              }}
+            />
+          ))}
         </View>
-
-        {/* Bottom inner glow strip */}
-        <View style={styles.bottomGlow} />
       </View>
     </View>
   );
@@ -203,43 +140,40 @@ const styles = StyleSheet.create({
     right: 16,
   },
 
+  // Soft teal ambient glow (iOS only)
   outerGlow: {
     position: 'absolute',
     top: 6, left: 10, right: 10, bottom: -6,
     borderRadius: Radius.xl,
     shadowColor: Colors.lime,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.22,
-    shadowRadius: 20,
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
   },
 
   glass: {
     height: BAR_H,
-    backgroundColor: 'rgba(10, 20, 11, 0.97)',
+    backgroundColor: 'rgba(255,255,255,0.96)',
     borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(168, 255, 62, 0.20)',
+    borderColor: 'rgba(0,0,0,0.08)',
     overflow: 'hidden',
-    elevation: 24,
+    // Android depth
+    elevation: 16,
+    shadowColor: '#1C1C1E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
   },
 
   topShine: {
     position: 'absolute',
     top: 0,
-    left: 24,
-    right: 24,
+    left: 20,
+    right: 20,
     height: 1,
-    backgroundColor: 'rgba(168, 255, 62, 0.40)',
+    backgroundColor: 'rgba(46,125,94,0.25)',
     borderRadius: 1,
-  },
-
-  bottomGlow: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(168, 255, 62, 0.06)',
   },
 
   pill: {
@@ -248,17 +182,9 @@ const styles = StyleSheet.create({
     width: PILL_W,
     height: PILL_H,
     borderRadius: 18,
-    backgroundColor: 'rgba(168, 255, 62, 0.11)',
+    backgroundColor: 'rgba(46,125,94,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(168, 255, 62, 0.28)',
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.lime,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
-      },
-    }),
+    borderColor: 'rgba(46,125,94,0.22)',
   },
 
   row: {

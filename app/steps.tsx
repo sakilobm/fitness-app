@@ -34,7 +34,7 @@ function WeekBars() {
         const x = i * barW + barW * 0.15;
         const bw = barW * 0.7;
         const color =
-          v === 0 ? 'rgba(255,255,255,0.06)'
+          v === 0 ? 'rgba(0,0,0,0.06)'
           : v >= STEPS_GOAL ? Colors.amber
           : i === today_idx ? Colors.lime
           : Colors.muted + '55';
