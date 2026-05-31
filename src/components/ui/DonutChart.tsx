@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Circle, G } from 'react-native-svg';
-import Animated, { useSharedValue, withTiming, Easing } from 'react-native-reanimated';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+import Svg, { Circle, G, Defs, Pattern as SvgPattern } from 'react-native-svg';
+import { useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 
 interface Segment {
   value: number;
@@ -16,8 +14,10 @@ interface DonutChartProps {
   strokeWidth?: number;
   children?: React.ReactNode;
   gapSize?: number;
-  trackColor?: string;   // explicit track color (replaces trackOpacity)
+  trackColor?: string;
   rounded?: boolean;
+  innerFill?: string;
+  showInnerDots?: boolean;
 }
 
 export default function DonutChart({
@@ -26,8 +26,10 @@ export default function DonutChart({
   strokeWidth = 14,
   children,
   gapSize = 0,
-  trackColor = 'rgba(0,0,0,0.08)',   // light-theme default
+  trackColor = 'rgba(0,0,0,0.08)',
   rounded = false,
+  innerFill,
+  showInnerDots = false,
 }: DonutChartProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -40,6 +42,7 @@ export default function DonutChart({
 
   const capExtra = rounded ? strokeWidth : 0;
   const effectiveGap = gapSize + capExtra;
+
   let cumLen = 0;
   const rings = segments.map((seg) => {
     const fraction = total > 0 ? seg.value / total : 0;
@@ -51,21 +54,50 @@ export default function DonutChart({
   });
 
   const linecap = rounded ? 'round' : 'butt';
+  const innerR = radius - strokeWidth / 2 - 1;
+  const patId = `dp_${Math.round(size)}`;
+  const cx = size / 2;
+  const cy = size / 2;
+  // SVG transform: rotate -90° around centre so 0° = 12 o'clock
+  const rotate = `rotate(-90, ${cx}, ${cy})`;
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+        <Defs>
+          {showInnerDots && (
+            <SvgPattern
+              id={patId}
+              x="0" y="0"
+              width="8" height="8"
+              patternUnits="userSpaceOnUse"
+            >
+              <Circle cx="4" cy="4" r="1" fill="rgba(0,0,0,0.09)" />
+            </SvgPattern>
+          )}
+        </Defs>
+
+        <G transform={rotate}>
+          {/* ① Inner circle base fill */}
+          {innerFill && (
+            <Circle cx={cx} cy={cy} r={innerR} fill={innerFill} />
+          )}
+          {/* ② Dot-grid texture overlay */}
+          {showInnerDots && (
+            <Circle cx={cx} cy={cy} r={innerR} fill={`url(#${patId})`} />
+          )}
+          {/* ③ Track ring */}
           <Circle
-            cx={size / 2} cy={size / 2} r={radius}
+            cx={cx} cy={cy} r={radius}
             stroke={trackColor}
             strokeWidth={strokeWidth}
             fill="none"
           />
+          {/* ④ Coloured segment arcs */}
           {rings.map(({ dash, startOffset, color }, i) => (
             <Circle
               key={i}
-              cx={size / 2} cy={size / 2} r={radius}
+              cx={cx} cy={cy} r={radius}
               stroke={color}
               strokeWidth={strokeWidth}
               fill="none"
@@ -76,6 +108,7 @@ export default function DonutChart({
           ))}
         </G>
       </Svg>
+
       <View style={styles.center}>{children}</View>
     </View>
   );

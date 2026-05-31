@@ -13,18 +13,18 @@ import { Colors, Typography, Radius } from '@/constants/theme';
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-const dayOfMonth = new Date().getDate();
-
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const macros = [
-  { label: 'Calories', current: 1420, goal: 2000, color: Colors.chart.calories, unit: 'kcal' },
-  { label: 'Protein',  current: 87,   goal: 150,  color: Colors.chart.protein,  unit: 'g'    },
-  { label: 'Carbs',    current: 165,  goal: 250,  color: Colors.chart.carbs,    unit: 'g'    },
-  { label: 'Fibre',    current: 18,   goal: 30,   color: Colors.chart.fibre,    unit: 'g'    },
+// Nutrition card — 3 segments exactly matching the reference design
+const DONUT_KCAL   = { current: 1320, goal: 2300 };
+const DONUT_DAY    = 8;
+const DONUT_PCT    = 64;
+const DONUT_TREND  = '+3%';
+const DONUT_SEGS = [
+  { label: 'Carbs',    current: 112, goal: 240, color: '#FB923C', unit: 'g' },
+  { label: 'Proteins', current: 48,  goal: 140, color: '#A78BFA', unit: 'g' },
+  { label: 'Fats',     current: 32,  goal: 110, color: '#0D9488', unit: 'g' },
 ];
-
-const caloriePct = Math.round((macros[0].current / macros[0].goal) * 100);
 
 const quickLogs: {
   iconLib: 'Ionicons' | 'MCI'; iconName: string; iconColor: string;
@@ -54,21 +54,20 @@ function AppIcon({ lib, name, size, color }: { lib: 'Ionicons' | 'MCI'; name: st
   return <Ionicons name={name as IoniconName} size={size} color={color} />;
 }
 
-// ── Nutrition Card (exact reference layout) ───────────────────────────────────
+// ── Nutrition Card ────────────────────────────────────────────────────────────
 
 function NutritionCard() {
   const [period, setPeriod] = useState<'Today' | 'Week' | 'Month'>('Today');
-  const [showPeriod, setShowPeriod] = useState(false);
 
   return (
     <View style={card.shell}>
 
-      {/* ── Row 1: Title  +  Period dropdown ── */}
+      {/* Row 1 — Title + Period toggle */}
       <View style={card.row1}>
         <Text style={card.title}>Nutrition</Text>
         <TouchableOpacity
           style={card.periodBtn}
-          onPress={() => setShowPeriod((v) => !v)}
+          onPress={() => setPeriod((p) => (p === 'Today' ? 'Week' : 'Today'))}
           activeOpacity={0.75}
         >
           <Text style={card.periodTxt}>{period}</Text>
@@ -76,71 +75,75 @@ function NutritionCard() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Row 2: Kcal display ── */}
+      {/* Row 2 — Kcal display */}
       <View style={card.row2}>
         <View style={card.kcalIconBox}>
           <MaterialCommunityIcons name="run" size={18} color={Colors.lime} />
         </View>
         <Text style={card.kcalBig}>
           <Text style={{ color: Colors.text.primary }}>
-            {macros[0].current.toLocaleString()}
+            {DONUT_KCAL.current.toLocaleString()}
           </Text>
-          <Text style={card.kcalSep}>/{macros[0].goal.toLocaleString()} kcal</Text>
+          <Text style={card.kcalSep}>/{DONUT_KCAL.goal.toLocaleString()} kcal</Text>
         </Text>
       </View>
 
-      {/* ── Row 3: Donut  +  Macro list ── */}
+      {/* Row 3 — Exact-reference donut  +  3-item macro list */}
       <View style={card.row3}>
 
-        {/* Donut with centre info */}
+        {/* ── Large donut: thick rounded arcs, dot-grid inner circle ── */}
         <DonutChart
-          size={148}
-          strokeWidth={15}
-          gapSize={6}
+          size={172}
+          strokeWidth={20}
+          gapSize={14}
           rounded
-          trackColor="rgba(0,0,0,0.08)"
-          segments={macros.map((m) => ({ value: m.current, color: m.color }))}
+          trackColor="rgba(0,0,0,0.07)"
+          innerFill="#F0EDE8"
+          showInnerDots
+          segments={DONUT_SEGS.map((s) => ({ value: s.current, color: s.color }))}
         >
-          <Text style={card.donutDay}>Day {dayOfMonth}</Text>
-          <Text style={card.donutPct}>{caloriePct}%</Text>
-          <View style={card.donutTrend}>
-            <Ionicons name="trending-up" size={9} color={Colors.lime} />
-            <Text style={card.donutTrendTxt}> +8%</Text>
+          {/* "Day 8" pill badge */}
+          <View style={card.dayBadge}>
+            <Text style={card.dayBadgeTxt}>Day {DONUT_DAY}</Text>
           </View>
+          {/* Large % */}
+          <Text style={card.donutPct}>{DONUT_PCT}%</Text>
+          {/* Trend */}
+          <Text style={card.donutTrend}>{DONUT_TREND}</Text>
         </DonutChart>
 
-        {/* Macro list — left border style matching reference */}
+        {/* ── 3-item macro list — left-border style ── */}
         <View style={card.macroList}>
-          {macros.map((m, i) => {
-            const unitLabel = m.unit === 'kcal' ? ' kcal' : 'g';
-            const isLast = i === macros.length - 1;
-            return (
-              <View key={m.label} style={[card.macroRow, !isLast && card.macroRowBorder]}>
-                {/* Coloured left border bar */}
-                <View style={[card.macroBorderBar, { backgroundColor: m.color }]} />
-                <View style={card.macroTexts}>
-                  <Text style={card.macroLabel}>{m.label}</Text>
-                  <Text style={card.macroVal} numberOfLines={1}>
-                    <Text style={[card.macroCurrent, { color: m.color }]}>
-                      {m.current}
-                    </Text>
-                    <Text style={card.macroGoal}>/{m.goal}{unitLabel}</Text>
-                  </Text>
-                </View>
+          {DONUT_SEGS.map((m, i) => (
+            <View
+              key={m.label}
+              style={[card.macroRow, i < DONUT_SEGS.length - 1 && card.macroRowBorder]}
+            >
+              <View style={[card.macroBorderBar, { backgroundColor: m.color }]} />
+              <View style={card.macroTexts}>
+                <Text style={card.macroLabel}>{m.label}</Text>
+                <Text style={card.macroVal} numberOfLines={1}>
+                  <Text style={[card.macroCurrent, { color: m.color }]}>{m.current}</Text>
+                  <Text style={card.macroGoal}>/{m.goal}g</Text>
+                </Text>
               </View>
-            );
-          })}
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* ── Row 4: Ask advice  +  Action button ── */}
+      {/* Row 4 — Ask advice + action */}
       <View style={card.row4}>
         <TouchableOpacity style={card.adviceBtn} activeOpacity={0.8}>
           <Ionicons name="sparkles" size={14} color={Colors.lime} />
           <Text style={card.adviceTxt}>Ask advice</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={card.actionBtn} activeOpacity={0.8} onPress={() => router.push('/(tabs)/nutrition')}>
-          <Ionicons name="arrow-forward" size={18} color={Colors.text.primary} />
+        <TouchableOpacity
+          style={card.actionBtn}
+          activeOpacity={0.8}
+          onPress={() => router.push('/(tabs)/nutrition')}
+        >
+          <Ionicons name="arrow-forward" size={18} color={Colors.bg} />
         </TouchableOpacity>
       </View>
 
@@ -350,34 +353,33 @@ const card = StyleSheet.create({
     gap: 16,
   },
 
-  // Donut centre labels
-  donutDay: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.muted,
-    letterSpacing: 0.5,
-    marginBottom: 2,
+  // Donut centre — "Day 8" pill badge
+  dayBadge: {
+    backgroundColor: 'rgba(0,0,0,0.07)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 6,
   },
+  dayBadgeTxt: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.muted,
+  },
+  // Large % number
   donutPct: {
-    fontSize: 30,
+    fontSize: 38,
     fontWeight: '800',
     color: Colors.text.primary,
-    lineHeight: 34,
-    letterSpacing: -1,
+    lineHeight: 42,
+    letterSpacing: -1.5,
   },
+  // "+3%" green trend — plain text, no bg box
   donutTrend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    backgroundColor: Colors.lime + '1A',
-    borderRadius: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  donutTrendTxt: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: '700',
     color: Colors.lime,
+    marginTop: 3,
   },
 
   // Macro list (right column)
