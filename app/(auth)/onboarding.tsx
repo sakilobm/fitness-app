@@ -6,13 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -88,7 +88,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Upper Branding Bar */}
       <View style={styles.header}>
         <View style={styles.logoContainer}>

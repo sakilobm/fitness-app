@@ -9,9 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -174,7 +174,7 @@ export default function ForgotPasswordScreen() {
                 </View>
 
                 <Text style={styles.successTitle}>Recovery Link Sent!</Text>
-                
+
                 <View style={styles.emailChip}>
                   <Ionicons name="mail" size={14} color={Colors.text.accent} />
                   <Text style={styles.emailChipText}>{email}</Text>

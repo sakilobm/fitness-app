@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -17,6 +16,7 @@ import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme'
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import { useAppStore } from '@/store';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function SignupScreen() {
   const [nameFocus, setNameFocus] = useState(false);
   const [emailFocus, setEmailFocus] = useState(false);
   const [passwordFocus, setPasswordFocus] = useState(false);
-  
+
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
