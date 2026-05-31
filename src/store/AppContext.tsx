@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile } from '../types';
+import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog } from '../types';
 import { Colors } from '../constants/theme';
 
 interface AppContextType {
@@ -10,9 +10,9 @@ interface AppContextType {
   updateUserMotto: (motto: string) => void;
   
   // Weight Tracking
-  weightLogs: number[];
-  setWeightLogs: React.Dispatch<React.SetStateAction<number[]>>;
-  addWeightLog: (weight: number, dateOffset?: 'today' | 'yesterday') => void;
+  weightLogs: WeightLog[];
+  setWeightLogs: React.Dispatch<React.SetStateAction<WeightLog[]>>;
+  addWeightLog: (weight: number, timeOfDay: 'morning' | 'afternoon' | 'night', dateOffset?: 'today' | 'yesterday') => void;
   deleteWeightLog: (index: number) => void;
   
   // Nutrition/Food Tracking
@@ -95,11 +95,66 @@ const initialMeals: Meal[] = [
   },
 ];
 
-const initialWeightLogs: number[] = [
+const getPastDateStr = (daysAgo: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().split('T')[0]; // "YYYY-MM-DD"
+};
+
+const initialWeightValues = [
   84.8, 84.5, 84.6, 84.1, 83.9, 83.5, 83.2, 82.9, 82.5, 82.8,
   82.1, 81.9, 81.5, 81.2, 80.9, 81.1, 80.5, 80.1, 79.8, 79.5,
   79.2, 78.9, 79.1, 78.6, 78.4, 78.1, 78.3, 78.0, 77.8, 78.4
 ];
+
+const generateInitialWeightLogs = (): WeightLog[] => {
+  const logs: WeightLog[] = [];
+  // Add past 28 days as morning entries
+  for (let i = 29; i >= 2; i--) {
+    const val = initialWeightValues[29 - i] || 78.4;
+    logs.push({
+      id: `w_past_${i}`,
+      weight: val,
+      date: getPastDateStr(i),
+      timeOfDay: 'morning',
+    });
+  }
+  // Yesterday: Morning and Night
+  logs.push({
+    id: 'w_yest_m',
+    weight: 77.8,
+    date: getPastDateStr(1),
+    timeOfDay: 'morning',
+  });
+  logs.push({
+    id: 'w_yest_n',
+    weight: 78.1,
+    date: getPastDateStr(1),
+    timeOfDay: 'night',
+  });
+  // Today: Morning, Afternoon, Night
+  logs.push({
+    id: 'w_tod_m',
+    weight: 78.4,
+    date: getPastDateStr(0),
+    timeOfDay: 'morning',
+  });
+  logs.push({
+    id: 'w_tod_a',
+    weight: 78.9,
+    date: getPastDateStr(0),
+    timeOfDay: 'afternoon',
+  });
+  logs.push({
+    id: 'w_tod_n',
+    weight: 78.6,
+    date: getPastDateStr(0),
+    timeOfDay: 'night',
+  });
+  return logs;
+};
+
+const initialWeightLogs: WeightLog[] = generateInitialWeightLogs();
 
 const initialWaterLogs: LogEntry[] = [
   { id: '1', time: '07:15', ml: 250 },
@@ -169,7 +224,7 @@ const initialReminders: ReminderItem[] = [
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(initialUserProfile);
-  const [weightLogs, setWeightLogs] = useState<number[]>(initialWeightLogs);
+  const [weightLogs, setWeightLogs] = useState<WeightLog[]>(initialWeightLogs);
   const [meals, setMeals] = useState<Meal[]>(initialMeals);
   const [waterLogs, setWaterLogs] = useState<LogEntry[]>(initialWaterLogs);
   const [reminders, setReminders] = useState<ReminderItem[]>(initialReminders);
@@ -183,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Keep user profile weight synced with weight logs
   useEffect(() => {
     if (weightLogs.length > 0) {
-      const latestWeight = weightLogs[weightLogs.length - 1];
+      const latestWeight = weightLogs[weightLogs.length - 1]?.weight || 78.4;
       setUser((u) => (u.weight !== latestWeight ? { ...u, weight: latestWeight } : u));
     }
   }, [weightLogs]);
@@ -218,16 +273,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Weight operations
-  const addWeightLog = (weight: number, dateOffset?: 'today' | 'yesterday') => {
+  const addWeightLog = (weight: number, timeOfDay: 'morning' | 'afternoon' | 'night', dateOffset?: 'today' | 'yesterday') => {
+    const targetDate = getPastDateStr(dateOffset === 'yesterday' ? 1 : 0);
     setWeightLogs((prev) => {
       const newLogs = [...prev];
-      if (dateOffset === 'yesterday') {
-        // Insert second to last or replace past weight
-        newLogs[newLogs.length - 2] = weight;
+      // Check if an entry with this date and timeOfDay already exists, if so overwrite it
+      const existingIndex = newLogs.findIndex((log) => log.date === targetDate && log.timeOfDay === timeOfDay);
+      if (existingIndex !== -1) {
+        newLogs[existingIndex] = {
+          ...newLogs[existingIndex],
+          weight,
+        };
       } else {
-        newLogs.push(weight);
+        newLogs.push({
+          id: 'w_log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          weight,
+          date: targetDate,
+          timeOfDay,
+        });
       }
-      return newLogs;
+      // Keep sorted by date chronologically, then by timeOfDay order
+      const timeOrder = { morning: 0, afternoon: 1, night: 2 };
+      return newLogs.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
+      });
     });
   };
 

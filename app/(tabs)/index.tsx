@@ -137,7 +137,7 @@ export default function HomeScreen() {
   // Dynamic calculations from context
   const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
   const totalWaterMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
-  const currentWeight = weightLogs[weightLogs.length - 1];
+  const currentWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1].weight : 78.4;
 
   const activeKcal = Math.round(stepsCount * 0.045 + activeMinutes * 7.5);
 

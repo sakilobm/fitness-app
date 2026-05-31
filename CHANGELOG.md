@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-05-31T16:45:00+05:30
+
+### Added — Intraday Weight Tracking & Multi-Time Graph Visualization
+
+**Architectural Decision:** Transitioned the application store's weight logging tracking system from a flat, simple `number[]` array to a multi-point database-style schema model (`WeightLog[]`). Grouping weight entries chronologically by calendar date and time of day (Morning, Afternoon, Night) provides rich, localized, high-resolution body tracking:
+- **Intraday Weight Data Schema:** Formulated a structured TypeScript type definition (`src/types/index.ts`) requiring a unique string identifier `id`, precise double metric `weight` value, calendar string format `date` (YYYY-MM-DD), and `timeOfDay` tag constraints ('morning' | 'afternoon' | 'night').
+- **Global Context Architecture Refactoring:** Overhauled `src/store/AppContext.tsx` global states. Replaced standard 1D weight list with the new structured record type. Programmed a dynamic, relational pre-population generator that simulates 30 days of data and inserts multiple intraday test weights (Morning, Afternoon, Night) for yesterday and today to showcase graph flows natively.
+- **Upsert Weight Logs Reducer:** Engineered `addWeightLog` inside the global context. Implemented search logic that matches dates and timeOfDay keys. Tapping "Save" under an active slot replaces previous entries (supporting multiple weight logs for the same slot) and automatically sorts elements chronologically by date and chronological slot ordering.
+- **Dedicated Intraday "Today" Zoom Filter:** Added `'today'` into the weight Period toggle selector array in `app/(tabs)/weight.tsx`. Selecting "Today" triggers a focused zoom-in view on today's weight variance, rendering exact weight figures above coordinate points.
+- **SparkLine SVG Status Plotting:** Modified `SparkLine` SVG drawing engine. Integrated a point status mapper: logged indices render as glowing green circles, while estimated slots (automatically carrying forward the user's latest recorded baseline weight) render as dotted, translucent hollow vectors, creating a premium visual representation of today's progress.
+- **Clock-Aware Bottom-Sheet Picker:** Upgraded the "Log Weight" slide-up Sheet Modal. Embedded a Segmented Control Pill Row utilizing visual emojis (`🌅 Morning`, `☀️ Afternoon`, `🌙 Night`) that automatically pre-selects the correct time slot by querying local device hour thresholds upon modal opening.
+- **Backward-Compatible Daily Summarizers:** Enforced zero regressions on other dashboard screens (like `index.tsx`) by constructing date-grouped summaries (`dailyWeightValues`) from the multi-point entries list.
+
 ## [1.6.0] - 2026-05-31T15:35:00+05:30
 
 ### Added — Centralized App State Provider & Global Inter-Screen Reactivity

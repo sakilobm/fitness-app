@@ -1,5 +1,23 @@
 # Rollback Plan
 
+If version `1.7.0` (Intraday Weight Tracking) needs to be reverted due to type casting errors or SVG coordinate plotting glitches on specific device platforms, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to daily weight array logs v1.6.0)
+
+1. **Restore all screens, stores, and schemas:**
+   Wipe the structured record schema and restore the daily numeric array list format:
+   ```powershell
+   git checkout v1.6.0 -- src/types/index.ts src/store/AppContext.tsx app/(tabs)/weight.tsx app/(tabs)/index.tsx
+   ```
+
+2. **Clean metro bundle cache:**
+   To guarantee Metro packager completely purges the structured weight schemas from compiled code:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.6.0` (Centralized App State Provider & Global Inter-Screen Reactivity) needs to be reverted due to context re-rendering lags or path alias conflicts, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to static screens v1.5.0)

@@ -57,3 +57,11 @@ export interface UserProfile {
   xp: number;
   streak: number;
 }
+
+export interface WeightLog {
+  id: string;
+  weight: number;
+  date: string; // YYYY-MM-DD
+  timeOfDay: 'morning' | 'afternoon' | 'night';
+}
+

@@ -1,0 +1,63 @@
+graph TD
+    %% Global Store Layer
+    subgraph StoreLayer ["Global State Engine (AppContext.tsx)"]
+        AppContext["AppContext (React Context)"]
+        AppProvider["AppProvider Wrapper"]
+        StateUser["user (UserProfile)"]
+        StateWeight["weightLogs (WeightLog[])"]
+        StateMeals["meals (Meal[])"]
+        StateWater["waterLogs (LogEntry[])"]
+        StateReminders["reminders (ReminderItem[])"]
+        StateSteps["stepsCount (number)"]
+        
+        AppProvider --> AppContext
+        AppContext --> StateUser
+        AppContext --> StateWeight
+        AppContext --> StateMeals
+        AppContext --> StateWater
+        AppContext --> StateReminders
+        AppContext --> StateSteps
+    end
+
+    %% UI and Router Layer
+    subgraph ViewLayer ["Router Navigation View Layers ((tabs))"]
+        HomeTab["Home Dashboard (index.tsx)"]
+        WeightTab["Weight Tracking (weight.tsx)"]
+        NutritionTab["Nutrition Log (nutrition.tsx)"]
+        RemindersTab["Reminders list (reminders.tsx)"]
+        ProfileTab["Profile Configuration (profile.tsx)"]
+    end
+
+    %% Component Dependencies
+    subgraph UILayer ["Shared Component Utilities (src/components/ui)"]
+        GlassCard["GlassCard Component"]
+        ScreenHeader["ScreenHeader branding"]
+        AppIcon["AppIcon Vector Unified"]
+        ProgressRing["ProgressRing Circle SVG"]
+    end
+
+    %% Bidirectional Reactivity Bindings
+    HomeTab <--> |"Reads weightLogs, meals, steps, water"| AppContext
+    WeightTab <--> |"Reads / Upserts intraday WeightLog (Morning/Aft/Ngt)"| AppContext
+    NutritionTab <--> |"Logs food portions, updates calorie counts"| AppContext
+    RemindersTab <--> |"Configures CRUD reminder scheduler schedules"| AppContext
+    ProfileTab <--> |"Dispatches user profile goals & targets updates"| AppContext
+
+    %% Components association
+    HomeTab --> GlassCard
+    WeightTab --> GlassCard
+    NutritionTab --> GlassCard
+    RemindersTab --> GlassCard
+    
+    HomeTab --> ScreenHeader
+    WeightTab --> ScreenHeader
+    NutritionTab --> ScreenHeader
+    RemindersTab --> ScreenHeader
+    
+    GlassCard --> AppIcon
+    ScreenHeader --> AppIcon
+
+    %% Custom SVG widgets
+    WeightTab --> SparkLine["SVG SparkLine Plotter (intraday hollow estimates)"]
+    WeightTab --> ProgressRing
+    HomeTab --> ProgressRing
