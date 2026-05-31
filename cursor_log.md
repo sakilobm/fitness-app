@@ -1,5 +1,31 @@
 # Cursor Test & Validation Log
 
+## [2026-05-31T15:00:00+05:30] - Fully Functional Interactive Weight Tracking Validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+- **Result:** Successfully completed with 0 errors.
+- **Output:** Empty (no TS compiler or typings issues across the entire codebase)
+
+### Manual Verification
+- Replaced static metrics on the Weight Tracking screen with a dynamic logs state array `weightLogs`.
+- Set up a highly interactive bottom-sheet Modal for logging weight, featuring quick-adjust increment pills (`-1.0kg`, `-0.1kg`, `+0.1kg`, `+1.0kg`) and an exact-typing numeric text box.
+- Synced the logged weight dynamically to the sparkline SVG path, stats cells (Current, Goal, Lost, and Streak), circular Goal Progress ring, milestones unlocked checklist state, and the BMI bar calculation.
+- Verified cancel and save operations function seamlessly.
+
+## [2026-05-31T14:50:00+05:30] - Profile Modal Keyboard Resize & Shrinking Layout Validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+- **Result:** Successfully completed with 0 errors.
+- **Output:** Empty (no TS compiler or typings issues across the entire codebase)
+
+### Manual Verification
+- Modified `KeyboardAvoidingView` wrapper behavior on Android from `'height'` to `undefined` in `app/(tabs)/profile.tsx`, allowing soft keyboard resizing to handle window sizing natively and prevent double-shrunk stuck layouts.
+- Added `flex: 1` to `modalKeyboard` wrapper styling in `profile.tsx` to guarantee full recovery to standard viewport heights on keyboard hide event.
+- Set a stable baseline `minHeight: 540` constraint on `modalContent` inside the stylesheet to prevent sheet content collapse.
+- Verified that focusing and editing the "Motivation Motto" input at the bottom of the ScrollView does not shrink, crop, or lock the modal sheet's layout when keyboard closes.
+
 ## [2026-05-31T14:45:00+05:30] - Profile Modal Bottom Alignment Layout Validation
 
 ### Automated Checks

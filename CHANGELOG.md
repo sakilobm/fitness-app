@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-05-31T15:00:00+05:30
+
+### Added — Fully Functional Interactive Weight Tracking
+
+**Architectural Decision:** Converted the static presentation layer of the Weight screen into a fully interactive state-driven module. Added a bottom-sheet styled `Modal` to dynamically log body weight and track metrics:
+- **Interactive Sizing & Controls:** Placed a direct "Log Weight" CTA card and linked it to a modal containing a precision manual keyboard input synced with quick-adjust increment pills (`-1.0kg`, `-0.1kg`, `+0.1kg`, `+1.0kg`) to guarantee swift mobile logging.
+- **Dynamic Derivations:** Linked weight logs directly to local screen state (`weightLogs`). Adding a log dynamically triggers real-time updates for:
+  - The SVG **Sparkline Chart** (sliced by Today/Week/Month metrics).
+  - The **Stats Grid** (Current Weight, dynamic Lost Weight, dynamic Weekly arrow comparison changes, and dynamic Streak incrementation).
+  - The circular **Goal Progress Ring** (Percentage calculations and remaining weight).
+  - The checklist **Milestones badges** (checks unlocking reactively if weight is below the metric milestone).
+  - The **BMI indicator bar** (dynamic indices computed automatically using user profile height baseline).
+
+## [1.2.2] - 2026-05-31T14:50:00+05:30
+
+### Fixed — Profile Modal Keyboard Resize & Shrinking Layout
+
+**Architectural Decision:** Resolved the layout bug where focusing the bottom inputs (like Motivation Motto) on Android/OS and dismissing the keyboard caused the modal's available viewport height to collapse permanently. Assigned `flex: 1` to the `KeyboardAvoidingView` wrapper style to ensure full dynamic height recovery, removed the redundant `behavior="height"` on Android (preventing soft-input double-shrinking conflict), and added a stable `minHeight: 540` constraint to `modalContent` to keep the bottom sheet visual structure solid and consistent.
+
 ## [1.2.1] - 2026-05-31T14:45:00+05:30
 
 ### Fixed — Profile Modal Bottom Alignment Layout

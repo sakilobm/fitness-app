@@ -420,7 +420,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.modalKeyboard}
           >
             <View style={styles.modalContent}>
@@ -851,6 +851,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalKeyboard: {
+    flex: 1,
     width: '100%',
     justifyContent: 'flex-end',
   },
@@ -861,6 +862,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+    minHeight: 540,
     maxHeight: '100%',
     borderTopWidth: 1,
     borderLeftWidth: 1,
