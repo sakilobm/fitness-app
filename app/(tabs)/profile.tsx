@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Switch, 
-  Modal, 
-  TextInput, 
-  KeyboardAvoidingView, 
-  Platform 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Switch,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -220,7 +220,7 @@ export default function ProfileScreen() {
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{userName}</Text>
             <Text style={styles.profileMotto} numberOfLines={1}>"{userMotto}"</Text>
-            
+
             <View style={styles.profileHeaderActions}>
               <View style={styles.levelBadge}>
                 <Ionicons name="flash" size={11} color={Colors.lime} />
@@ -852,6 +852,7 @@ const styles = StyleSheet.create({
   },
   modalKeyboard: {
     width: '100%',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: Colors.ivory,
@@ -859,9 +860,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: Radius.lg,
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    maxHeight: '92%',
-    borderWidth: 1,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+    maxHeight: '100%',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 0,
     borderColor: Colors.lime + '20',
   },
   modalHeader: {

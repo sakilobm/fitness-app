@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-05-31T14:45:00+05:30
+
+### Fixed — Profile Modal Bottom Alignment Layout
+
+**Architectural Decision:** Resolved the layout issue where the slide-up modal left a gap or did not sit flush against the bottom of the device screen. Added `justifyContent: 'flex-end'` to the modal keyboard container, extended the maximum height boundary to `100%`, adjusted the iOS safe-area bottom padding to `44`, and removed the bottom border outline to create a perfectly flush, borderless connection to the bottom screen edge.
+
 ## [1.2.0] - 2026-05-31T14:10:00+05:30
 
 ### Added — Advanced Edit Profile Modal & Dynamic State Bindings

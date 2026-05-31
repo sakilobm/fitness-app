@@ -1,5 +1,36 @@
 # Rollback Plan
 
+If version `1.2.1` (Profile Modal Bottom Alignment Layout Fix) needs to be reverted due to unexpected screen sizing bugs or padding issues on specific OS versions, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to Profile v1.2.0)
+
+1. **Restore profile.tsx codebase style:**
+   Revert the stylesheet entries in [profile.tsx](file:///c:/Users/sowbh/Desktop/Fitness-App/app/%28tabs%29/profile.tsx) for `modalKeyboard` and `modalContent` back to their v1.2.0 definitions:
+   ```typescript
+   modalKeyboard: {
+     width: '100%',
+   },
+   modalContent: {
+     backgroundColor: Colors.ivory,
+     borderTopLeftRadius: Radius.lg,
+     borderTopRightRadius: Radius.lg,
+     paddingTop: 20,
+     paddingHorizontal: 20,
+     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+     maxHeight: '92%',
+     borderWidth: 1,
+     borderColor: Colors.lime + '20',
+   },
+   ```
+
+2. **Clean metro bundle cache:**
+   To guarantee Metro bundler purges any stale bundle layouts:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.2.0` (Advanced Edit Profile Modal) needs to be reverted due to visual regressions or user issues on specific devices, use this guide to roll back to the previous state.
 
 ## Rollback Procedure (Reverting to Profile v1.1.1)
