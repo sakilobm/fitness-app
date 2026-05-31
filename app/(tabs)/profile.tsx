@@ -9,7 +9,8 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -51,6 +52,15 @@ const BADGES: Badge[] = [
   { id: 'b8', icon: { lib: 'MCI', name: 'pill' }, label: 'Supplement King', unlocked: false, color: Colors.chart.fibre },
 ];
 
+const AVATAR_PRESETS = [
+  { id: 'av1', label: 'Strength', url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av2', label: 'Runner', url: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av3', label: 'Yoga', url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av4', label: 'Trainer', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av5', label: 'Boxing', url: 'https://images.unsplash.com/photo-1491756906593-95123989ad30?w=150&auto=format&fit=crop&q=80' },
+  { id: 'av6', label: 'Cyclist', url: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=150&auto=format&fit=crop&q=80' },
+];
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, setUser, logoutUser } = useAppStore();
@@ -67,6 +77,7 @@ export default function ProfileScreen() {
   const userWeight = user.weight.toString();
   const userGoal = user.goal;
   const userMotto = user.motto;
+  const userProfilePic = user.profilePic || '';
 
   // Advanced Goals state variables (Option A - Recommended)
   const waterGoal = user.waterGoal.toString();
@@ -87,6 +98,7 @@ export default function ProfileScreen() {
   const [formCalorieGoal, setFormCalorieGoal] = useState('');
   const [formStepsGoal, setFormStepsGoal] = useState('');
   const [formWorkoutGoal, setFormWorkoutGoal] = useState('');
+  const [formProfilePic, setFormProfilePic] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
 
   // Compute initials dynamically
@@ -125,6 +137,7 @@ export default function ProfileScreen() {
     setFormCalorieGoal(calorieGoal);
     setFormStepsGoal(stepsGoal);
     setFormWorkoutGoal(workoutGoal);
+    setFormProfilePic(userProfilePic);
     setFormErrors({});
     setActiveFormTab('basic');
     setEditModalVisible(true);
@@ -197,6 +210,7 @@ export default function ProfileScreen() {
       level: user.level,
       xp: user.xp,
       streak: user.streak,
+      profilePic: formProfilePic,
     });
 
     // Close the Modal
@@ -222,7 +236,11 @@ export default function ProfileScreen() {
       <GlassCard accentColor={Colors.lime}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+            {user.profilePic ? (
+              <Image source={{ uri: user.profilePic }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
             <View style={styles.avatarDot} />
           </View>
           <View style={styles.profileInfo}>
@@ -477,6 +495,72 @@ export default function ProfileScreen() {
               <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                 {activeFormTab === 'basic' ? (
                   <View style={styles.formSection}>
+                    {/* Display Picture Selector Block */}
+                    <View style={styles.avatarFormCenter}>
+                      <View style={styles.avatarFormWrapper}>
+                        {formProfilePic ? (
+                          <Image source={{ uri: formProfilePic }} style={styles.avatarFormImage} />
+                        ) : (
+                          <Ionicons name="person" size={38} color={Colors.lime} />
+                        )}
+                        <View style={styles.avatarCameraBadge}>
+                          <Ionicons name="camera" size={12} color={Colors.white} />
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Pre-curated Avatar Presets Title */}
+                    <Text style={styles.presetsTitle}>Choose Premium Avatar</Text>
+                    
+                    {/* Horizontal Scroller Carousel for Preset Avatars */}
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.presetsScroll}
+                      contentContainerStyle={styles.presetsRow}
+                    >
+                      {AVATAR_PRESETS.map((preset) => {
+                        const isActive = formProfilePic === preset.url;
+                        return (
+                          <TouchableOpacity
+                            key={preset.id}
+                            style={styles.presetCell}
+                            activeOpacity={0.85}
+                            onPress={() => setFormProfilePic(preset.url)}
+                          >
+                            <View style={[styles.presetCircle, isActive && styles.presetCircleActive]}>
+                              <Image source={{ uri: preset.url }} style={styles.presetImage} />
+                            </View>
+                            <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]}>
+                              {preset.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+
+                    {/* Custom Image URL Field */}
+                    <View style={[styles.inputGroup, styles.customUrlWrapper]}>
+                      <Text style={styles.inputLabel}>Or paste custom Photo URL</Text>
+                      <View style={styles.inputFieldWrap}>
+                        <Ionicons name="link-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.textInput}
+                          value={formProfilePic}
+                          onChangeText={setFormProfilePic}
+                          placeholder="Paste custom photo URL (https://...)"
+                          placeholderTextColor={Colors.muted}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                        {formProfilePic ? (
+                          <TouchableOpacity onPress={() => setFormProfilePic('')} activeOpacity={0.7}>
+                            <Ionicons name="close-circle" size={16} color={Colors.muted} />
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    </View>
+
                     {/* Full Name Input */}
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Full Name</Text>
@@ -733,6 +817,105 @@ const styles = StyleSheet.create({
     width: 14, height: 14, borderRadius: 7,
     backgroundColor: '#22C55E',
     borderWidth: 2.5, borderColor: Colors.card,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+  },
+  avatarFormCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  avatarFormWrapper: {
+    position: 'relative',
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    borderWidth: 3,
+    borderColor: Colors.lime,
+    backgroundColor: Colors.lime + '12',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.lime,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  avatarFormImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+  },
+  avatarCameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.lime,
+    borderWidth: 2,
+    borderColor: Colors.ivory,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  presetsTitle: {
+    ...Typography.captionBold,
+    color: Colors.text.primary,
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  presetsScroll: {
+    marginBottom: 10,
+  },
+  presetsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  presetCell: {
+    alignItems: 'center',
+    gap: 4,
+    width: 66,
+  },
+  presetCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.card,
+    overflow: 'hidden',
+  },
+  presetCircleActive: {
+    borderColor: Colors.lime,
+    borderWidth: 2.5,
+  },
+  presetImage: {
+    width: '100%',
+    height: '100%',
+  },
+  presetLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.muted,
+  },
+  presetLabelActive: {
+    color: Colors.lime,
+    fontWeight: '700',
+  },
+  customUrlWrapper: {
+    marginTop: 4,
+    marginBottom: 12,
   },
   profileInfo: { flex: 1, gap: 4 },
   profileName: { ...Typography.h3, color: Colors.text.primary },

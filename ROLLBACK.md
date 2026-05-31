@@ -1,5 +1,23 @@
 # Rollback Plan
 
+If version `1.8.1` (Premium Profile Display Picture Selection System) needs to be reverted due to layout issues, image failing to load, or TypeScript compiler errors on older system platforms, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to text-avatar profile v1.8.0)
+
+1. **Restore screens, types, and stores:**
+   Revert the UserProfile schemas, initial states, and visual selector widgets back to their static states:
+   ```powershell
+   git checkout v1.8.0 -- src/types/index.ts src/store/AppContext.tsx app/(tabs)/profile.tsx
+   ```
+
+2. **Clean metro bundle cache:**
+   Purge compiled packages to verify that stale DP layout states do not persist:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.8.0` (Complete Authentication Suite & Navigation Gating Stack) needs to be reverted due to routing issues, path failures, or TypeScript compiler errors on older Expo systems, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to visual graph modal v1.7.1)

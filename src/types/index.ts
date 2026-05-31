@@ -56,6 +56,7 @@ export interface UserProfile {
   level: number;
   xp: number;
   streak: number;
+  profilePic?: string;
 }
 
 export interface WeightLog {

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.1] - 2026-05-31T17:02:00+05:30
+
+### Added — Premium Profile Display Picture (DP) Selection System
+
+**Architectural Decision:** Enhanced the personalization layer of the Profile screen by implementing a dynamic Profile Display Picture (DP) selection system. Upgraded the `UserProfile` data schema with a central `profilePic` string variable, and designed a highly tactile, visual editor overlay inside the Edit Profile form modal:
+- **Extended User Schema:** Added `profilePic?: string` inside `src/types/index.ts` and set a gorgeous bodybuilder persona default image URL inside the central store provider `AppContext.tsx`.
+- **Dynamic Image / Initials Fallbacks:** Overhauled the main Profile dashboard avatar bubble to render a high-definition `<Image>` component dynamically with smooth bounds containment, falling back robustly to standard initials text if the picture string is empty.
+- **Glassmorphic Rings & Camera Icon Overlays:** Designed a centered, glowing preview circle inside the Edit Profile form modal showing the current image selection wrapped in a floating camera bubble edit indicator to cue editing triggers.
+- **Pre-Curated Persona Presets Carousel:** Built a horizontal scrolling presets carousel hosting 6 pre-curated fitness avatars (illustrated fitness personas like Strength, Runner, Yoga, Trainer, Boxing, Cyclist) with active glowing selector indicators.
+- **Custom Image Link Textbox:** Integrated a styled text input box showing instant live preview updates as users type or paste custom web URLs, complete with quick clear chips.
+
 ## [1.8.0] - 2026-05-31T16:52:00+05:30
 
 ### Added — Complete Authentication Suite & Navigation Gating Stack

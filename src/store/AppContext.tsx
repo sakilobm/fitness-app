@@ -70,6 +70,7 @@ const initialUserProfile: UserProfile = {
   level: 8,
   xp: 850,
   streak: 14,
+  profilePic: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150&auto=format&fit=crop&q=80',
 };
 
 const initialMeals: Meal[] = [
