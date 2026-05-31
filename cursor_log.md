@@ -1,5 +1,22 @@
 # Cursor Test & Validation Log
 
+## [2026-05-31T15:35:00+05:30] - Centralized App State Provider & Global Inter-Screen Reactivity Validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+- **Result:** Successfully completed with 0 errors and 0 warnings.
+- **Output:** Empty (no compile or typing errors across the entire project structure)
+
+### Manual Verification
+- **Global Context Provider:** Created a centralized Context provider `AppContext.tsx` wrapped around root stack router `_layout.tsx`, managing user profile, weight, nutrition meals, hydration logs, reminders, and steps count in one master state.
+- **Home Dashboard Reactivity:** Wired calories chart macros, step goals, burned cals, quick logs, and the Apple-style greeting header dynamically to the global store, so they instantly re-compute when inputs change elsewhere.
+- **Activity Timeline Dynamism:** Engineered a sorted chronological activity timeline feed on the home screen that dynamically merges breakfast/lunch/dinner meals and water intakes as they are logged.
+- **Water Hydration Sync:** Linked the water tracking screen cylinder and summary cards to the same global waterLogs state, making the water shortcut chip on the Nutrition screen dynamically increment water levels.
+- **Profile Goal Propagation:** Refactored Profile Screen modal to dispatch goal and weight changes, propagating steps, water, and calorie updates instantly to all related tabs.
+- **Full Reminders Tab CRUD:** Replaced static cards with functional add, edit, toggle, and delete reminder actions. Constructed custom scroll wheels inside the bottom sheet (Hours, Minutes, AM/PM, repeat presets, repeat custom days selector pills, indicator color dots).
+- **Notification Toast Banner:** Rendered a beautiful animated overlay push banner inside the Reminders tab that triggers when mock alerts are simulated or items are saved.
+- **Vector Icons Reuse:** Consolidated duplicate vector icons mapping logic under a single modular UI utility `src/components/ui/AppIcon.tsx` for high code reuse and maintainability.
+
 ## [2026-05-31T15:15:00+05:30] - Fully Functional Interactive Food/Nutrition Tracking Validation
 
 ### Automated Checks

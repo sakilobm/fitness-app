@@ -1,1 +1,59 @@
-// Shared TypeScript interfaces and types — add exports here
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+export type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+export type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+export type IconDef =
+  | { lib: 'Ionicons'; name: IoniconName }
+  | { lib: 'MCI'; name: MCIName };
+
+export interface FoodItem {
+  name: string;
+  grams: number;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface Meal {
+  id: string;
+  label: string; // Breakfast, Lunch, Dinner, Snacks
+  icon: string;  // Emojis like 🌅, ☀️, 🌙, 🍎
+  items: FoodItem[];
+  expanded: boolean;
+}
+
+export interface LogEntry {
+  id: string;
+  time: string;
+  ml: number;
+}
+
+export interface ReminderItem {
+  id: string;
+  category: string;
+  icon: IconDef;
+  title: string;
+  time: string;
+  days: string[];
+  frequency: string;
+  enabled: boolean;
+  accentColor: string;
+}
+
+export interface UserProfile {
+  name: string;
+  age: number;
+  height: number;
+  weight: number;
+  goal: string;
+  motto: string;
+  calorieGoal: number;
+  waterGoal: number;
+  stepsGoal: number;
+  workoutGoal: number;
+  level: number;
+  xp: number;
+  streak: number;
+}

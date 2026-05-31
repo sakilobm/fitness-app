@@ -12,6 +12,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
+import { useAppStore } from '@/store';
 
 const { width: W } = Dimensions.get('window');
 const CYLINDER_W = 120;
@@ -87,12 +88,18 @@ const QUICK_AMOUNTS = [150, 250, 500];
 export default function WaterScreen() {
   const insets = useSafeAreaInsets();
 
-  // Dynamic States (Option A - Recommended)
-  const [log, setLog] = useState<LogEntry[]>(initialLog);
-  const [goalMl, setGoalMl] = useState(2500);
-  const [bestDay, setBestDay] = useState(3200);
-  const [avgDay, setAvgDay] = useState(2100);
-  const [streakVal, setStreakVal] = useState(8);
+  const {
+    user,
+    waterLogs: log,
+    addWaterLog: addWater,
+    deleteWaterLog: handleDeleteLog,
+    setWaterGoal: handleSaveGoalStore,
+    waterAvg: avgDay,
+    waterBest: bestDay,
+    waterStreak: streakVal,
+  } = useAppStore();
+
+  const goalMl = user.waterGoal;
 
   // Custom Amount Modal States
   const [showCustom, setShowCustom] = useState(false);
@@ -101,41 +108,23 @@ export default function WaterScreen() {
 
   // Edit Goal Modal States
   const [showGoalModal, setShowGoalModal] = useState(false);
-  const [tempGoalVal, setTempGoalVal] = useState(2500);
+  const [tempGoalVal, setTempGoalVal] = useState(goalMl);
+
+  // Sync temp goal when store goal changes
+  useEffect(() => {
+    setTempGoalVal(goalMl);
+  }, [goalMl]);
 
   // Dynamic Portions Calculations
   const totalMl = log.reduce((s, e) => s + e.ml, 0);
   const filled = Math.min(totalMl / goalMl, 1);
   const goalMet = totalMl >= goalMl;
 
-  // Track Peak Intake automatically
-  useEffect(() => {
-    if (totalMl > bestDay) {
-      setBestDay(totalMl);
-    }
-  }, [totalMl, bestDay]);
-
-  const addWater = (ml: number) => {
-    const now = new Date();
-    const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    const newEntry: LogEntry = {
-      id: Math.random().toString(),
-      time,
-      ml,
-    };
-    setLog((l) => [newEntry, ...l]);
-  };
-
-  // Delete Log entry (Option A - Recommended)
-  const handleDeleteLog = (id: string) => {
-    setLog((prev) => prev.filter((entry) => entry.id !== id));
-  };
-
   const handleSaveGoal = () => {
     if (tempGoalVal < 500 || tempGoalVal > 10000) {
       return;
     }
-    setGoalMl(tempGoalVal);
+    handleSaveGoalStore(tempGoalVal);
     setShowGoalModal(false);
   };
 

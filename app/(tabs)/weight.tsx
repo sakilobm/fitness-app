@@ -18,6 +18,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
+import { useAppStore } from '@/store';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
 
@@ -171,13 +172,13 @@ export default function WeightScreen() {
   const insets = useSafeAreaInsets();
   const [period, setPeriod] = useState<Period>('week');
 
-  // Dynamic state hooks for dynamic weight tracking
-  const [weightLogs, setWeightLogs] = useState<number[]>([
-    84.8, 84.5, 84.6, 84.1, 83.9, 83.5, 83.2, 82.9, 82.5, 82.8,
-    82.1, 81.9, 81.5, 81.2, 80.9, 81.1, 80.5, 80.1, 79.8, 79.5,
-    79.2, 78.9, 79.1, 78.6, 78.4, 78.1, 78.3, 78.0, 77.8, 78.4
-  ]);
-  const [streak, setStreak] = useState(14);
+  const {
+    user,
+    weightLogs,
+    addWeightLog,
+  } = useAppStore();
+
+  const streak = user.streak;
 
   // Modal control states
   const [logModalVisible, setLogModalVisible] = useState(false);
@@ -207,7 +208,7 @@ export default function WeightScreen() {
   const remainingWeight = parseFloat(Math.max(currentWeight - goalWeight, 0).toFixed(1));
 
   // Dynamic BMI
-  const heightM = 1.78; // 178 cm
+  const heightM = user.height / 100; // Dynamic height from profile
   const currentBmi = parseFloat((currentWeight / (heightM * heightM)).toFixed(1));
 
   // Slice chart data based on active period
@@ -238,15 +239,7 @@ export default function WeightScreen() {
       return;
     }
 
-    // Append to dynamic log array
-    const updated = [...weightLogs, parseFloat(val.toFixed(1))];
-    setWeightLogs(updated);
-
-    // Dynamic streak logic: increment streak if logged for today!
-    if (logDateOffset === 'today') {
-      setStreak((s) => s + 1);
-    }
-
+    addWeightLog(parseFloat(val.toFixed(1)), logDateOffset);
     setLogModalVisible(false);
   };
 

@@ -8,60 +8,18 @@ import { router } from 'expo-router';
 import GlassCard from '@/components/ui/GlassCard';
 import DonutChart from '@/components/ui/DonutChart';
 import { Colors, Radius } from '@/constants/theme';
+import { useAppStore } from '@/store';
+import { Meal } from '@/types';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-// ─── Date / greeting ─────────────────────────────────────────────────────────
-
-const _now = new Date();
-const _h = _now.getHours();
-const greetingStr = _h < 12 ? 'Good morning' : _h < 17 ? 'Good afternoon' : 'Good evening';
 const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const _now = new Date();
+const greetingStr = _now.getHours() < 12 ? 'Good morning' : _now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
 const dateStr = `${DAY_NAMES[_now.getDay()]}, ${_now.getDate()} ${MONTH_NAMES[_now.getMonth()]}`;
-
-// ─── Static data ──────────────────────────────────────────────────────────────
-
-const DONUT_KCAL  = { current: 1320, goal: 2300 };
-const DONUT_DAY   = 8;
-const DONUT_PCT   = 64;
-const DONUT_TREND = '+3%';
-const DONUT_SEGS  = [
-  { label: 'Carbs',    current: 112, goal: 240, color: '#FB923C' },
-  { label: 'Proteins', current: 48,  goal: 140, color: '#A78BFA' },
-  { label: 'Fats',     current: 32,  goal: 110, color: '#0D9488' },
-];
-
-const ACTIVITY_METRICS: {
-  lib: 'Ionicons' | 'MCI'; icon: string; color: string;
-  value: string; unit: string; label: string; route: string;
-}[] = [
-  { lib: 'Ionicons', icon: 'flame',        color: Colors.amber,       value: '1,420', unit: 'kcal',  label: 'Calories', route: '/(tabs)/nutrition' },
-  { lib: 'Ionicons', icon: 'footsteps',    color: Colors.lime,        value: '6,240', unit: 'steps', label: 'Steps',    route: '/steps'            },
-  { lib: 'Ionicons', icon: 'timer-outline',color: '#6366F1',          value: '48',    unit: 'min',   label: 'Active',   route: '/steps'            },
-];
-
-const QUICK_LOGS: {
-  lib: 'Ionicons' | 'MCI'; icon: string; color: string;
-  label: string; value: string; route: string;
-}[] = [
-  { lib: 'Ionicons', icon: 'water',         color: Colors.chart.water, label: 'Water',  value: '1.2 L',    route: '/water'            },
-  { lib: 'MCI',      icon: 'food-apple',    color: Colors.lime,        label: 'Food',   value: '1,320 kcal',route: '/(tabs)/nutrition' },
-  { lib: 'MCI',      icon: 'scale-bathroom',color: Colors.amber,       label: 'Weight', value: '78.4 kg',  route: '/(tabs)/weight'    },
-  { lib: 'Ionicons', icon: 'footsteps',     color: '#6366F1',          label: 'Steps',  value: '6,240',    route: '/steps'            },
-];
-
-const TIMELINE: {
-  time: string; label: string; kcal: number;
-  lib: 'Ionicons' | 'MCI'; icon: string; color: string;
-}[] = [
-  { time: '07:30', label: 'Breakfast',    kcal:  480, lib: 'MCI',      icon: 'egg-fried',  color: Colors.amber },
-  { time: '09:15', label: 'Morning Walk', kcal: -210, lib: 'MCI',      icon: 'walk',       color: Colors.lime  },
-  { time: '12:00', label: 'Lunch',        kcal:  620, lib: 'MCI',      icon: 'food-apple', color: Colors.amber },
-  { time: '15:30', label: 'Snack',        kcal:  150, lib: 'Ionicons', icon: 'nutrition',  color: '#FB923C'    },
-  { time: '18:00', label: 'Strength',     kcal: -380, lib: 'MCI',      icon: 'dumbbell',   color: Colors.lime  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -70,10 +28,29 @@ function AppIcon({ lib, name, size, color }: { lib: 'Ionicons' | 'MCI'; name: st
   return <Ionicons name={name as IoniconName} size={size} color={color} />;
 }
 
-// ─── Nutrition Card ───────────────────────────────────────────────────────────
-
 function NutritionCard() {
   const [period, setPeriod] = useState<'Today' | 'Week'>('Today');
+  
+  const { user, meals } = useAppStore();
+
+  // Dynamic calculations from context
+  const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
+  const goalKcal = user.calorieGoal;
+  
+  const totalProtein = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.protein, 0), 0);
+  const totalCarbs = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.carbs, 0), 0);
+  const totalFat = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.fat, 0), 0);
+
+  const DONUT_PCT = Math.min(Math.round((totalKcal / goalKcal) * 100), 100);
+  const DONUT_DAY = 8;
+  const DONUT_TREND = totalKcal > goalKcal ? 'Over limit' : `${DONUT_PCT}% hit`;
+
+  const DONUT_SEGS = [
+    { label: 'Carbs',    current: Math.round(totalCarbs),   goal: 240, color: '#FB923C' },
+    { label: 'Proteins', current: Math.round(totalProtein), goal: 140, color: '#A78BFA' },
+    { label: 'Fats',     current: Math.round(totalFat),     goal: 110, color: '#0D9488' },
+  ];
+
   return (
     <View style={card.shell}>
       {/* Title + period */}
@@ -94,8 +71,8 @@ function NutritionCard() {
           <MaterialCommunityIcons name="run" size={18} color={Colors.lime} />
         </View>
         <Text style={card.kcalBig}>
-          <Text style={{ color: Colors.text.primary }}>{DONUT_KCAL.current.toLocaleString()}</Text>
-          <Text style={card.kcalSep}>/{DONUT_KCAL.goal.toLocaleString()} kcal</Text>
+          <Text style={{ color: Colors.text.primary }}>{totalKcal.toLocaleString()}</Text>
+          <Text style={card.kcalSep}>/{goalKcal.toLocaleString()} kcal</Text>
         </Text>
       </View>
       {/* Donut + macros */}
@@ -147,6 +124,96 @@ function NutritionCard() {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  
+  const {
+    user,
+    meals,
+    waterLogs,
+    weightLogs,
+    stepsCount,
+    activeMinutes,
+  } = useAppStore();
+
+  // Dynamic calculations from context
+  const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
+  const totalWaterMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
+  const currentWeight = weightLogs[weightLogs.length - 1];
+
+  const activeKcal = Math.round(stepsCount * 0.045 + activeMinutes * 7.5);
+
+  const ACTIVITY_METRICS = [
+    { lib: 'Ionicons' as const, icon: 'flame',         color: Colors.amber,       value: activeKcal.toLocaleString(), unit: 'kcal',  label: 'Burned', route: '/steps' },
+    { lib: 'Ionicons' as const, icon: 'footsteps',     color: Colors.lime,        value: stepsCount.toLocaleString(), unit: 'steps', label: 'Steps',    route: '/steps'  },
+    { lib: 'Ionicons' as const, icon: 'timer-outline', color: '#6366F1',          value: activeMinutes.toString(),    unit: 'min',   label: 'Active',   route: '/steps'  },
+  ];
+
+  const QUICK_LOGS = [
+    { lib: 'Ionicons' as const, icon: 'water',         color: Colors.chart.water, label: 'Water',  value: `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water'            },
+    { lib: 'MCI' as const,      icon: 'food-apple',    color: Colors.lime,        label: 'Food',   value: `${totalKcal.toLocaleString()} kcal`,     route: '/(tabs)/nutrition' },
+    { lib: 'MCI' as const,      icon: 'scale-bathroom',color: Colors.amber,       label: 'Weight', value: `${currentWeight.toFixed(1)} kg`,         route: '/(tabs)/weight'    },
+    { lib: 'Ionicons' as const, icon: 'footsteps',     color: '#6366F1',          label: 'Steps',  value: stepsCount.toLocaleString(),               route: '/steps'            },
+  ];
+
+  // Dynamic chronologically sorted Activity Timeline
+  const getTimeline = () => {
+    const feed = [];
+    
+    // Add breakfast if logged
+    const bfMeal = meals.find((m) => m.id === 'breakfast');
+    const bfKcal = bfMeal ? bfMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
+    if (bfKcal > 0) {
+      feed.push({ time: '07:30', label: 'Breakfast', kcal: bfKcal, lib: 'MCI' as const, icon: 'egg-fried', color: Colors.amber });
+    }
+    
+    // Add morning walk simulated based on steps
+    if (stepsCount > 3000) {
+      feed.push({ time: '09:15', label: 'Morning Walk', kcal: -150, lib: 'MCI' as const, icon: 'walk', color: Colors.lime });
+    }
+    
+    // Add lunch if logged
+    const lhMeal = meals.find((m) => m.id === 'lunch');
+    const lhKcal = lhMeal ? lhMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
+    if (lhKcal > 0) {
+      feed.push({ time: '12:30', label: 'Lunch', kcal: lhKcal, lib: 'MCI' as const, icon: 'food-apple', color: Colors.amber });
+    }
+    
+    // Add snack if logged
+    const snMeal = meals.find((m) => m.id === 'snacks');
+    const snKcal = snMeal ? snMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
+    if (snKcal > 0) {
+      feed.push({ time: '15:30', label: 'Snack', kcal: snKcal, lib: 'Ionicons' as const, icon: 'nutrition', color: '#FB923C' });
+    }
+
+    // Add hydration checks from actual logs
+    if (waterLogs.length > 0) {
+      const latestWater = waterLogs[waterLogs.length - 1];
+      feed.push({ time: latestWater.time, label: `Logged Hydration`, kcal: latestWater.ml, lib: 'Ionicons' as const, icon: 'water', color: Colors.chart.water });
+    }
+
+    // Add dinner if logged
+    const dnMeal = meals.find((m) => m.id === 'dinner');
+    const dnKcal = dnMeal ? dnMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
+    if (dnKcal > 0) {
+      feed.push({ time: '19:30', label: 'Dinner', kcal: dnKcal, lib: 'MCI' as const, icon: 'silverware-fork-knife', color: Colors.amber });
+    }
+
+    // Fallback if timeline is completely empty
+    if (feed.length === 0) {
+      feed.push({ time: '08:00', label: 'Start your journey!', kcal: 0, lib: 'Ionicons' as const, icon: 'rocket-outline', color: Colors.lime });
+    }
+
+    return feed.sort((a, b) => a.time.localeCompare(b.time));
+  };
+
+  const TIMELINE = getTimeline();
+
+  // Compute initials dynamically
+  const initials = user.name
+    .split(' ')
+    .map((n) => n[0] || '')
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <ScrollView
@@ -159,24 +226,24 @@ export default function HomeScreen() {
         {/* Left: greeting + name + date/chips row */}
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{greetingStr},</Text>
-          <Text style={styles.name}>Sakil</Text>
+          <Text style={styles.name}>{user.name}</Text>
           <View style={styles.metaRow}>
             <Text style={styles.date}>{dateStr}</Text>
             <View style={styles.dot} />
             <View style={styles.streakChip}>
               <Ionicons name="flame" size={11} color={Colors.amber} />
-              <Text style={styles.streakTxt}>14</Text>
+              <Text style={styles.streakTxt}>{user.streak}</Text>
             </View>
             <View style={styles.xpChip}>
               <Ionicons name="flash" size={10} color={Colors.lime} />
-              <Text style={styles.xpTxt}>LVL 8</Text>
+              <Text style={styles.xpTxt}>LVL {user.level}</Text>
             </View>
           </View>
         </View>
 
         {/* Right: avatar */}
         <TouchableOpacity style={styles.avatar} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
-          <Text style={styles.avatarTxt}>AR</Text>
+          <Text style={styles.avatarTxt}>{initials}</Text>
           {/* Online dot */}
           <View style={styles.avatarDot} />
         </TouchableOpacity>
@@ -279,7 +346,7 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.timelineLabel}>{item.label}</Text>
             <Text style={[styles.timelineKcal, { color: item.color }]}>
-              {item.kcal > 0 ? `+${item.kcal}` : item.kcal} kcal
+              {item.kcal > 0 ? `+${item.kcal}` : item.kcal < 0 ? `${item.kcal}` : '0'} kcal
             </Text>
           </GlassCard>
         ))}

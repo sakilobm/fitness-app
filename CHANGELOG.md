@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-05-31T15:35:00+05:30
+
+### Added — Centralized App State Provider & Global Inter-Screen Reactivity
+
+**Architectural Decision:** Unified all local, siloed state trackers under a single Global Application Store (`src/store/AppContext.tsx`) using React's native Context API. Wrapped the root stack router inside this store, enabling real-time, bidirectional reactivity across all tabs and subviews. Consolidated duplicate icon mappings under a modular `<AppIcon>` UI component:
+- **Global Context State Engine:** Created `AppContext` managing user profile details, target goals, steps logs, dynamic hydration streams, nutritional meal logs, and scheduled reminders list.
+- **Dynamic Interconnected Workflows:** 
+  - *Hydration:* Logging water from the Home dashboard or the Macro chip inside Nutrition dynamically adds water logs and raises the main water cylinder level.
+  - *Profile Goals:* Editing step, calorie, or water targets in the Profile modal automatically propagates targets to the Home and Nutrition macro cards.
+  - *Weight logs:* Connected dynamic weights list to profile stats, BMIs, sparklines, and home stats.
+- **Fully Interactive Reminders Tab:** Replaced the static reminders presentation layer with a complete CRUD engine. Implemented configurable title inputs, custom segmented time wheels (Hours, Minutes, AM/PM selectors), preset and custom repeat schedules, custom indicator color selection, and smart recommendations that pre-populate form options.
+- **Simulated Notification Banners:** Built a glassmorphic simulated notification overlay toast system inside the Reminders tab that triggers when reminders are toggled, created, deleted, or simulated for test actions.
+- **Modular Vector Icon Helper:** Unified redundant vector icon rendering into a shared, robust UI utility (`src/components/ui/AppIcon.tsx`) for high code reuse.
+
 ## [1.5.0] - 2026-05-31T15:25:00+05:30
 
 ### Added — Fully Functional Interactive Water/Hydration Tracking

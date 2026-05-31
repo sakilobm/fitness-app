@@ -1,5 +1,35 @@
 # Rollback Plan
 
+If version `1.6.0` (Centralized App State Provider & Global Inter-Screen Reactivity) needs to be reverted due to context re-rendering lags or path alias conflicts, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to static screens v1.5.0)
+
+1. **Restore all screens and router layouts:**
+   Wipe the global store context and revert all tab screens back to their local state versions:
+   ```powershell
+   git checkout v1.5.0 -- app/_layout.tsx app/water.tsx app/(tabs)/nutrition.tsx app/(tabs)/weight.tsx app/(tabs)/profile.tsx app/(tabs)/reminders.tsx
+   ```
+
+2. **Clean up new shared files:**
+   Remove the new store context files and standard icon components:
+   ```powershell
+   Remove-Item -Force src/store/AppContext.tsx src/components/ui/AppIcon.tsx src/types/index.ts
+   ```
+
+3. **Re-initialize store and types index files:**
+   Reset index files to their clean placeholder states:
+   ```powershell
+   git checkout v1.5.0 -- src/store/index.ts src/components/ui/index.ts src/types/index.ts src/utils/index.ts
+   ```
+
+4. **Clean metro bundle cache:**
+   Purge Metro bundler cache to guarantee no stale global states persist in compiled bundles:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.5.0` (Fully Functional Interactive Water/Hydration Tracking) needs to be reverted due to animation rendering lags or modal sizing issues on older React Native packages, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to Water screen v1.1.1)

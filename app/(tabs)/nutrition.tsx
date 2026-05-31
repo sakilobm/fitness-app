@@ -18,23 +18,8 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Colors, Typography, Radius } from '@/constants/theme';
-
-interface FoodItem {
-  name: string;
-  grams: number;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
-
-interface Meal {
-  id: string;
-  label: string;
-  icon: string;
-  items: FoodItem[];
-  expanded: boolean;
-}
+import { useAppStore } from '@/store';
+import { FoodItem, Meal } from '@/types';
 
 const FOOD_LIBRARY: FoodItem[] = [
   { name: 'Oats with banana', grams: 100, kcal: 113, protein: 4, carbs: 19, fat: 2 },
@@ -110,11 +95,24 @@ const scoreS = StyleSheet.create({
 
 export default function NutritionScreen() {
   const insets = useSafeAreaInsets();
-  const [meals, setMeals] = useState<Meal[]>(initialMeals);
+  
+  const {
+    user,
+    meals,
+    setMeals,
+    addFoodToMeal,
+    deleteFoodFromMeal,
+    waterLogs,
+    addWaterLog,
+  } = useAppStore();
+
   const [showModal, setShowModal] = useState(false);
   const [activeMealId, setActiveMealId] = useState<string>('breakfast');
-  const [waterLogged, setWaterLogged] = useState(1.2); // in L
-  const waterGoal = 2.5;
+
+  // Sync hydration metrics dynamically from the store
+  const totalWaterMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
+  const waterLogged = parseFloat((totalWaterMl / 1000).toFixed(2)); // in L
+  const waterGoal = parseFloat((user.waterGoal / 1000).toFixed(2)); // in L
 
   // Search and portions state inside Modal
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,7 +146,7 @@ export default function NutritionScreen() {
 
   // Dynamic calculations (Option A - Recommended)
   const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
-  const goalKcal = 2000;
+  const goalKcal = user.calorieGoal;
   const totalProtein = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.protein, 0), 0);
   const totalCarbs = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.carbs, 0), 0);
   const totalFat = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.fat, 0), 0);
@@ -165,16 +163,7 @@ export default function NutritionScreen() {
 
   // Delete food item (Option A - Recommended)
   const handleDeleteFood = (mealId: string, itemIndex: number) => {
-    setMeals((prevMeals) =>
-      prevMeals.map((m) => {
-        if (m.id === mealId) {
-          const updatedItems = [...m.items];
-          updatedItems.splice(itemIndex, 1);
-          return { ...m, items: updatedItems };
-        }
-        return m;
-      })
-    );
+    deleteFoodFromMeal(mealId, itemIndex);
   };
 
   // Pre-select meal time on Modal open
@@ -214,12 +203,11 @@ export default function NutritionScreen() {
       fat: getScaledVal(selectedFood.fat, grams, baseG),
     };
 
+    addFoodToMeal(activeMealId, foodToLog);
+    
+    // Autoexpand log group locally
     setMeals((prev) =>
-      prev.map((m) =>
-        m.id === activeMealId
-          ? { ...m, items: [...m.items, foodToLog], expanded: true }
-          : m
-      )
+      prev.map((m) => (m.id === activeMealId ? { ...m, expanded: true } : m))
     );
     setShowModal(false);
   };
@@ -249,12 +237,11 @@ export default function NutritionScreen() {
       fat: isNaN(ft) ? 0 : ft,
     };
 
+    addFoodToMeal(activeMealId, foodToLog);
+    
+    // Autoexpand log group locally
     setMeals((prev) =>
-      prev.map((m) =>
-        m.id === activeMealId
-          ? { ...m, items: [...m.items, foodToLog], expanded: true }
-          : m
-      )
+      prev.map((m) => (m.id === activeMealId ? { ...m, expanded: true } : m))
     );
     setShowModal(false);
   };
@@ -281,11 +268,7 @@ export default function NutritionScreen() {
         <TouchableOpacity 
           style={styles.waterChip} 
           activeOpacity={0.8}
-          onPress={() => {
-            if (waterLogged < waterGoal) {
-              setWaterLogged((w) => parseFloat(Math.min(w + 0.25, waterGoal).toFixed(2)));
-            }
-          }}
+          onPress={() => addWaterLog(250)}
         >
           <View style={styles.waterChipIconWrap}>
             <Ionicons name="water" size={16} color={Colors.chart.water} />

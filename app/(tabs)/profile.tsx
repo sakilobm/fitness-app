@@ -18,6 +18,7 @@ import ProgressRing from '@/components/ui/ProgressRing';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
+import { useAppStore } from '@/store';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -52,24 +53,26 @@ const BADGES: Badge[] = [
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { user, setUser } = useAppStore();
+
   const [darkTheme, setDarkTheme] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [unitKg, setUnitKg] = useState(true);
   const [unitMl, setUnitMl] = useState(true);
 
   // Profile Dashboard Editable State variables (Option A - Recommended)
-  const [userName, setUserName] = useState('Alex Rivera');
-  const [userAge, setUserAge] = useState('28');
-  const [userHeight, setUserHeight] = useState('178');
-  const [userWeight, setUserWeight] = useState('78.4');
-  const [userGoal, setUserGoal] = useState('Lose Fat'); // 'Lose Fat' | 'Gain Muscle' | 'Stay Fit'
-  const [userMotto, setUserMotto] = useState('Strive for progress, not perfection!');
+  const userName = user.name;
+  const userAge = user.age.toString();
+  const userHeight = user.height.toString();
+  const userWeight = user.weight.toString();
+  const userGoal = user.goal;
+  const userMotto = user.motto;
 
   // Advanced Goals state variables (Option A - Recommended)
-  const [waterGoal, setWaterGoal] = useState('2500'); // ml
-  const [calorieGoal, setCalorieGoal] = useState('2400'); // kcal
-  const [stepsGoal, setStepsGoal] = useState('10000'); // steps
-  const [workoutGoal, setWorkoutGoal] = useState('4'); // workouts per week
+  const waterGoal = user.waterGoal.toString();
+  const calorieGoal = user.calorieGoal.toString();
+  const stepsGoal = user.stepsGoal.toString();
+  const workoutGoal = user.workoutGoal.toString();
 
   // Modal Control and Editing Form States
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -179,17 +182,22 @@ export default function ProfileScreen() {
       return;
     }
 
-    // Propagate all values back to screen state
-    setUserName(formName);
-    setUserAge(formAge);
-    setUserHeight(formHeight);
-    setUserWeight(formWeight);
-    setUserGoal(formGoal);
-    setUserMotto(formMotto);
-    setWaterGoal(formWaterGoal);
-    setCalorieGoal(formCalorieGoal);
-    setStepsGoal(formStepsGoal);
-    setWorkoutGoal(formWorkoutGoal);
+    // Propagate all values back to global store state
+    setUser({
+      name: formName.trim(),
+      age: ageNum,
+      height: heightNum,
+      weight: weightNum,
+      goal: formGoal,
+      motto: formMotto.trim(),
+      calorieGoal: calNum,
+      waterGoal: waterNum,
+      stepsGoal: stepsNum,
+      workoutGoal: parseInt(formWorkoutGoal, 10) || 4,
+      level: user.level,
+      xp: user.xp,
+      streak: user.streak,
+    });
 
     // Close the Modal
     setEditModalVisible(false);

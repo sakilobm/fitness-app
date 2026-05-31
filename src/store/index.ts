@@ -1,1 +1,1 @@
-// Global state management (Zustand / Context) — add stores here
+export * from './AppContext';
