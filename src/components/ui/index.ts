@@ -6,3 +6,4 @@ export { default as MacroBar } from './MacroBar';
 export { default as SectionHeader } from './SectionHeader';
 export { default as DonutChart } from './DonutChart';
 export { default as PillButton } from './PillButton';
+export { default as ScreenHeader } from './ScreenHeader';
