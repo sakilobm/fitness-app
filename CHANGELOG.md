@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-05-31T15:25:00+05:30
+
+### Added — Fully Functional Interactive Water/Hydration Tracking
+
+**Architectural Decision:** Converted the static presentation layer of the Water Hydration screen into a fully interactive state-driven module. Added a custom goal selection modal and custom logs entry sheet:
+- **Interactive Sizing & Controls:** Built a sliding quick-add hydration row (`150ml`, `250ml`, `500ml`, and `Custom` modals) linked directly to the main reanimated `WaterCylinder` container. Log entry additions dynamically raise the animated cylinder water level with realistic timing physics.
+- **Dynamic Deletable History:** Enabled timeline item deletions. Users can tap the `close-circle` next to any log entry to instantly filter the state array, subtract values from their daily total, and drop the cylinder water level.
+- **Custom Target Goal Editor:** Replaced the static daily goal baseline constant with a dynamic state hook (`goalMl`). Tapping the **Daily Goal Target** card opens a modal utilizing selector chips (`1500`, `2000`, `2500`, `3000`, `3500` ml) alongside custom target inputs.
+- **Dynamic Streak & Stats:** Automatically checks daily hydration targets. Met goals automatically increment user streaks (golden active glow) and update their all-time **Best Day Peak** record dynamically.
+- **Success Feedback Banner:** Rendered a visually premium golden sparkles reward banner *"🎉 Daily Hydration Goal Achieved!"* when intake exceeds targets.
+
+## [1.4.0] - 2026-05-31T15:15:00+05:30
+
+### Added — Fully Functional Interactive Food/Nutrition Tracking
+
+**Architectural Decision:** Converted the static presentation layer of the Food/Nutrition screen into a fully interactive state-driven module. Added a multi-tabbed slide-up `Modal` to log meals, custom food items, and track daily caloric/macro progress:
+- **State-driven Calculations:** Refactored the summary card to derive Calories, Proteins, Carbs, Fats, and Fiber dynamically from active breakfast/lunch/dinner/snacks logs. Log changes automatically trigger updates in the remaining calorie badge, macro progress bars, and the circular **Nutrition Score ring** (dynamically scored `'A'`, `'B'`, or `'C'` contextually).
+- **Search Library & Configurator:** Integrated a responsive, filterable default food library (e.g. Eggs, Oats, Chicken, Avocado, Rice). Selecting an item opens a **portion scaler** (grams input) that mathematically computes calories and macros in real-time before saving.
+- **Custom Entry Tab:** Provided a manual tab to log custom dishes by typing their name, grams, and precise calories/macros.
+- **Active Editing & Deleting:** Enabled swipe/click `close-circle` buttons on logged list items to instantly remove entries and re-balance subtotals.
+- **Contextual Automation & Shortcuts:** Added contextual hour-of-day pre-selection for meals, alongside a dynamic water chip that allows quick-add logging of `+250ml` water directly from the Nutrition dashboard.
+
 ## [1.3.0] - 2026-05-31T15:00:00+05:30
 
 ### Added — Fully Functional Interactive Weight Tracking

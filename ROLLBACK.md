@@ -1,5 +1,41 @@
 # Rollback Plan
 
+If version `1.5.0` (Fully Functional Interactive Water/Hydration Tracking) needs to be reverted due to animation rendering lags or modal sizing issues on older React Native packages, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to Water screen v1.1.1)
+
+1. **Restore water.tsx codebase:**
+   Revert [water.tsx](file:///c:/Users/sowbh/Desktop/Fitness-App/app/water.tsx) to its static presentation format by running git checkout or restoring from backup:
+   ```powershell
+   git checkout v1.1.1 -- app/water.tsx
+   ```
+
+2. **Clean metro bundle cache:**
+   To guarantee Metro bundler purges any stale compiled dynamic sheets:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `1.4.0` (Fully Functional Interactive Food/Nutrition Tracking) needs to be reverted due to calculation overflows or modal keyboard interaction errors, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to Nutrition screen v1.1.1)
+
+1. **Restore nutrition.tsx codebase:**
+   Revert [nutrition.tsx](file:///c:/Users/sowbh/Desktop/Fitness-App/app/%28tabs%29/nutrition.tsx) to its static presentation format by running git checkout or restoring from backup:
+   ```powershell
+   git checkout v1.1.1 -- app/(tabs)/nutrition.tsx
+   ```
+
+2. **Clean metro bundle cache:**
+   To guarantee Metro bundler purges any stale compiled dynamic sheets:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.3.0` (Fully Functional Interactive Weight Tracking) needs to be reverted due to data binding errors or visual glitches on older OS targets, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to Weight screen v1.1.1)
