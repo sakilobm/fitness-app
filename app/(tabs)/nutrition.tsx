@@ -4,9 +4,11 @@ import {
   Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import MacroBar from '@/components/ui/MacroBar';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Colors, Typography, Radius } from '@/constants/theme';
 
@@ -65,20 +67,29 @@ const totalFibre = 18;
 function NutritionScore({ score }: { score: 'A' | 'B' | 'C' }) {
   const colors: Record<string, string> = { A: Colors.lime, B: Colors.amber, C: Colors.danger };
   const pcts: Record<string, number> = { A: 0.92, B: 0.72, C: 0.52 };
+  const labels: Record<string, string> = { A: 'Excellent', B: 'Good', C: 'Needs Work' };
   return (
     <View style={scoreS.container}>
       <ProgressRing size={64} strokeWidth={6} progress={pcts[score]} color={colors[score]}>
         <Text style={[scoreS.letter, { color: colors[score] }]}>{score}</Text>
       </ProgressRing>
-      <Text style={scoreS.label}>Daily Score</Text>
+      <View style={[scoreS.labelBadge, { backgroundColor: colors[score] + '15', borderColor: colors[score] + '35' }]}>
+        <Text style={[scoreS.labelText, { color: colors[score] }]}>{labels[score]}</Text>
+      </View>
     </View>
   );
 }
 
 const scoreS = StyleSheet.create({
-  container: { alignItems: 'center', gap: 4 },
+  container: { alignItems: 'center', gap: 6 },
   letter: { ...Typography.h2 },
-  label: { ...Typography.micro, color: Colors.muted },
+  labelBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  labelText: { ...Typography.micro },
 });
 
 export default function NutritionScreen() {
@@ -99,16 +110,26 @@ export default function NutritionScreen() {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Nutrition</Text>
+        <ScreenHeader
+          title="Nutrition"
+          subtitle="FOOD & MACROS"
+          icon={{ lib: 'MCI', name: 'food-apple' }}
+          accentColor={Colors.chart.calories}
+        />
 
         {/* Water reminder chip */}
-        <View style={styles.waterChip}>
-          <Text style={styles.waterChipIcon}>💧</Text>
-          <Text style={styles.waterChipText}>Water: 1.2 / 2.5 L today</Text>
-          <View style={styles.waterBar}>
-            <View style={[styles.waterFill, { width: `${(1.2 / 2.5) * 100}%` }]} />
+        <TouchableOpacity style={styles.waterChip} activeOpacity={0.8}>
+          <View style={styles.waterChipIconWrap}>
+            <Ionicons name="water" size={16} color={Colors.chart.water} />
           </View>
-        </View>
+          <View style={styles.waterChipContent}>
+            <Text style={styles.waterChipText}>Water: 1.2 / 2.5 L today</Text>
+            <View style={styles.waterBar}>
+              <View style={[styles.waterFill, { width: `${(1.2 / 2.5) * 100}%` }]} />
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={Colors.chart.water} />
+        </TouchableOpacity>
 
         {/* Macro summary */}
         <GlassCard accentColor={Colors.lime}>
@@ -116,7 +137,10 @@ export default function NutritionScreen() {
             <View style={styles.summaryLeft}>
               <Text style={styles.kcalNum}>{totalKcal}</Text>
               <Text style={styles.kcalLabel}>/ {goalKcal} kcal</Text>
-              <Text style={styles.kcalRemain}>{goalKcal - totalKcal} remaining</Text>
+              <View style={styles.remainBadge}>
+                <Ionicons name="flame" size={11} color={Colors.lime} />
+                <Text style={styles.kcalRemain}>{goalKcal - totalKcal} remaining</Text>
+              </View>
             </View>
             <NutritionScore score="B" />
           </View>
@@ -139,7 +163,13 @@ export default function NutritionScreen() {
                 <Text style={styles.mealLabel}>{meal.label}</Text>
                 <Text style={styles.mealKcal}>{mealKcal(meal)} kcal</Text>
               </View>
-              <Text style={styles.mealChevron}>{meal.expanded ? '▲' : '▼'}</Text>
+              <View style={[styles.mealChevronWrap, meal.expanded && styles.mealChevronWrapActive]}>
+                <Ionicons
+                  name={meal.expanded ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={meal.expanded ? Colors.lime : Colors.muted}
+                />
+              </View>
             </TouchableOpacity>
             {meal.expanded && (
               <View style={styles.mealBody}>
@@ -150,31 +180,32 @@ export default function NutritionScreen() {
                       <Text style={styles.foodGrams}>{item.grams}g</Text>
                     </View>
                     <View style={styles.foodChips}>
-                      <View style={[styles.chip, { backgroundColor: Colors.chart.calories + '22' }]}>
+                      <View style={[styles.chip, { backgroundColor: Colors.chart.calories + '18' }]}>
                         <Text style={[styles.chipText, { color: Colors.chart.calories }]}>{item.kcal} kcal</Text>
                       </View>
-                      <View style={[styles.chip, { backgroundColor: Colors.chart.protein + '22' }]}>
+                      <View style={[styles.chip, { backgroundColor: Colors.chart.protein + '18' }]}>
                         <Text style={[styles.chipText, { color: Colors.chart.protein }]}>{item.protein}P</Text>
                       </View>
-                      <View style={[styles.chip, { backgroundColor: Colors.chart.carbs + '22' }]}>
+                      <View style={[styles.chip, { backgroundColor: Colors.chart.carbs + '18' }]}>
                         <Text style={[styles.chipText, { color: Colors.chart.carbs }]}>{item.carbs}C</Text>
                       </View>
                     </View>
                     <TouchableOpacity style={styles.deleteBtn}>
-                      <Text style={styles.deleteTxt}>✕</Text>
+                      <Ionicons name="close-circle" size={18} color={Colors.danger + '88'} />
                     </TouchableOpacity>
                   </View>
                 ))}
                 {/* Photo card */}
                 <TouchableOpacity style={styles.photoRow}>
-                  <Text style={styles.photoIcon}>📸</Text>
+                  <Ionicons name="camera-outline" size={16} color={Colors.muted} />
                   <Text style={styles.photoText}>Log plate photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.addFoodBtn}
                   onPress={() => { setActiveMeal(meal.id); setShowModal(true); }}
                 >
-                  <Text style={styles.addFoodBtnText}>+ Add Food</Text>
+                  <Ionicons name="add" size={14} color={Colors.lime} />
+                  <Text style={styles.addFoodBtnText}>Add Food</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -188,7 +219,8 @@ export default function NutritionScreen() {
         onPress={() => setShowModal(true)}
         activeOpacity={0.85}
       >
-        <Text style={styles.fabText}>+ Log Food</Text>
+        <Ionicons name="add" size={18} color={Colors.bg} />
+        <Text style={styles.fabText}>Log Food</Text>
       </TouchableOpacity>
 
       {/* Quick-add modal */}
@@ -197,11 +229,17 @@ export default function NutritionScreen() {
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Log Food</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Search food or scan barcode..."
-              placeholderTextColor={Colors.muted}
-            />
+            <View style={styles.modalSearchWrap}>
+              <Ionicons name="search" size={18} color={Colors.muted} />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Search food or scan barcode..."
+                placeholderTextColor={Colors.muted}
+              />
+              <TouchableOpacity style={styles.scanBtn}>
+                <Ionicons name="barcode-outline" size={20} color={Colors.lime} />
+              </TouchableOpacity>
+            </View>
             <View style={styles.modalQuickAdd}>
               {['Recent', 'Frequent', 'Custom'].map((t) => (
                 <TouchableOpacity key={t} style={styles.modalTab}>
@@ -222,24 +260,43 @@ export default function NutritionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
-  title: { ...Typography.h1, color: Colors.text.primary },
 
   waterChip: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.chart.water + '15',
+    backgroundColor: Colors.chart.water + '10',
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.chart.water + '44',
+    borderWidth: 1, borderColor: Colors.chart.water + '30',
     padding: 12,
   },
-  waterChipIcon: { fontSize: 18 },
-  waterChipText: { ...Typography.caption, color: Colors.text.primary, flex: 1 },
-  waterBar: { width: 60, height: 4, backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: 2 },
+  waterChipIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: Colors.chart.water + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterChipContent: { flex: 1, gap: 4 },
+  waterChipText: { ...Typography.captionBold, color: Colors.text.primary },
+  waterBar: { height: 4, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 2 },
   waterFill: { height: '100%', backgroundColor: Colors.chart.water, borderRadius: 2 },
 
   summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   summaryLeft: { gap: 2 },
   kcalNum: { ...Typography.h1, color: Colors.text.primary },
   kcalLabel: { ...Typography.caption, color: Colors.muted },
+  remainBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.lime + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.lime + '30',
+    marginTop: 4,
+  },
   kcalRemain: { ...Typography.captionBold, color: Colors.lime },
 
   mealHeader: {
@@ -250,7 +307,17 @@ const styles = StyleSheet.create({
   mealHeaderText: { flex: 1 },
   mealLabel: { ...Typography.h4, color: Colors.text.primary },
   mealKcal: { ...Typography.caption, color: Colors.muted },
-  mealChevron: { ...Typography.caption, color: Colors.muted },
+  mealChevronWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealChevronWrapActive: {
+    backgroundColor: Colors.lime + '15',
+  },
 
   mealBody: { paddingHorizontal: 16, paddingBottom: 12, gap: 2 },
   foodItem: {
@@ -265,29 +332,33 @@ const styles = StyleSheet.create({
   chip: { borderRadius: Radius.pill, paddingHorizontal: 7, paddingVertical: 3 },
   chipText: { ...Typography.micro },
   deleteBtn: { padding: 6 },
-  deleteTxt: { ...Typography.caption, color: Colors.danger },
 
   photoRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.cardBorder,
   },
-  photoIcon: { fontSize: 18 },
   photoText: { ...Typography.caption, color: Colors.muted },
 
   addFoodBtn: {
     marginTop: 8, alignSelf: 'flex-start',
-    backgroundColor: Colors.lime + '22',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.lime + '18',
     borderRadius: Radius.pill,
-    paddingHorizontal: 16, paddingVertical: 8,
-    borderWidth: 1, borderColor: Colors.lime + '55',
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: Colors.lime + '40',
   },
   addFoodBtnText: { ...Typography.captionBold, color: Colors.lime },
 
   fab: {
     position: 'absolute', right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: Colors.lime,
     borderRadius: Radius.pill,
-    paddingHorizontal: 24, paddingVertical: 14,
+    paddingHorizontal: 22, paddingVertical: 14,
     shadowColor: Colors.lime, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
   },
@@ -304,14 +375,28 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.muted + '55', borderRadius: 2, marginBottom: 4,
   },
   modalTitle: { ...Typography.h3, color: Colors.text.primary },
+  modalSearchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.bg,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingHorizontal: 14,
+  },
   modalInput: {
-    backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.cardBorder,
-    padding: 14, color: Colors.text.primary, ...Typography.body,
+    flex: 1,
+    paddingVertical: 14,
+    color: Colors.text.primary,
+    ...Typography.body,
+  },
+  scanBtn: {
+    padding: 4,
   },
   modalQuickAdd: { flexDirection: 'row', gap: 8 },
   modalTab: {
-    flex: 1, backgroundColor: Colors.card, borderRadius: Radius.pill,
+    flex: 1, backgroundColor: Colors.bg, borderRadius: Radius.pill,
     paddingVertical: 10, alignItems: 'center',
     borderWidth: 1, borderColor: Colors.cardBorder,
   },

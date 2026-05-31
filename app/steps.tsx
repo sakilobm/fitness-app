@@ -7,11 +7,13 @@ import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import StatBadge from '@/components/ui/StatBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 
 const { width: W } = Dimensions.get('window');
+const STEPS_COLOR = '#6366F1';
 
 const STEPS_GOAL = 10000;
 const STEPS_TODAY = 6240;
@@ -36,7 +38,7 @@ function WeekBars() {
         const color =
           v === 0 ? 'rgba(0,0,0,0.06)'
           : v >= STEPS_GOAL ? Colors.amber
-          : i === today_idx ? Colors.lime
+          : i === today_idx ? STEPS_COLOR
           : Colors.muted + '55';
         return (
           <G key={i}>
@@ -47,7 +49,7 @@ function WeekBars() {
             />
             <SvgText
               x={x + bw / 2} y={chartH + 18}
-              fill={i === today_idx ? Colors.lime : Colors.muted}
+              fill={i === today_idx ? STEPS_COLOR : Colors.muted}
               fontSize={11} textAnchor="middle" fontWeight={i === today_idx ? '700' : '400'}
             >
               {WEEK_LABELS[i]}
@@ -93,13 +95,13 @@ function StreakDots() {
 
 const streakS = StyleSheet.create({
   dot: { width: 20, height: 20, borderRadius: 10 },
-  dotHit: { backgroundColor: Colors.lime + '88' },
+  dotHit: { backgroundColor: STEPS_COLOR + '66' },
   dotMiss: { backgroundColor: Colors.danger + '44' },
-  dotToday: { borderWidth: 2, borderColor: Colors.lime, backgroundColor: Colors.lime },
+  dotToday: { borderWidth: 2, borderColor: STEPS_COLOR, backgroundColor: STEPS_COLOR },
 });
 
 const MOTION = [
-  { label: 'Walking', pct: 0.55, color: Colors.lime },
+  { label: 'Walking', pct: 0.55, color: STEPS_COLOR },
   { label: 'Running', pct: 0.2, color: Colors.amber },
   { label: 'Stationary', pct: 0.25, color: Colors.muted + '55' },
 ];
@@ -115,16 +117,18 @@ export default function StepsScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Steps & Walking</Text>
-      </View>
+      <ScreenHeader
+        title="Steps & Walking"
+        subtitle="ACTIVITY"
+        icon={{ lib: 'Ionicons', name: 'footsteps' }}
+        accentColor={STEPS_COLOR}
+        showBack
+        onBack={() => router.back()}
+      />
 
       {/* Giant ring */}
       <View style={styles.ringSection}>
-        <ProgressRing size={220} strokeWidth={18} progress={progress} color={Colors.lime} glowing>
+        <ProgressRing size={220} strokeWidth={18} progress={progress} color={STEPS_COLOR} glowing>
           <Text style={styles.stepsNum}>{STEPS_TODAY.toLocaleString()}</Text>
           <Text style={styles.stepsGoal}>/ {STEPS_GOAL.toLocaleString()} steps</Text>
           <View style={styles.ringStats}>
@@ -135,22 +139,25 @@ export default function StepsScreen() {
             </View>
             <View style={styles.ringStatDivider} />
             <View style={styles.ringStat}>
-              <Ionicons name="location" size={14} color={Colors.lime} />
+              <Ionicons name="location" size={14} color={STEPS_COLOR} />
               <Text style={styles.ringStatVal}>{DISTANCE_KM}</Text>
               <Text style={styles.ringStatLabel}>km</Text>
             </View>
           </View>
         </ProgressRing>
-        <Text style={styles.ringPct}>{Math.round(progress * 100)}% of daily goal</Text>
+        <View style={styles.ringPctBadge}>
+          <Ionicons name="trending-up" size={14} color={STEPS_COLOR} />
+          <Text style={styles.ringPct}>{Math.round(progress * 100)}% of daily goal</Text>
+        </View>
       </View>
 
       {/* Weekly bars */}
-      <GlassCard accentColor={Colors.lime}>
-        <SectionHeader title="This Week" />
+      <GlassCard accentColor={STEPS_COLOR}>
+        <SectionHeader title="This Week" accentColor={STEPS_COLOR} />
         <WeekBars />
         <View style={styles.chartLegend}>
           {[
-            { label: 'Today', color: Colors.lime },
+            { label: 'Today', color: STEPS_COLOR },
             { label: 'Goal hit', color: Colors.amber },
             { label: 'Below goal', color: Colors.muted },
           ].map((l) => (
@@ -164,7 +171,7 @@ export default function StepsScreen() {
 
       {/* Motion breakdown */}
       <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Time in Motion" />
+        <SectionHeader title="Time in Motion" accentColor={Colors.amber} />
         <View style={styles.motionRow}>
           {MOTION.map((m) => (
             <View key={m.label} style={styles.motionItem}>
@@ -179,7 +186,7 @@ export default function StepsScreen() {
 
       {/* Goal setter */}
       <GlassCard>
-        <SectionHeader title="Goal Settings" />
+        <SectionHeader title="Goal Settings" accentColor={STEPS_COLOR} />
         <View style={styles.goalToggle}>
           {(['daily', 'weekly'] as const).map((v) => (
             <PillButton
@@ -187,12 +194,13 @@ export default function StepsScreen() {
               label={v.charAt(0).toUpperCase() + v.slice(1)}
               active={goalView === v}
               onPress={() => setGoalView(v)}
+              color={STEPS_COLOR}
               style={{ flex: 1 }}
             />
           ))}
         </View>
         <View style={styles.goalInfo}>
-          <Text style={styles.goalValue}>{goalView === 'daily' ? '10,000' : '70,000'}</Text>
+          <Text style={[styles.goalValue, { color: STEPS_COLOR }]}>{goalView === 'daily' ? '10,000' : '70,000'}</Text>
           <Text style={styles.goalUnit}>steps {goalView === 'daily' ? 'per day' : 'per week'}</Text>
         </View>
         <Text style={styles.goalSub}>Recommended: 7,000–10,000 steps/day for general health</Text>
@@ -200,12 +208,12 @@ export default function StepsScreen() {
 
       {/* Streak */}
       <GlassCard>
-        <SectionHeader title="Last 14 Days" />
+        <SectionHeader title="Last 14 Days" accentColor={STEPS_COLOR} />
         <StreakDots />
         <View style={styles.streakStats}>
-          <StatBadge label="Streak" value="11d 🔥" color={Colors.lime} />
+          <StatBadge label="Streak" value="11d 🔥" color={STEPS_COLOR} />
           <StatBadge label="Best Day" value="12,400" color={Colors.amber} />
-          <StatBadge label="Avg/Day" value="8,200" color={Colors.lime} />
+          <StatBadge label="Avg/Day" value="8,200" color={STEPS_COLOR} />
         </View>
       </GlassCard>
     </ScrollView>
@@ -215,21 +223,27 @@ export default function StepsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  back: { padding: 4 },
-  backText: { ...Typography.h4, color: Colors.lime },
-  title: { ...Typography.h1, color: Colors.text.primary },
 
   ringSection: { alignItems: 'center', gap: 12, paddingVertical: 8 },
   stepsNum: { ...Typography.hero, color: Colors.text.primary },
   stepsGoal: { ...Typography.caption, color: Colors.muted },
   ringStats: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 16 },
   ringStat: { alignItems: 'center', gap: 2 },
-  ringStatIcon: { fontSize: 14 },
   ringStatVal: { ...Typography.h4, color: Colors.text.primary },
   ringStatLabel: { ...Typography.micro, color: Colors.muted },
   ringStatDivider: { width: 1, height: 30, backgroundColor: Colors.cardBorder },
-  ringPct: { ...Typography.bodyBold, color: Colors.lime },
+  ringPctBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: STEPS_COLOR + '15',
+    borderRadius: Radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: STEPS_COLOR + '30',
+  },
+  ringPct: { ...Typography.captionBold, color: STEPS_COLOR },
 
   chartLegend: { flexDirection: 'row', gap: 16, marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -243,7 +257,7 @@ const styles = StyleSheet.create({
 
   goalToggle: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   goalInfo: { alignItems: 'center', marginBottom: 8 },
-  goalValue: { ...Typography.hero, color: Colors.lime },
+  goalValue: { ...Typography.hero },
   goalUnit: { ...Typography.body, color: Colors.muted },
   goalSub: { ...Typography.caption, color: Colors.muted, textAlign: 'center' },
 

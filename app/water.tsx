@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import StatBadge from '@/components/ui/StatBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 
@@ -107,28 +108,33 @@ export default function WaterScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Water Tracking</Text>
-      </View>
+      <ScreenHeader
+        title="Water Tracking"
+        subtitle="HYDRATION"
+        icon={{ lib: 'Ionicons', name: 'water' }}
+        accentColor={Colors.chart.water}
+        showBack
+        onBack={() => router.back()}
+      />
 
       {/* Hero cylinder */}
-      <View style={styles.heroSection}>
-        <WaterCylinder filled={filled} />
-        <View style={styles.heroText}>
-          <Text style={styles.mlNum}>{totalMl}<Text style={styles.mlUnit}> ml</Text></Text>
-          <Text style={styles.mlGoal}>of {GOAL_ML} ml goal</Text>
-          <View style={styles.mlBadge}>
-            <Text style={styles.mlBadgeText}>{Math.round(filled * 100)}% hydrated</Text>
+      <GlassCard accentColor={Colors.chart.water}>
+        <View style={styles.heroSection}>
+          <WaterCylinder filled={filled} />
+          <View style={styles.heroText}>
+            <Text style={styles.mlNum}>{totalMl}<Text style={styles.mlUnit}> ml</Text></Text>
+            <Text style={styles.mlGoal}>of {GOAL_ML} ml goal</Text>
+            <View style={styles.mlBadge}>
+              <Ionicons name="water" size={11} color={Colors.chart.water} />
+              <Text style={styles.mlBadgeText}>{Math.round(filled * 100)}% hydrated</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </GlassCard>
 
       {/* Quick add */}
       <GlassCard accentColor={Colors.chart.water}>
-        <SectionHeader title="Quick Add" />
+        <SectionHeader title="Quick Add" accentColor={Colors.chart.water} />
         <View style={styles.quickRow}>
           {QUICK_AMOUNTS.map((ml) => (
             <TouchableOpacity
@@ -147,14 +153,14 @@ export default function WaterScreen() {
             activeOpacity={0.75}
           >
             <Ionicons name="create-outline" size={20} color={Colors.muted} />
-            <Text style={styles.quickMl}>Custom</Text>
+            <Text style={[styles.quickMl, { color: Colors.muted }]}>Custom</Text>
           </TouchableOpacity>
         </View>
       </GlassCard>
 
       {/* Log history */}
       <GlassCard>
-        <SectionHeader title="Today's Log" />
+        <SectionHeader title="Today's Log" accentColor={Colors.chart.water} />
         {log.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="water-outline" size={44} color={Colors.muted} />
@@ -171,6 +177,7 @@ export default function WaterScreen() {
                 <View style={styles.logInfo}>
                   <Text style={styles.logTime}>{entry.time}</Text>
                   <View style={styles.logPill}>
+                    <Ionicons name="water" size={10} color={Colors.chart.water} />
                     <Text style={styles.logPillText}>{entry.ml} ml</Text>
                   </View>
                 </View>
@@ -182,10 +189,15 @@ export default function WaterScreen() {
 
       {/* Goal & streak */}
       <GlassCard accentColor={Colors.chart.water}>
-        <SectionHeader title="Daily Goal" />
+        <SectionHeader title="Daily Goal" accentColor={Colors.chart.water} />
         <View style={styles.goalRow}>
-          <Text style={styles.goalValue}>{GOAL_ML} ml</Text>
-          <Text style={styles.goalRange}>Recommended: 2,000–3,000 ml/day</Text>
+          <View style={styles.goalIconWrap}>
+            <Ionicons name="trophy" size={20} color={Colors.chart.water} />
+          </View>
+          <View style={styles.goalContent}>
+            <Text style={styles.goalValue}>{GOAL_ML} ml</Text>
+            <Text style={styles.goalRange}>Recommended: 2,000–3,000 ml/day</Text>
+          </View>
         </View>
       </GlassCard>
 
@@ -197,7 +209,9 @@ export default function WaterScreen() {
 
       {/* Reminder chip */}
       <TouchableOpacity style={styles.reminderChip} activeOpacity={0.8}>
-        <Ionicons name="alarm" size={20} color={Colors.amber} />
+        <View style={styles.reminderIconWrap}>
+          <Ionicons name="alarm" size={18} color={Colors.amber} />
+        </View>
         <Text style={styles.reminderText}>Next reminder at 3:00 PM</Text>
         <Ionicons name="chevron-forward" size={18} color={Colors.amber} />
       </TouchableOpacity>
@@ -206,6 +220,7 @@ export default function WaterScreen() {
       <Modal visible={showCustom} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Custom Amount</Text>
             <TextInput
               style={styles.modalInput}
@@ -225,6 +240,7 @@ export default function WaterScreen() {
                 setShowCustom(false);
               }}
             >
+              <Ionicons name="water" size={16} color={Colors.bg} />
               <Text style={styles.modalBtnText}>Add Water</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowCustom(false)} style={styles.modalCancel}>
@@ -240,38 +256,35 @@ export default function WaterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  back: { padding: 4 },
-  backText: { ...Typography.h4, color: Colors.lime },
-  title: { ...Typography.h1, color: Colors.text.primary },
 
-  heroSection: { flexDirection: 'row', alignItems: 'center', gap: 32, paddingVertical: 12, justifyContent: 'center' },
+  heroSection: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingVertical: 8, justifyContent: 'center' },
   heroText: { gap: 6 },
   mlNum: { ...Typography.hero, color: Colors.chart.water },
   mlUnit: { ...Typography.h2, color: Colors.chart.water },
   mlGoal: { ...Typography.caption, color: Colors.muted },
   mlBadge: {
-    backgroundColor: Colors.chart.water + '22',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Colors.chart.water + '18',
     borderRadius: Radius.pill,
     paddingHorizontal: 12, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.chart.water + '55',
+    borderWidth: 1, borderColor: Colors.chart.water + '40',
   },
   mlBadgeText: { ...Typography.captionBold, color: Colors.chart.water },
 
   quickRow: { flexDirection: 'row', gap: 8 },
   quickBtn: {
     flex: 1, alignItems: 'center', gap: 6,
-    backgroundColor: Colors.chart.water + '15',
+    backgroundColor: Colors.chart.water + '12',
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.chart.water + '44',
+    borderWidth: 1, borderColor: Colors.chart.water + '35',
     paddingVertical: 12,
   },
   customBtn: { backgroundColor: Colors.card, borderColor: Colors.cardBorder },
-  quickIcon: { fontSize: 20 },
   quickMl: { ...Typography.captionBold, color: Colors.text.primary },
 
   emptyState: { alignItems: 'center', gap: 8, paddingVertical: 24 },
-  emptyIcon: { fontSize: 40 },
   emptyText: { ...Typography.body, color: Colors.muted },
 
   logList: { gap: 0 },
@@ -282,29 +295,49 @@ const styles = StyleSheet.create({
   logInfo: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingBottom: 12 },
   logTime: { ...Typography.caption, color: Colors.muted, width: 40, marginTop: 2 },
   logPill: {
-    backgroundColor: Colors.chart.water + '22',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Colors.chart.water + '18',
     borderRadius: Radius.pill,
     paddingHorizontal: 12, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.chart.water + '44',
+    borderWidth: 1, borderColor: Colors.chart.water + '35',
   },
   logPillText: { ...Typography.captionBold, color: Colors.chart.water },
 
-  goalRow: { gap: 4 },
+  goalRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  goalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.chart.water + '15',
+    borderWidth: 1,
+    borderColor: Colors.chart.water + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalContent: { flex: 1, gap: 2 },
   goalValue: { ...Typography.h2, color: Colors.chart.water },
   goalRange: { ...Typography.caption, color: Colors.muted },
 
   statsRow: { flexDirection: 'row', gap: 8 },
 
   reminderChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.amberOverlay,
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.amber + '44',
+    borderWidth: 1, borderColor: Colors.amber + '35',
     padding: 14,
   },
-  reminderIcon: { fontSize: 18 },
+  reminderIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.amber + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   reminderText: { ...Typography.body, color: Colors.text.primary, flex: 1 },
-  reminderArrow: { ...Typography.h3, color: Colors.amber },
 
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
   modalSheet: {
@@ -313,16 +346,24 @@ const styles = StyleSheet.create({
     padding: 28, gap: 16,
     borderWidth: 1, borderColor: Colors.cardBorder,
   },
+  modalHandle: {
+    alignSelf: 'center', width: 40, height: 4,
+    backgroundColor: Colors.muted + '55', borderRadius: 2, marginBottom: 4,
+  },
   modalTitle: { ...Typography.h3, color: Colors.text.primary },
   modalInput: {
-    backgroundColor: Colors.card, borderRadius: Radius.md,
+    backgroundColor: Colors.bg, borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.cardBorder,
     padding: 14, color: Colors.text.primary, ...Typography.h3,
     textAlign: 'center',
   },
   modalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: Colors.chart.water, borderRadius: Radius.pill,
-    paddingVertical: 14, alignItems: 'center',
+    paddingVertical: 14,
   },
   modalBtnText: { ...Typography.bodyBold, color: Colors.bg },
   modalCancel: { alignItems: 'center', paddingVertical: 8 },

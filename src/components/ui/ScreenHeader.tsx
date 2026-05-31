@@ -1,13 +1,22 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Radius } from '@/constants/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+type IconDef =
+  | { lib: 'Ionicons'; name: IoniconName }
+  | { lib: 'MCI'; name: MCIName };
 
 interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
+  /** Accent color for icon bubble and decorative elements */
+  accentColor?: string;
+  /** Icon to show next to the title */
+  icon?: IconDef;
   /** Show a back-button circle on the left (detail screens) */
   showBack?: boolean;
   onBack?: () => void;
@@ -18,9 +27,16 @@ interface ScreenHeaderProps {
   rightElement?: React.ReactNode;
 }
 
+function HeaderIcon({ icon, color, size }: { icon: IconDef; color: string; size: number }) {
+  if (icon.lib === 'MCI') return <MaterialCommunityIcons name={icon.name} size={size} color={color} />;
+  return <Ionicons name={icon.name} size={size} color={color} />;
+}
+
 export default function ScreenHeader({
   title,
   subtitle,
+  accentColor = Colors.lime,
+  icon,
   showBack = false,
   onBack,
   rightIcon,
@@ -41,43 +57,128 @@ export default function ScreenHeader({
   };
 
   if (showBack) {
-    // ── Detail-screen layout (back button left, title+subtitle left, optional right) ──
+    // ── Detail-screen layout (back button left, icon bubble + title, optional right) ──
     return (
-      <View style={styles.row}>
-        <TouchableOpacity style={styles.iconBtn} onPress={onBack} activeOpacity={0.75}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text.primary} />
-        </TouchableOpacity>
+      <View style={styles.detailContainer}>
+        {/* Row with back button, title, and right slot */}
+        <View style={styles.detailRow}>
+          <TouchableOpacity
+            style={[styles.backBtn, { borderColor: accentColor + '30' }]}
+            onPress={onBack}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="chevron-back" size={20} color={accentColor} />
+          </TouchableOpacity>
 
-        <View style={styles.centerBlock}>
-          {subtitle && <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>}
-          <Text style={styles.titleDetail} numberOfLines={1}>{title}</Text>
+          <View style={styles.detailTitleBlock}>
+            {icon && (
+              <View style={[styles.detailIconBubble, { backgroundColor: accentColor + '15' }]}>
+                <HeaderIcon icon={icon} color={accentColor} size={18} />
+              </View>
+            )}
+            <View style={styles.detailTitleText}>
+              {subtitle && <Text style={[styles.detailSubtitle, { color: accentColor }]}>{subtitle}</Text>}
+              <Text style={styles.detailTitle} numberOfLines={1}>{title}</Text>
+            </View>
+          </View>
+
+          <View style={{ width: 40 }}>
+            {(rightElement || rightIcon) && <RightSlot />}
+          </View>
         </View>
 
-        <RightSlot />
+        {/* Decorative accent bar */}
+        <View style={[styles.accentBar, { backgroundColor: accentColor + '18' }]}>
+          <View style={[styles.accentBarFill, { backgroundColor: accentColor, width: '35%' }]} />
+        </View>
       </View>
     );
   }
 
-  // ── Tab-screen layout (large left title, subtitle below, optional right icon) ──
+  // ── Tab-screen layout (large title with icon bubble + accent underline) ──
   return (
-    <View style={styles.col}>
-      <View style={styles.colTop}>
-        <Text style={styles.titleTab}>{title}</Text>
-        <RightSlot />
+    <View style={styles.tabContainer}>
+      <View style={styles.tabRow}>
+        {/* Icon bubble */}
+        {icon && (
+          <View style={[styles.tabIconBubble, { backgroundColor: accentColor + '15', borderColor: accentColor + '30' }]}>
+            <HeaderIcon icon={icon} color={accentColor} size={22} />
+          </View>
+        )}
+
+        {/* Title block */}
+        <View style={styles.tabTitleBlock}>
+          {subtitle && <Text style={[styles.tabSubtitle, { color: accentColor }]}>{subtitle}</Text>}
+          <Text style={styles.tabTitle}>{title}</Text>
+        </View>
+
+        {/* Right slot */}
+        {(rightElement || rightIcon) && <RightSlot />}
       </View>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+
+      {/* Decorative accent bar */}
+      <View style={[styles.accentBar, { backgroundColor: accentColor + '12' }]}>
+        <View style={[styles.accentBarFill, { backgroundColor: accentColor, width: '25%' }]} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // ── Detail (horizontal) ────────────────────────────────────────────────────
-  row: {
+  // ── Detail (horizontal, back-button variant) ──────────────────────────────
+  detailContainer: {
+    gap: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1C1C1E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  detailTitleBlock: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
+  detailIconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailTitleText: {
+    flex: 1,
+    gap: 1,
+  },
+  detailSubtitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  detailTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.text.primary,
+    letterSpacing: -0.5,
+  },
 
+  // ── Icon btn (shared) ─────────────────────────────────────────────────────
   iconBtn: {
     width: 40,
     height: 40,
@@ -95,40 +196,53 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
 
-  centerBlock: {
-    flex: 1,
-    justifyContent: 'center',
+  // ── Tab-screen (large title variant) ──────────────────────────────────────
+  tabContainer: {
+    gap: 10,
   },
-
-  titleDetail: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.text.primary,
-    letterSpacing: -0.5,
-  },
-
-  // ── Tab (vertical stack) ───────────────────────────────────────────────────
-  col: {
-    gap: 4,
-  },
-  colTop: {
+  tabRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 14,
   },
-  titleTab: {
-    fontSize: 30,
+  tabIconBubble: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1C1C1E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  tabTitleBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  tabSubtitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  tabTitle: {
+    fontSize: 28,
     fontWeight: '800',
     color: Colors.text.primary,
     letterSpacing: -0.8,
-    flex: 1,
   },
 
-  // ── Shared subtitle ────────────────────────────────────────────────────────
-  subtitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: Colors.muted,
-    letterSpacing: 0.1,
+  // ── Shared accent bar ─────────────────────────────────────────────────────
+  accentBar: {
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  accentBarFill: {
+    height: '100%',
+    borderRadius: 2,
   },
 });

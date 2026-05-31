@@ -159,7 +159,7 @@ export default function HomeScreen() {
         {/* Left: greeting + name + date/chips row */}
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{greetingStr},</Text>
-          <Text style={styles.name}>Alex Rivera</Text>
+          <Text style={styles.name}>Sakil</Text>
           <View style={styles.metaRow}>
             <Text style={styles.date}>{dateStr}</Text>
             <View style={styles.dot} />

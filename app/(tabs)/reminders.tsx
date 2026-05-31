@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -95,10 +96,10 @@ const initialReminders: ReminderItem[] = [
   },
 ];
 
-const SMART_SUGGESTIONS: { icon: IconDef; text: string }[] = [
-  { icon: { lib: 'Ionicons', name: 'water' }, text: 'You usually forget water after 4 PM' },
-  { icon: { lib: 'MCI', name: 'scale-bathroom' }, text: 'Weigh-in consistency drops on weekends' },
-  { icon: { lib: 'Ionicons', name: 'restaurant' }, text: 'Lunch log is often skipped on Tuesdays' },
+const SMART_SUGGESTIONS: { icon: IconDef; text: string; color: string }[] = [
+  { icon: { lib: 'Ionicons', name: 'water' }, text: 'You usually forget water after 4 PM', color: Colors.chart.water },
+  { icon: { lib: 'MCI', name: 'scale-bathroom' }, text: 'Weigh-in consistency drops on weekends', color: Colors.amber },
+  { icon: { lib: 'Ionicons', name: 'restaurant' }, text: 'Lunch log is often skipped on Tuesdays', color: Colors.chart.calories },
 ];
 
 function DayPills({ days, selected }: { days: string[]; selected: string[] }) {
@@ -137,12 +138,18 @@ function ReminderCard({
     <GlassCard noPadding style={{ marginBottom: 0 }}>
       <View style={[remS.accentBar, { backgroundColor: reminder.accentColor }]} />
       <TouchableOpacity style={remS.main} onPress={onExpand} activeOpacity={0.8}>
-        <View style={[remS.iconWrap, { backgroundColor: reminder.accentColor + '18' }]}>
+        <View style={[remS.iconWrap, { backgroundColor: reminder.accentColor + '15', borderColor: reminder.accentColor + '30' }]}>
           <ReminderIcon icon={reminder.icon} color={reminder.accentColor} size={20} />
         </View>
         <View style={remS.info}>
           <Text style={remS.title}>{reminder.title}</Text>
-          <Text style={remS.subtitle}>{reminder.time} · {reminder.frequency}</Text>
+          <View style={remS.metaRow}>
+            <View style={[remS.timeBadge, { backgroundColor: reminder.accentColor + '12' }]}>
+              <Ionicons name="time-outline" size={10} color={reminder.accentColor} />
+              <Text style={[remS.timeTxt, { color: reminder.accentColor }]}>{reminder.time}</Text>
+            </View>
+            <Text style={remS.subtitle}>{reminder.frequency}</Text>
+          </View>
         </View>
         <Switch
           value={reminder.enabled}
@@ -165,8 +172,9 @@ function ReminderCard({
             <Text style={remS.expandLabel}>Frequency</Text>
             <Text style={remS.expandValue}>{reminder.frequency}</Text>
           </View>
-          <TouchableOpacity style={remS.editBtn}>
-            <Text style={remS.editBtnText}>Edit Reminder</Text>
+          <TouchableOpacity style={[remS.editBtn, { borderColor: reminder.accentColor + '50', backgroundColor: reminder.accentColor + '15' }]}>
+            <Ionicons name="pencil" size={12} color={reminder.accentColor} />
+            <Text style={[remS.editBtnText, { color: reminder.accentColor }]}>Edit Reminder</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -175,14 +183,25 @@ function ReminderCard({
 }
 
 const remS = StyleSheet.create({
-  accentBar: { height: 2 },
+  accentBar: { height: 2.5 },
   main: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   iconWrap: {
-    width: 38, height: 38, borderRadius: 12,
+    width: 40, height: 40, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1,
   },
-  info: { flex: 1 },
+  info: { flex: 1, gap: 4 },
   title: { ...Typography.bodyBold, color: Colors.text.primary },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+  },
+  timeTxt: { ...Typography.micro },
   subtitle: { ...Typography.caption, color: Colors.muted },
   expanded: {
     paddingHorizontal: 14, paddingBottom: 14,
@@ -193,15 +212,27 @@ const remS = StyleSheet.create({
   expandValue: { ...Typography.captionBold, color: Colors.text.primary },
   editBtn: {
     marginTop: 4, alignSelf: 'flex-start',
-    backgroundColor: Colors.lime + '22',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderRadius: Radius.pill,
     paddingHorizontal: 14, paddingVertical: 7,
-    borderWidth: 1, borderColor: Colors.lime + '55',
+    borderWidth: 1,
   },
-  editBtnText: { ...Typography.captionBold, color: Colors.lime },
+  editBtnText: { ...Typography.captionBold },
 });
 
 const CATEGORIES = ['All', 'Water', 'Meals', 'Weigh-in', 'Body Photo', 'Workout', 'Supplements'];
+
+const CATEGORY_COLORS: Record<string, string> = {
+  All: Colors.lime,
+  Water: Colors.chart.water,
+  Meals: Colors.amber,
+  'Weigh-in': Colors.lime,
+  'Body Photo': Colors.lime,
+  Workout: Colors.lime,
+  Supplements: Colors.chart.fibre,
+};
 
 export default function RemindersScreen() {
   const insets = useSafeAreaInsets();
@@ -215,27 +246,42 @@ export default function RemindersScreen() {
 
   const filtered = category === 'All' ? reminders : reminders.filter((r) => r.category === category);
 
+  const activeCount = reminders.filter((r) => r.enabled).length;
+
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Reminders</Text>
+        <ScreenHeader
+          title="Reminders"
+          subtitle={`${activeCount} ACTIVE`}
+          icon={{ lib: 'Ionicons', name: 'notifications' }}
+          accentColor="#6366F1"
+          rightIcon="settings-outline"
+        />
 
         {/* Category filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
           <View style={styles.catRow}>
-            {CATEGORIES.map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.catPill, category === c && styles.catPillActive]}
-                onPress={() => setCategory(c)}
-                activeOpacity={0.75}
-              >
-                <Text style={[styles.catText, category === c && styles.catTextActive]}>{c}</Text>
-              </TouchableOpacity>
-            ))}
+            {CATEGORIES.map((c) => {
+              const isActive = category === c;
+              const color = CATEGORY_COLORS[c] || Colors.lime;
+              return (
+                <TouchableOpacity
+                  key={c}
+                  style={[
+                    styles.catPill,
+                    isActive && { backgroundColor: color + '18', borderColor: color },
+                  ]}
+                  onPress={() => setCategory(c)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.catText, isActive && { color }]}>{c}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
 
@@ -251,16 +297,17 @@ export default function RemindersScreen() {
           ))}
         </View>
 
-        <SectionHeader title="Smart Suggestions" />
+        <SectionHeader title="Smart Suggestions" accentColor="#6366F1" />
         <View style={styles.suggestionsCol}>
           {SMART_SUGGESTIONS.map((s, i) => (
-            <TouchableOpacity key={i} style={styles.suggChip} activeOpacity={0.8}>
-              <View style={styles.suggIconWrap}>
-                <ReminderIcon icon={s.icon} color={Colors.lime} size={18} />
+            <TouchableOpacity key={i} style={[styles.suggChip, { borderColor: s.color + '25' }]} activeOpacity={0.8}>
+              <View style={[styles.suggIconWrap, { backgroundColor: s.color + '15' }]}>
+                <ReminderIcon icon={s.icon} color={s.color} size={18} />
               </View>
               <Text style={styles.suggText}>{s.text}</Text>
-              <View style={styles.suggAddBtn}>
-                <Text style={styles.suggAddText}>Add</Text>
+              <View style={[styles.suggAddBtn, { backgroundColor: s.color + '18', borderColor: s.color + '40' }]}>
+                <Ionicons name="add" size={12} color={s.color} />
+                <Text style={[styles.suggAddText, { color: s.color }]}>Add</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -282,11 +329,14 @@ export default function RemindersScreen() {
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>New Reminder</Text>
             <View style={styles.modalCategoryGrid}>
-              {CATEGORIES.slice(1).map((c) => (
-                <TouchableOpacity key={c} style={styles.modalCatBtn}>
-                  <Text style={styles.modalCatBtnText}>{c}</Text>
-                </TouchableOpacity>
-              ))}
+              {CATEGORIES.slice(1).map((c) => {
+                const color = CATEGORY_COLORS[c] || Colors.lime;
+                return (
+                  <TouchableOpacity key={c} style={[styles.modalCatBtn, { borderColor: color + '40' }]}>
+                    <Text style={[styles.modalCatBtnText, { color }]}>{c}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             <Text style={styles.modalHint}>Select a category to configure your reminder</Text>
             <TouchableOpacity onPress={() => setShowAdd(false)} style={styles.modalClose}>
@@ -302,7 +352,6 @@ export default function RemindersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
-  title: { ...Typography.h1, color: Colors.text.primary },
 
   catScroll: { marginHorizontal: -16 },
   catRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 2 },
@@ -312,9 +361,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderWidth: 1, borderColor: Colors.cardBorder,
   },
-  catPillActive: { backgroundColor: Colors.lime + '22', borderColor: Colors.lime },
   catText: { ...Typography.captionBold, color: Colors.muted },
-  catTextActive: { color: Colors.lime },
 
   reminderList: { gap: 8 },
 
@@ -322,28 +369,35 @@ const styles = StyleSheet.create({
   suggChip: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.lime + '22', padding: 14,
+    borderWidth: 1, padding: 14,
+    shadowColor: '#1C1C1E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   suggIconWrap: {
-    width: 34, height: 34, borderRadius: 10,
-    backgroundColor: Colors.lime + '15',
+    width: 36, height: 36, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
   suggText: { ...Typography.caption, color: Colors.text.primary, flex: 1 },
   suggAddBtn: {
-    backgroundColor: Colors.lime + '22', borderRadius: Radius.pill,
-    paddingHorizontal: 12, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.lime + '44',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1,
   },
-  suggAddText: { ...Typography.captionBold, color: Colors.lime },
+  suggAddText: { ...Typography.captionBold },
 
   fab: {
     position: 'absolute', right: 20,
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.lime,
+    backgroundColor: '#6366F1',
     borderRadius: Radius.pill,
     paddingHorizontal: 20, paddingVertical: 14,
-    shadowColor: Colors.lime,
+    shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
   },
@@ -364,10 +418,10 @@ const styles = StyleSheet.create({
   modalCategoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modalCatBtn: {
     backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    borderWidth: 1,
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  modalCatBtnText: { ...Typography.captionBold, color: Colors.muted },
+  modalCatBtnText: { ...Typography.captionBold },
   modalHint: { ...Typography.caption, color: Colors.muted, textAlign: 'center' },
   modalClose: { alignItems: 'center', paddingVertical: 6 },
   modalCloseText: { ...Typography.bodyBold, color: Colors.danger },

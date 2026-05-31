@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
 
@@ -78,28 +79,35 @@ export default function MetabolismScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Metabolism</Text>
-      </View>
+      <ScreenHeader
+        title="Metabolism"
+        subtitle="ENERGY & BODY"
+        icon={{ lib: 'Ionicons', name: 'flame' }}
+        accentColor={Colors.amber}
+        showBack
+        onBack={() => router.back()}
+      />
 
       {/* BMR Hero */}
       <GlassCard accentColor={Colors.amber}>
         <View style={styles.bmrHero}>
-          <Ionicons name="flame" size={52} color={Colors.amber} />
+          <View style={styles.bmrIconWrap}>
+            <Ionicons name="flame" size={36} color={Colors.amber} />
+          </View>
           <View style={styles.bmrText}>
             <Text style={styles.bmrValue}>{BMR}</Text>
             <Text style={styles.bmrLabel}>Basal Metabolic Rate</Text>
-            <Text style={styles.bmrSub}>calories your body burns at rest daily</Text>
+            <View style={styles.bmrBadge}>
+              <Ionicons name="body" size={10} color={Colors.amber} />
+              <Text style={styles.bmrSub}>calories your body burns at rest daily</Text>
+            </View>
           </View>
         </View>
       </GlassCard>
 
       {/* TDEE */}
       <GlassCard accentColor={Colors.lime}>
-        <SectionHeader title="Total Daily Energy (TDEE)" />
+        <SectionHeader title="Total Daily Energy (TDEE)" accentColor={Colors.lime} />
         <View style={styles.activitySegment}>
           {ACTIVITY_LEVELS.map((a) => (
             <TouchableOpacity
@@ -118,14 +126,16 @@ export default function MetabolismScreen() {
           <Text style={styles.tdeeValue}>{tdee.toLocaleString()}</Text>
           <Text style={styles.tdeeLabel}>kcal / day</Text>
         </View>
-        <Text style={styles.tdeeNote}>
-          × {mult} multiplier ({ACTIVITY_LEVELS.find((a) => a.key === actLevel)?.label})
-        </Text>
+        <View style={styles.tdeeBadge}>
+          <Text style={styles.tdeeNote}>
+            × {mult} multiplier ({ACTIVITY_LEVELS.find((a) => a.key === actLevel)?.label})
+          </Text>
+        </View>
       </GlassCard>
 
       {/* Macro split */}
       <GlassCard>
-        <SectionHeader title="Macro Split Recommendation" />
+        <SectionHeader title="Macro Split Recommendation" accentColor={Colors.chart.protein} />
         <View style={styles.macroRow}>
           {MACRO_SPLIT.map((m) => (
             <View key={m.label} style={styles.macroItem}>
@@ -133,7 +143,9 @@ export default function MetabolismScreen() {
                 <Text style={[styles.macroPct, { color: m.color }]}>{Math.round(m.pct * 100)}%</Text>
               </ProgressRing>
               <Text style={styles.macroLabel}>{m.label}</Text>
-              <Text style={[styles.macroGrams, { color: m.color }]}>{m.grams}g</Text>
+              <View style={[styles.macroGramBadge, { backgroundColor: m.color + '15', borderColor: m.color + '30' }]}>
+                <Text style={[styles.macroGrams, { color: m.color }]}>{m.grams}g</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -141,7 +153,7 @@ export default function MetabolismScreen() {
 
       {/* Weekly trend */}
       <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Weekly BMR Trend" />
+        <SectionHeader title="Weekly BMR Trend" accentColor={Colors.amber} />
         <TrendLine data={TREND_DATA} />
         <View style={styles.trendStats}>
           <View style={styles.trendStat}>
@@ -161,7 +173,7 @@ export default function MetabolismScreen() {
 
       {/* Body composition */}
       <GlassCard>
-        <SectionHeader title="Body Composition" />
+        <SectionHeader title="Body Composition" accentColor={Colors.lime} />
         <View style={styles.bodyRow}>
           {BODY_COMP.map((b) => (
             <View key={b.label} style={styles.bodyCard}>
@@ -180,17 +192,39 @@ export default function MetabolismScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  back: { padding: 4 },
-  backText: { ...Typography.h4, color: Colors.lime },
-  title: { ...Typography.h1, color: Colors.text.primary },
 
-  bmrHero: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  bmrIcon: { width: 52, alignItems: 'center' as const },
+  bmrHero: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  bmrIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 22,
+    backgroundColor: Colors.amber + '15',
+    borderWidth: 1,
+    borderColor: Colors.amber + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.amber,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   bmrText: { flex: 1, gap: 4 },
   bmrValue: { ...Typography.hero, color: Colors.amber },
   bmrLabel: { ...Typography.h4, color: Colors.text.primary },
-  bmrSub: { ...Typography.caption, color: Colors.muted },
+  bmrBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.amber + '12',
+    borderRadius: Radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: Colors.amber + '25',
+  },
+  bmrSub: { ...Typography.micro, color: Colors.amber },
 
   activitySegment: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
   actBtn: {
@@ -198,20 +232,35 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill, borderWidth: 1,
     borderColor: Colors.cardBorder, backgroundColor: Colors.card,
   },
-  actBtnActive: { backgroundColor: Colors.lime + '22', borderColor: Colors.lime },
+  actBtnActive: { backgroundColor: Colors.lime + '18', borderColor: Colors.lime },
   actBtnText: { ...Typography.captionBold, color: Colors.muted },
   actBtnTextActive: { color: Colors.lime },
 
   tdeeResult: { alignItems: 'center', marginBottom: 4 },
   tdeeValue: { ...Typography.hero, color: Colors.lime },
   tdeeLabel: { ...Typography.caption, color: Colors.muted },
-  tdeeNote: { ...Typography.caption, color: Colors.muted, textAlign: 'center' },
+  tdeeBadge: {
+    alignSelf: 'center',
+    backgroundColor: Colors.lime + '12',
+    borderRadius: Radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.lime + '25',
+  },
+  tdeeNote: { ...Typography.micro, color: Colors.lime, textAlign: 'center' },
 
   macroRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
   macroItem: { alignItems: 'center', gap: 6 },
   macroPct: { ...Typography.captionBold },
   macroLabel: { ...Typography.caption, color: Colors.muted },
-  macroGrams: { ...Typography.bodyBold },
+  macroGramBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  macroGrams: { ...Typography.captionBold },
 
   trendStats: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 12 },
   trendStat: { alignItems: 'center', gap: 2 },

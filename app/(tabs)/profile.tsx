@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Switch, 
+  Modal, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform 
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -19,38 +31,23 @@ function AppIcon({ icon, size, color }: { icon: IconDef; size: number; color: st
   return <Ionicons name={icon.name} size={size} color={color} />;
 }
 
-const USER = { name: 'Alex Rivera', initials: 'AR' };
-
 interface Badge {
   id: string;
   icon: IconDef;
   label: string;
   unlocked: boolean;
+  color: string;
 }
 
 const BADGES: Badge[] = [
-  { id: 'b1', icon: { lib: 'Ionicons', name: 'flame' }, label: '7-Day Streak', unlocked: true },
-  { id: 'b2', icon: { lib: 'Ionicons', name: 'water' }, label: 'Hydration Pro', unlocked: true },
-  { id: 'b3', icon: { lib: 'MCI', name: 'scale-bathroom' }, label: '5kg Lost', unlocked: true },
-  { id: 'b4', icon: { lib: 'MCI', name: 'dumbbell' }, label: 'Iron Will', unlocked: true },
-  { id: 'b5', icon: { lib: 'MCI', name: 'food-apple' }, label: 'Macro Master', unlocked: false },
-  { id: 'b6', icon: { lib: 'Ionicons', name: 'camera' }, label: 'Photo Journey', unlocked: false },
-  { id: 'b7', icon: { lib: 'MCI', name: 'run' }, label: 'Step Crusher', unlocked: false },
-  { id: 'b8', icon: { lib: 'MCI', name: 'pill' }, label: 'Supplement King', unlocked: false },
-];
-
-const WEEK_SUMMARY: { icon: IconDef; label: string; value: string; color: string }[] = [
-  { icon: { lib: 'MCI', name: 'dumbbell' }, label: 'Workouts', value: '4', color: Colors.lime },
-  { icon: { lib: 'Ionicons', name: 'trophy' }, label: 'Goals Hit', value: '18/21', color: Colors.amber },
-  { icon: { lib: 'Ionicons', name: 'flame' }, label: 'Streak', value: '14d', color: Colors.amber },
-  { icon: { lib: 'Ionicons', name: 'water' }, label: 'Avg Water', value: '2.1L', color: Colors.chart.water },
-];
-
-const USER_STATS = [
-  { label: 'Age', value: '28' },
-  { label: 'Height', value: '178 cm' },
-  { label: 'Weight', value: '78.4 kg' },
-  { label: 'Goal', value: 'Lose Fat' },
+  { id: 'b1', icon: { lib: 'Ionicons', name: 'flame' }, label: '7-Day Streak', unlocked: true, color: Colors.amber },
+  { id: 'b2', icon: { lib: 'Ionicons', name: 'water' }, label: 'Hydration Pro', unlocked: true, color: Colors.chart.water },
+  { id: 'b3', icon: { lib: 'MCI', name: 'scale-bathroom' }, label: '5kg Lost', unlocked: true, color: Colors.lime },
+  { id: 'b4', icon: { lib: 'MCI', name: 'dumbbell' }, label: 'Iron Will', unlocked: true, color: Colors.lime },
+  { id: 'b5', icon: { lib: 'MCI', name: 'food-apple' }, label: 'Macro Master', unlocked: false, color: Colors.chart.carbs },
+  { id: 'b6', icon: { lib: 'Ionicons', name: 'camera' }, label: 'Photo Journey', unlocked: false, color: Colors.lime },
+  { id: 'b7', icon: { lib: 'MCI', name: 'run' }, label: 'Step Crusher', unlocked: false, color: '#6366F1' },
+  { id: 'b8', icon: { lib: 'MCI', name: 'pill' }, label: 'Supplement King', unlocked: false, color: Colors.chart.fibre },
 ];
 
 export default function ProfileScreen() {
@@ -60,38 +57,198 @@ export default function ProfileScreen() {
   const [unitKg, setUnitKg] = useState(true);
   const [unitMl, setUnitMl] = useState(true);
 
+  // Profile Dashboard Editable State variables (Option A - Recommended)
+  const [userName, setUserName] = useState('Alex Rivera');
+  const [userAge, setUserAge] = useState('28');
+  const [userHeight, setUserHeight] = useState('178');
+  const [userWeight, setUserWeight] = useState('78.4');
+  const [userGoal, setUserGoal] = useState('Lose Fat'); // 'Lose Fat' | 'Gain Muscle' | 'Stay Fit'
+  const [userMotto, setUserMotto] = useState('Strive for progress, not perfection!');
+
+  // Advanced Goals state variables (Option A - Recommended)
+  const [waterGoal, setWaterGoal] = useState('2500'); // ml
+  const [calorieGoal, setCalorieGoal] = useState('2400'); // kcal
+  const [stepsGoal, setStepsGoal] = useState('10000'); // steps
+  const [workoutGoal, setWorkoutGoal] = useState('4'); // workouts per week
+
+  // Modal Control and Editing Form States
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [activeFormTab, setActiveFormTab] = useState<'basic' | 'advanced'>('basic');
+  const [formName, setFormName] = useState('');
+  const [formAge, setFormAge] = useState('');
+  const [formHeight, setFormHeight] = useState('');
+  const [formWeight, setFormWeight] = useState('');
+  const [formGoal, setFormGoal] = useState('');
+  const [formMotto, setFormMotto] = useState('');
+  const [formWaterGoal, setFormWaterGoal] = useState('');
+  const [formCalorieGoal, setFormCalorieGoal] = useState('');
+  const [formStepsGoal, setFormStepsGoal] = useState('');
+  const [formWorkoutGoal, setFormWorkoutGoal] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+
+  // Compute initials dynamically
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0] || '')
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  // Compute dynamic stats list
+  const userStats = [
+    { label: 'Age', value: `${userAge}`, icon: 'calendar-outline' as IoniconName, color: '#6366F1' },
+    { label: 'Height', value: `${userHeight} cm`, icon: 'resize-outline' as IoniconName, color: Colors.lime },
+    { label: 'Weight', value: `${userWeight} kg`, icon: 'barbell-outline' as IoniconName, color: Colors.amber },
+    { label: 'Goal', value: userGoal, icon: (userGoal === 'Gain Muscle' ? 'trending-up-outline' : userGoal === 'Stay Fit' ? 'body-outline' : 'trending-down-outline') as IoniconName, color: Colors.chart.calories },
+  ];
+
+  // Compute dynamic weekly summary based on goals
+  const weekSummary: { icon: IconDef; label: string; value: string; color: string }[] = [
+    { icon: { lib: 'MCI' as const, name: 'dumbbell' as const }, label: 'Workouts', value: `${workoutGoal}`, color: Colors.lime },
+    { icon: { lib: 'Ionicons' as const, name: 'trophy' as const }, label: 'Goals Hit', value: '18/21', color: Colors.amber },
+    { icon: { lib: 'Ionicons' as const, name: 'flame' as const }, label: 'Streak', value: '14d', color: Colors.amber },
+    { icon: { lib: 'Ionicons' as const, name: 'water' as const }, label: 'Avg Water', value: `${(parseFloat(waterGoal) / 1000).toFixed(1)}L`, color: Colors.chart.water },
+  ];
+
+  // Open modal with current settings loaded into form state
+  const openEditModal = () => {
+    setFormName(userName);
+    setFormAge(userAge);
+    setFormHeight(userHeight);
+    setFormWeight(userWeight);
+    setFormGoal(userGoal);
+    setFormMotto(userMotto);
+    setFormWaterGoal(waterGoal);
+    setFormCalorieGoal(calorieGoal);
+    setFormStepsGoal(stepsGoal);
+    setFormWorkoutGoal(workoutGoal);
+    setFormErrors({});
+    setActiveFormTab('basic');
+    setEditModalVisible(true);
+  };
+
+  // Form Validation & Save Function (Option A - Recommended)
+  const handleSaveProfile = () => {
+    const errors: Record<string, string> = {};
+
+    // Basic fields validation
+    if (!formName.trim()) {
+      errors.name = 'Full name is required';
+    }
+
+    const ageNum = parseInt(formAge, 10);
+    if (!formAge || isNaN(ageNum) || ageNum <= 0 || ageNum > 120) {
+      errors.age = 'Invalid age';
+    }
+
+    const heightNum = parseFloat(formHeight);
+    if (!formHeight || isNaN(heightNum) || heightNum <= 50 || heightNum > 250) {
+      errors.height = 'Invalid height';
+    }
+
+    const weightNum = parseFloat(formWeight);
+    if (!formWeight || isNaN(weightNum) || weightNum <= 10 || weightNum > 500) {
+      errors.weight = 'Invalid weight';
+    }
+
+    // Advanced fields validation
+    const waterNum = parseInt(formWaterGoal, 10);
+    if (!formWaterGoal || isNaN(waterNum) || waterNum < 500 || waterNum > 10000) {
+      errors.waterGoal = 'Range: 500 - 10000 ml';
+    }
+
+    const calNum = parseInt(formCalorieGoal, 10);
+    if (!formCalorieGoal || isNaN(calNum) || calNum < 500 || calNum > 10000) {
+      errors.calorieGoal = 'Range: 500 - 10000 kcal';
+    }
+
+    const stepsNum = parseInt(formStepsGoal, 10);
+    if (!formStepsGoal || isNaN(stepsNum) || stepsNum < 1000 || stepsNum > 50000) {
+      errors.stepsGoal = 'Range: 1000 - 50000';
+    }
+
+    // If there are validation errors, set error state and stop saving
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      // Switch tab to the one with the error so user sees it
+      if (errors.name || errors.age || errors.height || errors.weight) {
+        setActiveFormTab('basic');
+      } else {
+        setActiveFormTab('advanced');
+      }
+      return;
+    }
+
+    // Propagate all values back to screen state
+    setUserName(formName);
+    setUserAge(formAge);
+    setUserHeight(formHeight);
+    setUserWeight(formWeight);
+    setUserGoal(formGoal);
+    setUserMotto(formMotto);
+    setWaterGoal(formWaterGoal);
+    setCalorieGoal(formCalorieGoal);
+    setStepsGoal(formStepsGoal);
+    setWorkoutGoal(formWorkoutGoal);
+
+    // Close the Modal
+    setEditModalVisible(false);
+  };
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Profile header */}
+      <ScreenHeader
+        title="Profile"
+        subtitle="MY ACCOUNT"
+        icon={{ lib: 'Ionicons', name: 'person' }}
+        accentColor={Colors.lime}
+        rightIcon="create-outline"
+        onRightPress={openEditModal}
+      />
+
+      {/* Profile header card */}
       <GlassCard accentColor={Colors.lime}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{USER.initials}</Text>
+            <Text style={styles.avatarText}>{initials}</Text>
+            <View style={styles.avatarDot} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{USER.name}</Text>
-            <View style={styles.levelBadge}>
-              <Ionicons name="flash" size={11} color={Colors.lime} />
-              <Text style={styles.levelText}>Level 8 · 2,840 XP</Text>
+            <Text style={styles.profileName}>{userName}</Text>
+            <Text style={styles.profileMotto} numberOfLines={1}>"{userMotto}"</Text>
+            
+            <View style={styles.profileHeaderActions}>
+              <View style={styles.levelBadge}>
+                <Ionicons name="flash" size={11} color={Colors.lime} />
+                <Text style={styles.levelText}>Level 8 · 2,840 XP</Text>
+              </View>
+              <TouchableOpacity style={styles.editBtn} onPress={openEditModal} activeOpacity={0.75}>
+                <Ionicons name="create" size={11} color={Colors.lime} />
+                <Text style={styles.editBtnText}>Edit Profile</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.xpBar}>
-              <View style={styles.xpFill} />
+
+            <View style={styles.xpBarTrack}>
+              <View style={styles.xpBarFill} />
             </View>
             <Text style={styles.xpSub}>1,160 XP to Level 9</Text>
           </View>
         </View>
       </GlassCard>
 
-      {/* Stats */}
+      {/* Dynamic Stats Grid */}
       <GlassCard>
-        <SectionHeader title="My Stats" />
+        <SectionHeader title="My Stats" accentColor="#6366F1" />
         <View style={styles.statsGrid}>
-          {USER_STATS.map((s) => (
+          {userStats.map((s) => (
             <View key={s.label} style={styles.statCell}>
+              <View style={[styles.statIconWrap, { backgroundColor: s.color + '12' }]}>
+                <Ionicons name={s.icon} size={16} color={s.color} />
+              </View>
               <Text style={styles.statValue}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
@@ -99,13 +256,13 @@ export default function ProfileScreen() {
         </View>
       </GlassCard>
 
-      {/* Weekly summary */}
+      {/* Dynamic Weekly Summary card */}
       <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="This Week" />
+        <SectionHeader title="This Week" accentColor={Colors.amber} />
         <View style={styles.weekRow}>
-          {WEEK_SUMMARY.map((w) => (
+          {weekSummary.map((w) => (
             <View key={w.label} style={styles.weekItem}>
-              <View style={[styles.weekIconWrap, { backgroundColor: w.color + '18' }]}>
+              <View style={[styles.weekIconWrap, { backgroundColor: w.color + '15', borderColor: w.color + '30' }]}>
                 <AppIcon icon={w.icon} size={22} color={w.color} />
               </View>
               <Text style={[styles.weekVal, { color: w.color }]}>{w.value}</Text>
@@ -115,18 +272,32 @@ export default function ProfileScreen() {
         </View>
       </GlassCard>
 
-      {/* Badges */}
+      {/* Achievements Achievements badge row */}
       <GlassCard>
-        <SectionHeader title="Achievements" action={`${BADGES.filter((b) => b.unlocked).length}/${BADGES.length}`} />
+        <SectionHeader
+          title="Achievements"
+          action={`${BADGES.filter((b) => b.unlocked).length}/${BADGES.length}`}
+          accentColor={Colors.amber}
+        />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgeScroll}>
           <View style={styles.badgeRow}>
             {BADGES.map((badge) => (
               <View key={badge.id} style={[styles.badgeItem, !badge.unlocked && styles.badgeLocked]}>
-                <View style={[styles.badgeCircle, badge.unlocked && styles.badgeCircleActive]}>
+                <View style={[
+                  styles.badgeCircle,
+                  badge.unlocked && {
+                    backgroundColor: badge.color + '12',
+                    borderColor: badge.color + '55',
+                    shadowColor: badge.color,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 8,
+                  },
+                ]}>
                   <AppIcon
                     icon={badge.icon}
                     size={24}
-                    color={badge.unlocked ? Colors.lime : Colors.muted}
+                    color={badge.unlocked ? badge.color : Colors.muted}
                   />
                 </View>
                 <Text style={[styles.badgeLabel, !badge.unlocked && styles.badgeLabelLocked]}>
@@ -138,31 +309,34 @@ export default function ProfileScreen() {
         </ScrollView>
       </GlassCard>
 
-      {/* Goal progress */}
+      {/* Dynamic Goal progress */}
       <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Goal Progress" />
+        <SectionHeader title="Goal Progress" accentColor={Colors.amber} />
         <View style={styles.goalRow}>
           <ProgressRing size={100} strokeWidth={10} progress={0.46} color={Colors.amber}>
             <Text style={styles.goalPct}>46%</Text>
           </ProgressRing>
           <View style={styles.goalText}>
-            <Text style={styles.goalTitle}>Lose Fat</Text>
-            <Text style={styles.goalSub}>Current: 78.4 kg → Target: 72.0 kg</Text>
-            <Text style={styles.goalEta}>Est. 9 weeks at current pace</Text>
+            <Text style={styles.goalTitle}>{userGoal}</Text>
+            <Text style={styles.goalSub}>Current: {userWeight} kg → Target: {userGoal === 'Gain Muscle' ? '85.0 kg' : userGoal === 'Stay Fit' ? 'Maintain' : '72.0 kg'}</Text>
+            <Text style={styles.goalEta}>{userGoal === 'Stay Fit' ? 'Awesome! Keep up active routines' : 'Est. 9 weeks at current pace'}</Text>
             <View style={styles.goalBadge}>
-              <Text style={styles.goalBadgeText}>6.4 kg remaining</Text>
+              <Ionicons name={userGoal === 'Gain Muscle' ? 'trending-up' : userGoal === 'Stay Fit' ? 'body' : 'trending-down'} size={11} color={Colors.amber} />
+              <Text style={styles.goalBadgeText}>
+                {userGoal === 'Gain Muscle' ? '6.6 kg remaining' : userGoal === 'Stay Fit' ? 'Active lifestyle' : '6.4 kg remaining'}
+              </Text>
             </View>
           </View>
         </View>
       </GlassCard>
 
-      {/* Settings */}
+      {/* Static Settings Settings */}
       <GlassCard>
-        <SectionHeader title="Settings" />
+        <SectionHeader title="Settings" accentColor={Colors.muted} />
         <View style={styles.settingsList}>
           <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.muted + '18' }]}>
-              <Ionicons name="moon" size={18} color={Colors.muted} />
+            <View style={[styles.settingIconWrap, { backgroundColor: '#6366F1' + '15' }]}>
+              <Ionicons name="moon" size={18} color="#6366F1" />
             </View>
             <Text style={styles.settingLabel}>Dark Theme</Text>
             <Switch
@@ -173,7 +347,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.amber + '18' }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.amber + '15' }]}>
               <MaterialCommunityIcons name="scale-bathroom" size={18} color={Colors.amber} />
             </View>
             <Text style={styles.settingLabel}>Weight Unit</Text>
@@ -188,7 +362,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.chart.water + '18' }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.chart.water + '15' }]}>
               <Ionicons name="water" size={18} color={Colors.chart.water} />
             </View>
             <Text style={styles.settingLabel}>Volume Unit</Text>
@@ -203,7 +377,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.lime + '18' }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.lime + '15' }]}>
               <Ionicons name="notifications" size={18} color={Colors.lime} />
             </View>
             <Text style={styles.settingLabel}>Notifications</Text>
@@ -215,7 +389,7 @@ export default function ProfileScreen() {
           </View>
 
           <TouchableOpacity style={styles.settingRow} activeOpacity={0.75}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.chart.fibre + '18' }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.chart.fibre + '15' }]}>
               <Ionicons name="download-outline" size={18} color={Colors.chart.fibre} />
             </View>
             <Text style={styles.settingLabel}>Export Data</Text>
@@ -223,7 +397,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} activeOpacity={0.75}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.danger + '18' }]}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.danger + '15' }]}>
               <Ionicons name="lock-closed" size={18} color={Colors.danger} />
             </View>
             <Text style={styles.settingLabel}>Privacy & Security</Text>
@@ -232,7 +406,291 @@ export default function ProfileScreen() {
         </View>
       </GlassCard>
 
-      <Text style={styles.version}>FitForge v1.0.0</Text>
+      <View style={styles.versionBlock}>
+        <Text style={styles.version}>FitForge v1.0.0</Text>
+        <Text style={styles.versionSub}>Made with 💚 for a healthier you</Text>
+      </View>
+
+      {/* Edit Profile Modal (Option A - Recommended Segmented-tab Overlay) */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKeyboard}
+          >
+            <View style={styles.modalContent}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeaderTitleBlock}>
+                  <View style={[styles.modalHeaderIconWrap, { backgroundColor: Colors.lime + '15' }]}>
+                    <Ionicons name="person" size={18} color={Colors.lime} />
+                  </View>
+                  <View>
+                    <Text style={styles.modalHeaderSub}>ACCOUNT SETTINGS</Text>
+                    <Text style={styles.modalHeaderTitle}>Edit Profile</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setEditModalVisible(false)}>
+                  <Ionicons name="close" size={20} color={Colors.text.primary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Segmented Tab Selector */}
+              <View style={styles.tabSelector}>
+                <TouchableOpacity
+                  style={[styles.tabBtn, activeFormTab === 'basic' && styles.tabBtnActive]}
+                  onPress={() => setActiveFormTab('basic')}
+                >
+                  <Ionicons name="options-outline" size={14} color={activeFormTab === 'basic' ? Colors.lime : Colors.muted} />
+                  <Text style={[styles.tabBtnText, activeFormTab === 'basic' && styles.tabBtnTextActive]}>Basic Metrics</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tabBtn, activeFormTab === 'advanced' && styles.tabBtnActive]}
+                  onPress={() => setActiveFormTab('advanced')}
+                >
+                  <Ionicons name="flash-outline" size={14} color={activeFormTab === 'advanced' ? Colors.lime : Colors.muted} />
+                  <Text style={[styles.tabBtnText, activeFormTab === 'advanced' && styles.tabBtnTextActive]}>Advanced Goals</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                {activeFormTab === 'basic' ? (
+                  <View style={styles.formSection}>
+                    {/* Full Name Input */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Full Name</Text>
+                      <View style={[styles.inputFieldWrap, formErrors.name && styles.inputFieldError]}>
+                        <Ionicons name="person-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.textInput}
+                          value={formName}
+                          onChangeText={(t) => {
+                            setFormName(t);
+                            if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
+                          }}
+                          placeholder="Alex Rivera"
+                          placeholderTextColor={Colors.muted}
+                        />
+                      </View>
+                      {formErrors.name && <Text style={styles.errorText}>{formErrors.name}</Text>}
+                    </View>
+
+                    {/* Numeric Row: Age, Height, Weight */}
+                    <View style={styles.inputRow}>
+                      {/* Age */}
+                      <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.inputLabel}>Age</Text>
+                        <View style={[styles.inputFieldWrap, formErrors.age && styles.inputFieldError]}>
+                          <TextInput
+                            style={styles.textInput}
+                            value={formAge}
+                            onChangeText={(t) => {
+                              setFormAge(t);
+                              if (formErrors.age) setFormErrors({ ...formErrors, age: undefined });
+                            }}
+                            keyboardType="numeric"
+                            placeholder="28"
+                            placeholderTextColor={Colors.muted}
+                            maxLength={3}
+                          />
+                        </View>
+                        {formErrors.age && <Text style={styles.errorText}>{formErrors.age}</Text>}
+                      </View>
+
+                      {/* Height */}
+                      <View style={[styles.inputGroup, { flex: 1.2 }]}>
+                        <Text style={styles.inputLabel}>Height (cm)</Text>
+                        <View style={[styles.inputFieldWrap, formErrors.height && styles.inputFieldError]}>
+                          <TextInput
+                            style={styles.textInput}
+                            value={formHeight}
+                            onChangeText={(t) => {
+                              setFormHeight(t);
+                              if (formErrors.height) setFormErrors({ ...formErrors, height: undefined });
+                            }}
+                            keyboardType="numeric"
+                            placeholder="178"
+                            placeholderTextColor={Colors.muted}
+                            maxLength={3}
+                          />
+                        </View>
+                        {formErrors.height && <Text style={styles.errorText}>{formErrors.height}</Text>}
+                      </View>
+
+                      {/* Weight */}
+                      <View style={[styles.inputGroup, { flex: 1.2 }]}>
+                        <Text style={styles.inputLabel}>Weight (kg)</Text>
+                        <View style={[styles.inputFieldWrap, formErrors.weight && styles.inputFieldError]}>
+                          <TextInput
+                            style={styles.textInput}
+                            value={formWeight}
+                            onChangeText={(t) => {
+                              setFormWeight(t);
+                              if (formErrors.weight) setFormErrors({ ...formErrors, weight: undefined });
+                            }}
+                            keyboardType="numeric"
+                            placeholder="78.4"
+                            placeholderTextColor={Colors.muted}
+                            maxLength={5}
+                          />
+                        </View>
+                        {formErrors.weight && <Text style={styles.errorText}>{formErrors.weight}</Text>}
+                      </View>
+                    </View>
+
+                    {/* Primary Goal Selector (Touchable Pill Chips) */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Primary Fitness Goal</Text>
+                      <View style={styles.goalChipsRow}>
+                        {['Lose Fat', 'Gain Muscle', 'Stay Fit'].map((goal) => (
+                          <TouchableOpacity
+                            key={goal}
+                            style={[
+                              styles.goalChip,
+                              formGoal === goal && styles.goalChipActive
+                            ]}
+                            onPress={() => setFormGoal(goal)}
+                            activeOpacity={0.8}
+                          >
+                            <Ionicons
+                              name={goal === 'Gain Muscle' ? 'trending-up' : goal === 'Stay Fit' ? 'body' : 'trending-down'}
+                              size={14}
+                              color={formGoal === goal ? Colors.lime : Colors.muted}
+                            />
+                            <Text style={[styles.goalChipText, formGoal === goal && styles.goalChipTextActive]}>{goal}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Motivation Motto / Bio Tagline */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Motivation Motto</Text>
+                      <View style={[styles.inputFieldWrap, formErrors.motto && styles.inputFieldError]}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.textInput}
+                          value={formMotto}
+                          onChangeText={(t) => {
+                            setFormMotto(t);
+                            if (formErrors.motto) setFormErrors({ ...formErrors, motto: undefined });
+                          }}
+                          placeholder="Strive for progress, not perfection!"
+                          placeholderTextColor={Colors.muted}
+                        />
+                      </View>
+                      {formErrors.motto && <Text style={styles.errorText}>{formErrors.motto}</Text>}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.formSection}>
+                    {/* Daily Calorie Intake Target */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Daily Calorie Target (kcal)</Text>
+                      <View style={[styles.inputFieldWrap, formErrors.calorieGoal && styles.inputFieldError]}>
+                        <Ionicons name="flame-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.textInput}
+                          value={formCalorieGoal}
+                          onChangeText={(t) => {
+                            setFormCalorieGoal(t);
+                            if (formErrors.calorieGoal) setFormErrors({ ...formErrors, calorieGoal: undefined });
+                          }}
+                          keyboardType="numeric"
+                          placeholder="2400"
+                          placeholderTextColor={Colors.muted}
+                          maxLength={5}
+                        />
+                      </View>
+                      {formErrors.calorieGoal && <Text style={styles.errorText}>{formErrors.calorieGoal}</Text>}
+                    </View>
+
+                    {/* Daily Hydration Target */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Daily Water Goal (ml)</Text>
+                      <View style={[styles.inputFieldWrap, formErrors.waterGoal && styles.inputFieldError]}>
+                        <Ionicons name="water-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.textInput}
+                          value={formWaterGoal}
+                          onChangeText={(t) => {
+                            setFormWaterGoal(t);
+                            if (formErrors.waterGoal) setFormErrors({ ...formErrors, waterGoal: undefined });
+                          }}
+                          keyboardType="numeric"
+                          placeholder="2500"
+                          placeholderTextColor={Colors.muted}
+                          maxLength={5}
+                        />
+                      </View>
+                      {formErrors.waterGoal && <Text style={styles.errorText}>{formErrors.waterGoal}</Text>}
+                    </View>
+
+                    {/* Daily Activity Step Goal */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Daily Steps Target</Text>
+                      <View style={[styles.inputFieldWrap, formErrors.stepsGoal && styles.inputFieldError]}>
+                        <Ionicons name="footsteps-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <TextInput
+                          style={styles.textInput}
+                          value={formStepsGoal}
+                          onChangeText={(t) => {
+                            setFormStepsGoal(t);
+                            if (formErrors.stepsGoal) setFormErrors({ ...formErrors, stepsGoal: undefined });
+                          }}
+                          keyboardType="numeric"
+                          placeholder="10000"
+                          placeholderTextColor={Colors.muted}
+                          maxLength={5}
+                        />
+                      </View>
+                      {formErrors.stepsGoal && <Text style={styles.errorText}>{formErrors.stepsGoal}</Text>}
+                    </View>
+
+                    {/* Weekly Workout Frequency Target */}
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Workout Target (workouts/week)</Text>
+                      <View style={styles.workoutPillsRow}>
+                        {['2', '3', '4', '5', '6'].map((freq) => (
+                          <TouchableOpacity
+                            key={freq}
+                            style={[
+                              styles.workoutPill,
+                              formWorkoutGoal === freq && styles.workoutPillActive
+                            ]}
+                            onPress={() => setFormWorkoutGoal(freq)}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={[styles.workoutPillText, formWorkoutGoal === freq && styles.workoutPillTextActive]}>
+                              {freq} days
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* Action Buttons Footer */}
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)} activeOpacity={0.8}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSaveProfile} activeOpacity={0.8}>
+                  <Ionicons name="checkmark-circle" size={16} color={Colors.white} />
+                  <Text style={styles.saveBtnText}>Save Profile</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -244,29 +702,79 @@ const styles = StyleSheet.create({
   profileHeader: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   avatar: {
     width: 70, height: 70, borderRadius: 35,
-    backgroundColor: Colors.lime + '22',
+    backgroundColor: Colors.lime + '18',
     borderWidth: 2.5, borderColor: Colors.lime,
     alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.lime,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: { ...Typography.h2, color: Colors.lime },
-  profileInfo: { flex: 1, gap: 6 },
+  avatarDot: {
+    position: 'absolute', bottom: 1, right: 1,
+    width: 14, height: 14, borderRadius: 7,
+    backgroundColor: '#22C55E',
+    borderWidth: 2.5, borderColor: Colors.card,
+  },
+  profileInfo: { flex: 1, gap: 4 },
   profileName: { ...Typography.h3, color: Colors.text.primary },
+  profileMotto: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+    fontStyle: 'italic',
+    marginTop: -2,
+  },
+  profileHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.lime + '15',
+    borderColor: Colors.lime + '30',
+    borderWidth: 1,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  editBtnText: {
+    ...Typography.micro,
+    color: Colors.lime,
+  },
   levelBadge: {
     alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.lime + '22', borderRadius: Radius.pill,
+    backgroundColor: Colors.lime + '18', borderRadius: Radius.pill,
     paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.lime + '44',
+    borderWidth: 1, borderColor: Colors.lime + '40',
   },
   levelText: { ...Typography.captionBold, color: Colors.lime },
-  xpBar: { height: 4, backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: Radius.pill, overflow: 'hidden' },
-  xpFill: { width: '71%', height: '100%', backgroundColor: Colors.lime, borderRadius: Radius.pill },
+  xpBarTrack: {
+    height: 5, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: Radius.pill, overflow: 'hidden', marginTop: 4,
+  },
+  xpBarFill: {
+    width: '71%', height: '100%', backgroundColor: Colors.lime, borderRadius: Radius.pill,
+  },
   xpSub: { ...Typography.micro, color: Colors.muted },
 
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statCell: {
     width: '48%', backgroundColor: Colors.bg + '88',
-    borderRadius: Radius.md, padding: 12,
-    borderWidth: 1, borderColor: Colors.cardBorder, gap: 2,
+    borderRadius: Radius.md, padding: 14,
+    borderWidth: 1, borderColor: Colors.cardBorder, gap: 4,
+  },
+  statIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
   },
   statValue: { ...Typography.h4, color: Colors.text.primary },
   statLabel: { ...Typography.caption, color: Colors.muted },
@@ -274,8 +782,9 @@ const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row', justifyContent: 'space-around' },
   weekItem: { alignItems: 'center', gap: 6 },
   weekIconWrap: {
-    width: 44, height: 44, borderRadius: 14,
+    width: 46, height: 46, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1,
   },
   weekVal: { ...Typography.h4 },
   weekLabel: { ...Typography.micro, color: Colors.muted },
@@ -290,12 +799,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.cardBorder,
     alignItems: 'center', justifyContent: 'center',
   },
-  badgeCircleActive: {
-    backgroundColor: Colors.lime + '15',
-    borderColor: Colors.lime + '77',
-    shadowColor: Colors.lime, shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5, shadowRadius: 8,
-  },
   badgeLabel: { ...Typography.micro, color: Colors.text.primary, textAlign: 'center' },
   badgeLabelLocked: { color: Colors.muted },
 
@@ -307,9 +810,12 @@ const styles = StyleSheet.create({
   goalEta: { ...Typography.micro, color: Colors.muted },
   goalBadge: {
     alignSelf: 'flex-start', marginTop: 4,
-    backgroundColor: Colors.amber + '22', borderRadius: Radius.pill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Colors.amber + '18', borderRadius: Radius.pill,
     paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.amber + '44',
+    borderWidth: 1, borderColor: Colors.amber + '40',
   },
   goalBadgeText: { ...Typography.captionBold, color: Colors.amber },
 
@@ -320,19 +826,255 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
   },
   settingIconWrap: {
-    width: 34, height: 34, borderRadius: 10,
+    width: 36, height: 36, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
   settingLabel: { ...Typography.body, color: Colors.text.primary, flex: 1 },
   unitToggle: {
-    flexDirection: 'row', gap: 4,
+    flexDirection: 'row', gap: 2,
     backgroundColor: Colors.bg, borderRadius: Radius.pill, padding: 3,
     borderWidth: 1, borderColor: Colors.cardBorder,
   },
-  unitBtn: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: Radius.pill },
-  unitBtnActive: { backgroundColor: Colors.lime + '33' },
+  unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: Radius.pill },
+  unitBtnActive: { backgroundColor: Colors.lime + '28' },
   unitBtnText: { ...Typography.captionBold, color: Colors.muted },
   unitBtnTextActive: { color: Colors.lime },
 
-  version: { ...Typography.micro, color: Colors.muted, textAlign: 'center', paddingTop: 8 },
+  versionBlock: { alignItems: 'center', paddingTop: 8, gap: 2 },
+  version: { ...Typography.micro, color: Colors.muted },
+  versionSub: { ...Typography.micro, color: Colors.muted, opacity: 0.6 },
+
+  // Edit Profile Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(28, 28, 30, 0.60)',
+    justifyContent: 'flex-end',
+  },
+  modalKeyboard: {
+    width: '100%',
+  },
+  modalContent: {
+    backgroundColor: Colors.ivory,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    maxHeight: '92%',
+    borderWidth: 1,
+    borderColor: Colors.lime + '20',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalHeaderTitleBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalHeaderIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalHeaderSub: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: Colors.lime,
+  },
+  modalHeaderTitle: {
+    ...Typography.h3,
+    color: Colors.text.primary,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  tabSelector: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: Radius.pill,
+    padding: 3,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: Radius.pill,
+  },
+  tabBtnActive: {
+    backgroundColor: Colors.card,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tabBtnText: {
+    ...Typography.captionBold,
+    color: Colors.muted,
+  },
+  tabBtnTextActive: {
+    color: Colors.lime,
+  },
+  modalScroll: {
+    maxHeight: 380,
+  },
+  formSection: {
+    gap: 16,
+    paddingBottom: 20,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  inputLabel: {
+    ...Typography.captionBold,
+    color: Colors.text.primary,
+  },
+  inputFieldWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  inputFieldError: {
+    borderColor: Colors.danger,
+    backgroundColor: Colors.danger + '05',
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  textInput: {
+    flex: 1,
+    ...Typography.body,
+    color: Colors.text.primary,
+    padding: 0,
+  },
+  errorText: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: Colors.danger,
+    marginTop: 2,
+  },
+  goalChipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  goalChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 40,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.card,
+  },
+  goalChipActive: {
+    borderColor: Colors.lime,
+    backgroundColor: Colors.lime + '12',
+  },
+  goalChipText: {
+    ...Typography.captionBold,
+    color: Colors.muted,
+  },
+  goalChipTextActive: {
+    color: Colors.lime,
+  },
+  workoutPillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  workoutPill: {
+    flex: 1,
+    minWidth: '28%',
+    height: 38,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workoutPillActive: {
+    borderColor: Colors.lime,
+    backgroundColor: Colors.lime + '12',
+  },
+  workoutPillText: {
+    ...Typography.captionBold,
+    color: Colors.muted,
+  },
+  workoutPillTextActive: {
+    color: Colors.lime,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.cardBorder,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  cancelBtnText: {
+    ...Typography.bodyBold,
+    color: Colors.text.secondary,
+  },
+  saveBtn: {
+    flex: 2,
+    height: 48,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.lime,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: Colors.lime,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  saveBtnText: {
+    ...Typography.bodyBold,
+    color: Colors.white,
+  },
 });

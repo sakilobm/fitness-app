@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle, Line, Text as SvgText } from 'react-native-svg';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
-import StatBadge from '@/components/ui/StatBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
@@ -121,7 +122,10 @@ function BMIBar({ bmi }: { bmi: number }) {
           <Text key={c.label} style={bmiS.catLabel}>{c.label}</Text>
         ))}
       </View>
-      <Text style={[bmiS.bmiValue, { color: category.color }]}>BMI {bmi} — {category.label}weight</Text>
+      <View style={[bmiS.resultBadge, { backgroundColor: category.color + '15', borderColor: category.color + '35' }]}>
+        <View style={[bmiS.resultDot, { backgroundColor: category.color }]} />
+        <Text style={[bmiS.bmiValue, { color: category.color }]}>BMI {bmi} — {category.label}weight</Text>
+      </View>
     </View>
   );
 }
@@ -133,7 +137,23 @@ const bmiS = StyleSheet.create({
   pointerDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 3, borderColor: Colors.card },
   labels: { flexDirection: 'row', justifyContent: 'space-between' },
   catLabel: { ...Typography.micro, color: Colors.muted, flex: 1, textAlign: 'center' },
-  bmiValue: { ...Typography.bodyBold, marginTop: 8, textAlign: 'center' },
+  resultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  resultDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  bmiValue: { ...Typography.bodyBold },
 });
 
 const MILESTONES = [75, 80, 85, 90];
@@ -149,7 +169,12 @@ export default function WeightScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Weight Tracking</Text>
+      <ScreenHeader
+        title="Weight Tracking"
+        subtitle="BODY METRICS"
+        icon={{ lib: 'MCI', name: 'scale-bathroom' }}
+        accentColor={Colors.amber}
+      />
 
       {/* Period toggle */}
       <View style={styles.periodRow}>
@@ -169,17 +194,69 @@ export default function WeightScreen() {
         <SparkLine data={chartData} />
       </GlassCard>
 
-      {/* Stats row */}
-      <View style={styles.statsRow}>
-        <StatBadge label="Current" value="78.4 kg" color={Colors.lime} />
-        <StatBadge label="Goal" value="72.0 kg" color={Colors.amber} />
-        <StatBadge label="Lost" value="6.1 kg" color={Colors.lime} />
-        <StatBadge label="Streak" value="14d 🔥" color={Colors.amber} />
-      </View>
+      {/* Stats panel */}
+      <GlassCard accentColor={Colors.lime}>
+        <View style={styles.statsGrid}>
+          {/* Current Weight */}
+          <View style={styles.statCard}>
+            <View style={[styles.statAccentBar, { backgroundColor: Colors.lime }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '30' }]}>
+              <MaterialCommunityIcons name="scale-bathroom" size={18} color={Colors.lime} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Current</Text>
+              <Text style={[styles.statValue, { color: Colors.lime }]}>78.4<Text style={styles.statUnit}> kg</Text></Text>
+            </View>
+          </View>
+
+          {/* Goal Weight */}
+          <View style={styles.statCard}>
+            <View style={[styles.statAccentBar, { backgroundColor: Colors.amber }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: Colors.amber + '15', borderColor: Colors.amber + '30' }]}>
+              <Ionicons name="flag" size={16} color={Colors.amber} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Goal</Text>
+              <Text style={[styles.statValue, { color: Colors.amber }]}>72.0<Text style={styles.statUnit}> kg</Text></Text>
+            </View>
+          </View>
+
+          {/* Total Lost */}
+          <View style={styles.statCard}>
+            <View style={[styles.statAccentBar, { backgroundColor: Colors.lime }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '30' }]}>
+              <Ionicons name="trending-down" size={18} color={Colors.lime} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Lost</Text>
+              <Text style={[styles.statValue, { color: Colors.lime }]}>6.1<Text style={styles.statUnit}> kg</Text></Text>
+              <View style={[styles.statChip, { backgroundColor: Colors.lime + '12', borderColor: Colors.lime + '25' }]}>
+                <Ionicons name="arrow-down" size={8} color={Colors.lime} />
+                <Text style={[styles.statChipText, { color: Colors.lime }]}>-0.5 this week</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Streak */}
+          <View style={styles.statCard}>
+            <View style={[styles.statAccentBar, { backgroundColor: Colors.amber }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: Colors.amber + '15', borderColor: Colors.amber + '30' }]}>
+              <Ionicons name="flame" size={18} color={Colors.amber} />
+            </View>
+            <View style={styles.statContent}>
+              <Text style={styles.statLabel}>Streak</Text>
+              <Text style={[styles.statValue, { color: Colors.amber }]}>14<Text style={styles.statUnit}> days</Text></Text>
+              <View style={[styles.statChip, { backgroundColor: Colors.amber + '12', borderColor: Colors.amber + '25' }]}>
+                <Text style={[styles.statChipText, { color: Colors.amber }]}>🔥 Personal best!</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </GlassCard>
 
       {/* Goal / Slider */}
       <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Goal Progress" />
+        <SectionHeader title="Goal Progress" accentColor={Colors.amber} />
         <View style={styles.goalRow}>
           <ProgressRing size={90} strokeWidth={8} progress={0.46} color={Colors.amber}>
             <Text style={styles.goalRingPct}>46%</Text>
@@ -206,7 +283,7 @@ export default function WeightScreen() {
 
       {/* Heatmap */}
       <GlassCard>
-        <SectionHeader title="Log Calendar" />
+        <SectionHeader title="Log Calendar" accentColor={Colors.lime} />
         <CalHeatmap />
         <View style={styles.heatmapLegend}>
           {[{ label: 'Logged', color: Colors.lime + '88' }, { label: 'Goal hit', color: Colors.lime }, { label: 'Missed', color: Colors.danger + '55' }].map((l) => (
@@ -220,18 +297,20 @@ export default function WeightScreen() {
 
       {/* BMI */}
       <GlassCard accentColor={Colors.lime}>
-        <SectionHeader title="BMI Indicator" />
+        <SectionHeader title="BMI Indicator" accentColor={Colors.lime} />
         <BMIBar bmi={24.2} />
       </GlassCard>
 
       {/* Photo reminder */}
       <TouchableOpacity style={styles.photoCard} activeOpacity={0.8}>
-        <Text style={styles.photoIcon}>📸</Text>
+        <View style={styles.photoIconWrap}>
+          <Ionicons name="camera" size={22} color={Colors.lime} />
+        </View>
         <View style={styles.photoText}>
           <Text style={styles.photoTitle}>Progress Photo</Text>
           <Text style={styles.photoSub}>Add this week's progress photo</Text>
         </View>
-        <Text style={styles.photoArrow}>›</Text>
+        <Ionicons name="chevron-forward" size={18} color={Colors.lime} />
       </TouchableOpacity>
     </ScrollView>
   );
@@ -240,10 +319,70 @@ export default function WeightScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
-  title: { ...Typography.h1, color: Colors.text.primary },
   periodRow: { flexDirection: 'row', gap: 8 },
 
-  statsRow: { flexDirection: 'row', gap: 8 },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: Colors.card,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 12,
+    flexDirection: 'column',
+    gap: 8,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  statAccentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+  },
+  statIconBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+  },
+  statContent: {
+    gap: 2,
+  },
+  statLabel: {
+    ...Typography.caption,
+    color: Colors.muted,
+  },
+  statValue: {
+    ...Typography.h3,
+  },
+  statUnit: {
+    ...Typography.body,
+    color: Colors.muted,
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    borderRadius: Radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  statChipText: {
+    ...Typography.micro,
+  },
 
   goalRow: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   goalRingPct: { ...Typography.bodyBold, color: Colors.amber },
@@ -271,10 +410,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card, borderRadius: Radius.lg,
     borderWidth: 1, borderColor: Colors.lime + '33',
     padding: 16,
+    shadowColor: '#1C1C1E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  photoIcon: { fontSize: 32 },
+  photoIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.lime + '15',
+    borderWidth: 1,
+    borderColor: Colors.lime + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   photoText: { flex: 1 },
   photoTitle: { ...Typography.bodyBold, color: Colors.text.primary },
   photoSub: { ...Typography.caption, color: Colors.muted },
-  photoArrow: { ...Typography.h2, color: Colors.lime },
 });
