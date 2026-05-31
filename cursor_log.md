@@ -1,5 +1,22 @@
 # Cursor Test & Validation Log
 
+## [2026-05-31T17:07:00+05:30] - Native Storage Gallery Image Selection & Camera Upload Validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+- **Result:** Successfully completed with 0 errors and 0 warnings.
+- **Output:** Empty (no typescript compiler or native assembly errors across the workspace)
+
+### Manual Verification
+- **Image Picker Core Integration (`app/(tabs)/profile.tsx`):** Installed and imported `expo-image-picker` SDK 56-compatible native package successfully.
+- **Interactive Camera trigger bubble (`app/(tabs)/profile.tsx`):** Wrapped the circular DP preview in a `<TouchableOpacity>` targeting click events, displaying the action sheet overlay on click.
+- **Glassmorphic popup Action Sheet (`app/(tabs)/profile.tsx`):** Developed a gorgeous bottom slide-up modal with 3 beautiful, rounded action lists:
+  - `🖼️ Choose from Gallery` (requests gallery permissions contextually and fires `launchImageLibraryAsync`)
+  - `📸 Take Photo` (requests camera permissions and triggers `launchCameraAsync`)
+  - `❌ Cancel` (closes Action Sheet)
+- **Local File URI persistence (`app/(tabs)/profile.tsx`):** Handled image selector cancels safely, caching URI paths to local file systems in `formProfilePic`, and successfully loading local file URLs inside dashboard `<Image>` blocks with zero rendering flickers.
+- **ImagePicker Deprecation Fix (`app/(tabs)/profile.tsx`):** Addressed the SDK 56 deprecation warning by replacing `ImagePicker.MediaTypeOptions.Images` with clean `'images'` union types inside gallery/camera pickers, satisfying typescript compiles successfully.
+
 ## [2026-05-31T17:02:00+05:30] - Premium Profile Display Picture (DP) Selection System Validation
 
 ### Automated Checks

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.2] - 2026-05-31T17:07:00+05:30
+
+### Added — Native Storage Gallery Image Selection & Camera Upload
+
+**Architectural Decision:** Integrated native device storage access inside the display picture selection workflow to support direct image picking and camera capturing. Utilized the official, SDK 56-compatible `expo-image-picker` package to query system permissions and resolve local file paths securely, and designed a custom glassmorphic bottom Action Sheet modal inside the Profile editor:
+- **Expo Image Picker Integration:** Installed and configured `expo-image-picker` to request media roll and camera permissions, handling user cancellations and resolving selected paths to native `file://` or `content://` local URIs dynamically.
+- **Translucent Camera edit badge Trigger:** Wrapped the profile form's preview circle in a responsive `<TouchableOpacity>` that opens the visual action sheet on click.
+- **Glassmorphic Bottom Action Sheet Modal:** Designed a bottom-aligned pop-up sheet with three elegant action buttons:
+  - `🖼️ Choose from Gallery` (ImagePicker.launchImageLibraryAsync)
+  - `📸 Take Photo` (ImagePicker.launchCameraAsync)
+  - `❌ Cancel` (Dismisses overlay)
+- **Local File URI rendering:** Configured the state engine to persist and render native file URIs seamlessly inside the dashboard header and preview circles with zero compilation overhead.
+- **MediaType Deprecation Warning Resolution:** Addressed the Expo ImagePicker SDK 56 console warning by replacing deprecated enum `ImagePicker.MediaTypeOptions.Images` with standard string literal `'images'` inside launch handlers, satisfying typescript types.
+
 ## [1.8.1] - 2026-05-31T17:02:00+05:30
 
 ### Added — Premium Profile Display Picture (DP) Selection System

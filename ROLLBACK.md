@@ -1,5 +1,29 @@
 # Rollback Plan
 
+If version `1.8.2` (Native Storage Gallery Image Selection & Camera Upload) needs to be reverted due to permission failures, image picker crashes, or runtime compatibility issues with older Expo platforms, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to preset-avatar profile v1.8.1)
+
+1. **Restore profile screen codebase:**
+   Revert the profile picker changes, image picker imports, and action sheet modals back to their preset-only states:
+   ```powershell
+   git checkout v1.8.1 -- app/(tabs)/profile.tsx
+   ```
+
+2. **Uninstall picker dependencies:**
+   Remove the native image picker package from package.json and node modules:
+   ```powershell
+   npm uninstall expo-image-picker
+   ```
+
+3. **Clean metro bundle cache:**
+   To guarantee Metro bundle purges native module extensions and picker overlays:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.8.1` (Premium Profile Display Picture Selection System) needs to be reverted due to layout issues, image failing to load, or TypeScript compiler errors on older system platforms, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to text-avatar profile v1.8.0)

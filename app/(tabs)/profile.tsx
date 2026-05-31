@@ -19,6 +19,7 @@ import ProgressRing from '@/components/ui/ProgressRing';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
+import * as ImagePicker from 'expo-image-picker';
 import { useAppStore } from '@/store';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -100,6 +101,55 @@ export default function ProfileScreen() {
   const [formWorkoutGoal, setFormWorkoutGoal] = useState('');
   const [formProfilePic, setFormProfilePic] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+
+  const pickImageFromGallery = async () => {
+    setActionSheetVisible(false);
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to select a display picture!');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.9,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        setFormProfilePic(result.assets[0].uri);
+      }
+    } catch (e) {
+      console.warn('Image picker error: ', e);
+    }
+  };
+
+  const takePhotoWithCamera = async () => {
+    setActionSheetVisible(false);
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera permissions to capture a profile photo!');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.9,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        setFormProfilePic(result.assets[0].uri);
+      }
+    } catch (e) {
+      console.warn('Camera capture error: ', e);
+    }
+  };
 
   // Compute initials dynamically
   const initials = userName
@@ -497,7 +547,11 @@ export default function ProfileScreen() {
                   <View style={styles.formSection}>
                     {/* Display Picture Selector Block */}
                     <View style={styles.avatarFormCenter}>
-                      <View style={styles.avatarFormWrapper}>
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        style={styles.avatarFormWrapper}
+                        onPress={() => setActionSheetVisible(true)}
+                      >
                         {formProfilePic ? (
                           <Image source={{ uri: formProfilePic }} style={styles.avatarFormImage} />
                         ) : (
@@ -506,7 +560,7 @@ export default function ProfileScreen() {
                         <View style={styles.avatarCameraBadge}>
                           <Ionicons name="camera" size={12} color={Colors.white} />
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     </View>
 
                     {/* Pre-curated Avatar Presets Title */}
@@ -789,6 +843,77 @@ export default function ProfileScreen() {
               </View>
             </View>
           </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* Dynamic Glassmorphic Action Sheet Selector */}
+      <Modal
+        visible={actionSheetVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setActionSheetVisible(false)}
+      >
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetDismissArea}
+            activeOpacity={1}
+            onPress={() => setActionSheetVisible(false)}
+          />
+          <GlassCard style={styles.sheetCard} accentColor={Colors.lime}>
+            {/* Header branding indicator */}
+            <View style={styles.sheetDragIndicator} />
+            <Text style={styles.sheetTitle}>Upload Profile Photo</Text>
+            <Text style={styles.sheetSubtitle}>Pick a modern fitness representation from your storage or capture a new one.</Text>
+
+            <View style={styles.sheetButtonsContainer}>
+              {/* Photo library trigger */}
+              <TouchableOpacity
+                style={styles.sheetButton}
+                activeOpacity={0.8}
+                onPress={pickImageFromGallery}
+              >
+                <View style={[styles.sheetIconWrap, { backgroundColor: Colors.lime + '12' }]}>
+                  <Ionicons name="images" size={20} color={Colors.lime} />
+                </View>
+                <View style={styles.sheetButtonLabelBlock}>
+                  <Text style={styles.sheetButtonTitle}>Choose from Gallery</Text>
+                  <Text style={styles.sheetButtonSub}>Select an existing image from local storage</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+              </TouchableOpacity>
+
+              {/* Camera capture trigger */}
+              <TouchableOpacity
+                style={styles.sheetButton}
+                activeOpacity={0.8}
+                onPress={takePhotoWithCamera}
+              >
+                <View style={[styles.sheetIconWrap, { backgroundColor: Colors.amber + '12' }]}>
+                  <Ionicons name="camera" size={20} color={Colors.amber} />
+                </View>
+                <View style={styles.sheetButtonLabelBlock}>
+                  <Text style={styles.sheetButtonTitle}>Take Photo</Text>
+                  <Text style={styles.sheetButtonSub}>Open camera to capture a new photo</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+              </TouchableOpacity>
+
+              {/* Cancel direct trigger */}
+              <TouchableOpacity
+                style={[styles.sheetButton, styles.sheetCancelButton]}
+                activeOpacity={0.8}
+                onPress={() => setActionSheetVisible(false)}
+              >
+                <View style={[styles.sheetIconWrap, { backgroundColor: Colors.danger + '12' }]}>
+                  <Ionicons name="close" size={20} color={Colors.danger} />
+                </View>
+                <View style={styles.sheetButtonLabelBlock}>
+                  <Text style={[styles.sheetButtonTitle, { color: Colors.danger }]}>Cancel</Text>
+                  <Text style={styles.sheetButtonSub}>Keep current picture selection</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </GlassCard>
         </View>
       </Modal>
     </ScrollView>
@@ -1281,5 +1406,79 @@ const styles = StyleSheet.create({
   saveBtnText: {
     ...Typography.bodyBold,
     color: Colors.white,
+  },
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(28, 28, 30, 0.50)',
+    justifyContent: 'flex-end',
+  },
+  sheetDismissArea: {
+    flex: 1,
+  },
+  sheetCard: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
+    padding: 20,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  sheetDragIndicator: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    ...Typography.h3,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  sheetSubtitle: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  sheetButtonsContainer: {
+    gap: 12,
+  },
+  sheetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bg + '44',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    borderRadius: Radius.md,
+    padding: 12,
+    gap: 12,
+  },
+  sheetCancelButton: {
+    borderColor: Colors.danger + '22',
+    backgroundColor: Colors.danger + '06',
+  },
+  sheetIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetButtonLabelBlock: {
+    flex: 1,
+    gap: 1,
+  },
+  sheetButtonTitle: {
+    ...Typography.bodyBold,
+    color: Colors.text.primary,
+  },
+  sheetButtonSub: {
+    fontSize: 11,
+    fontWeight: '400',
+    color: Colors.text.secondary,
   },
 });
