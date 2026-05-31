@@ -45,6 +45,12 @@ interface AppContextType {
   addSteps: (steps: number) => void;
   activeMinutes: number;
   setActiveMinutes: React.Dispatch<React.SetStateAction<number>>;
+
+  // Authentication State
+  isAuthenticated: boolean;
+  loginUser: (email: string) => void;
+  signupUser: (name: string, email: string) => void;
+  logoutUser: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -230,6 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [reminders, setReminders] = useState<ReminderItem[]>(initialReminders);
   const [stepsCount, setStepsCount] = useState<number>(6240);
   const [activeMinutes, setActiveMinutes] = useState<number>(48);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const [waterAvg, setWaterAvg] = useState(2100);
   const [waterBest, setWaterBest] = useState(3200);
@@ -396,6 +403,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const loginUser = (email: string) => {
+    setIsAuthenticated(true);
+  };
+
+  const signupUser = (name: string, email: string) => {
+    setUser((u) => ({ ...u, name }));
+    setIsAuthenticated(true);
+  };
+
+  const logoutUser = () => {
+    setIsAuthenticated(false);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -430,6 +450,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addSteps,
         activeMinutes,
         setActiveMinutes,
+        isAuthenticated,
+        loginUser,
+        signupUser,
+        logoutUser,
       }}
     >
       {children}

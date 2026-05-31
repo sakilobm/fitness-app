@@ -1,5 +1,29 @@
 # Rollback Plan
 
+If version `1.8.0` (Complete Authentication Suite & Navigation Gating Stack) needs to be reverted due to routing issues, path failures, or TypeScript compiler errors on older Expo systems, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to visual graph modal v1.7.1)
+
+1. **Restore screens and layouts:**
+   Revert the root layout navigation gates and profile log out widgets back to their static states:
+   ```powershell
+   git checkout v1.7.1 -- app/_layout.tsx app/(tabs)/profile.tsx
+   ```
+
+2. **Clean up authentication stack files:**
+   Remove the new auth route group files completely:
+   ```powershell
+   Remove-Item -Recurse -Force app/(auth)
+   ```
+
+3. **Clean metro bundle cache:**
+   To guarantee Metro completely purges the authentication bundle files and redirects:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.7.1` (Visual Polish & Fullscreen Interactive Graph Modal) needs to be reverted due to gesture recognizer issues or SVG tap handler crashes on specific Native runtimes, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to static non-expandable graph logs v1.7.0)

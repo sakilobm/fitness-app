@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-05-31T16:52:00+05:30
+
+### Added — Complete Authentication Suite & Navigation Gating Stack
+
+**Architectural Decision:** Decoupled authentication Stack screens cleanly from tab menus using standard route grouping `app/(auth)/`. Secured all Core Dashboard tabs (`/(tabs)`) and root-level pages (`/steps`, `/water`, `/metabolism`) from unauthorized entries by implementing a reactive `<NavigationGate>` segment router wrapper inside `app/_layout.tsx` that routes unauthenticated users instantly to onboarding and authenticated sessions to tabs, preventing flashing or unauthorized route mounting. Exposed a secure Log Out action inside Profile settings.
+- **Sleek Swipe-Based Onboarding Carousel (`app/(auth)/onboarding.tsx`):** Engineered a pure horizontal swipe welcome carousel with high-end glassmorphic slide cards mapping core features (Weight Tracking, Nutrition, Reminders), motivational quotes, dynamic dots page indicator colors, and forest-teal navigation CTA buttons.
+- **Glassmorphic Sign In Screen (`app/(auth)/login.tsx`):** Designed form inputs showing real-time outline active boundary highlights (`Colors.lime` / `Colors.danger` based on format validity), custom vector password show/hide eye-toggles, Google & Apple quick credentials bypass indicators, and submit spinner loader feedback.
+- **Password Strength Analyzer Sign Up Screen (`app/(auth)/signup.tsx`):** Implemented registration forms with real-time outline validators and an interactive **Password Strength Bar** (red/yellow/green visual complexity meter) tracking length and char mixtures.
+- **Verification Reset Screen (`app/(auth)/forgot.tsx`):** Created a recovery screen that dynamically transitions into a majestic "Verification Link Sent!" success panel showing interactive email badges and quick return routes.
+
 ## [1.7.1] - 2026-05-31T16:50:00+05:30
 
 ### Added — Visual Polish & Immersive Fullscreen Graph Analysis Modal

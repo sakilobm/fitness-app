@@ -53,7 +53,7 @@ const BADGES: Badge[] = [
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { user, setUser } = useAppStore();
+  const { user, setUser, logoutUser } = useAppStore();
 
   const [darkTheme, setDarkTheme] = useState(true);
   const [notifications, setNotifications] = useState(true);
@@ -404,12 +404,20 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} activeOpacity={0.75}>
+          <TouchableOpacity style={styles.settingRow} activeOpacity={0.75}>
             <View style={[styles.settingIconWrap, { backgroundColor: Colors.danger + '15' }]}>
               <Ionicons name="lock-closed" size={18} color={Colors.danger} />
             </View>
             <Text style={styles.settingLabel}>Privacy & Security</Text>
             <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} activeOpacity={0.75} onPress={logoutUser}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.danger + '22' }]}>
+              <Ionicons name="log-out" size={18} color={Colors.danger} />
+            </View>
+            <Text style={[styles.settingLabel, { color: Colors.danger, fontWeight: '700' }]}>Log Out</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.danger} />
           </TouchableOpacity>
         </View>
       </GlassCard>

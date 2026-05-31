@@ -19,6 +19,18 @@ graph TD
         AppContext --> StateSteps
     end
 
+    %% Navigation Gating and Authentication Stack Layer
+    subgraph AuthLayer ["Authentication Route Stack ((auth))"]
+        Onboarding["Onboarding (onboarding.tsx)"]
+        Login["Login (login.tsx)"]
+        Signup["Signup (signup.tsx)"]
+        Forgot["Forgot Password (forgot.tsx)"]
+    end
+
+    subgraph GateLayer ["Navigation Security Gating"]
+        NavigationGate["NavigationGate (_layout.tsx)"]
+    end
+
     %% UI and Router Layer
     subgraph ViewLayer ["Router Navigation View Layers ((tabs))"]
         HomeTab["Home Dashboard (index.tsx)"]
@@ -37,6 +49,14 @@ graph TD
     end
 
     %% Bidirectional Reactivity Bindings
+    NavigationGate <--> |"Queries isAuthenticated and segments"| AppContext
+    NavigationGate --> |"Unauthenticated redirect"| Onboarding
+    NavigationGate --> |"Authenticated redirect"| HomeTab
+    
+    Login --> |"Dispatches loginUser()"| AppContext
+    Signup --> |"Dispatches signupUser()"| AppContext
+    ProfileTab --> |"🚪 Log Out dispatches logoutUser()"| AppContext
+
     HomeTab <--> |"Reads weightLogs, meals, steps, water"| AppContext
     WeightTab <--> |"Reads / Upserts intraday WeightLog (Morning/Aft/Ngt)"| AppContext
     NutritionTab <--> |"Logs food portions, updates calorie counts"| AppContext

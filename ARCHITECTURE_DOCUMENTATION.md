@@ -6,26 +6,28 @@ This document explains the software architecture of the Fitness App. It serves a
 
 ## 1. High-Level Architectural Pattern
 
-The Fitness App is built on a **Centralized Global State Engine** using React's native Context API and **Expo Router** for tab-based navigation. 
+The Fitness App is built on a **Centralized Global State Engine** using React's native Context API and **Expo Router** for secure, path-based routing. 
 
-All core feature tabs (Home, Nutrition, Weight, Reminders, Profile) are wrapped within a master `AppProvider` context. This guarantees complete inter-screen reactivity—making action logs in one screen instantly propagate across the entire app.
+All core feature views are wrapped inside a master `AppProvider` context and gated by a reactive `<NavigationGate>` component. This guarantees that unauthenticated requests are securely rerouted to the onboarding carousel, while authenticated sessions enjoy seamless inter-screen state reactivity across all modules.
 
 ```mermaid
 graph TD
     AppLayout["App Layout (_layout.tsx)"] --> AppProvider["AppProvider (AppContext.tsx)"]
-    AppProvider --> Navigation["Tabs Navigation ((tabs))"]
+    AppProvider --> NavigationGate["NavigationGate (_layout.tsx)"]
     
-    Navigation --> Home["Home Tab (index.tsx)"]
-    Navigation --> Nutrition["Nutrition Tab (nutrition.tsx)"]
-    Navigation --> Weight["Weight Tab (weight.tsx)"]
-    Navigation --> Reminders["Reminders Tab (reminders.tsx)"]
-    Navigation --> Profile["Profile Tab (profile.tsx)"]
+    NavigationGate --> |"Unauthenticated"| AuthGroup["Auth Stack ((auth))"]
+    NavigationGate --> |"Authenticated"| TabNavigation["Tabs Navigation ((tabs))"]
     
-    Home <--> AppProvider
-    Nutrition <--> AppProvider
-    Weight <--> AppProvider
-    Reminders <--> AppProvider
-    Profile <--> AppProvider
+    AuthGroup --> Onboarding["Onboarding (onboarding.tsx)"]
+    AuthGroup --> Login["Login (login.tsx)"]
+    AuthGroup --> Signup["Signup (signup.tsx)"]
+    AuthGroup --> Forgot["Forgot Password (forgot.tsx)"]
+    
+    TabNavigation --> Home["Home Tab (index.tsx)"]
+    TabNavigation --> Nutrition["Nutrition Tab (nutrition.tsx)"]
+    TabNavigation --> Weight["Weight Tab (weight.tsx)"]
+    TabNavigation --> Reminders["Reminders Tab (reminders.tsx)"]
+    TabNavigation --> Profile["Profile Tab (profile.tsx)"]
 ```
 
 ---
@@ -126,3 +128,14 @@ Tapping on the main Weight Trend card launches a fullscreen interactive analysis
 * **Zoom Analysis**: Fully scalable charts displaying daily, weekly, monthly, and 3-month weight trends.
 * **Point Selection Details**: Native tap handlers (`onPress`) on SVG chart nodes let users click any point to display a glowing panel showing exact metrics (Weight, Date, Time of Day).
 * **Weight Log History Manager**: Displays a scrollable history list of all entries in reverse chronological order. Clicking the delete trash icon searches and triggers `deleteWeightLog` on the central store, removing entries with dynamic visual refitting.
+
+---
+
+## 6. Authentication Suite & Navigation Gating
+
+To secure user personal information, the application implements a robust, reactive routing and stack security system:
+* **Decoupled (auth) Stack Layout:** Authentication views are organized inside a route group `app/(auth)/` stacking onboarding, login, signup, and forgot screens.
+* **Navigation Router Gate:** The root layout renders a `<NavigationGate>` component inside the central state provider context. Using reactive segments hooks (`useSegments`) and routing actions (`useRouter`), it checks `isAuthenticated` state. Unauthenticated requests are immediately redirected to `/(auth)/onboarding`, while authenticated actions route safely to `/(tabs)`.
+* **Password Strength Meter:** Tapping the signup page tracks password complexity in real-time, mapping levels from Weak 🔴, Medium 🟡, to Strong 🟢 using a styled progress fill bar.
+* **Email Validation Indicators:** Text inputs monitor email formatting in real-time (`Colors.lime` for valid, `Colors.danger` for invalid borders) to prevent entry mistakes.
+* **Profile Log Out:** A dedicated Red Warning button `🚪 Log Out` dispatches `logoutUser()`, clearing the session flag and routing the user safely back to onboarding.
