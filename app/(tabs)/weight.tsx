@@ -26,38 +26,115 @@ const { width: W } = Dimensions.get('window');
 const CHART_W = W - 64;
 const CHART_H = 140;
 
-type Period = 'week' | 'month' | '3m';
+type Period = 'today' | 'week' | 'month' | '3m';
 
-function SparkLine({ data }: { data: number[] }) {
+function SparkLine({ 
+  data, 
+  period, 
+  statuses, 
+  onPointPress 
+}: { 
+  data: number[]; 
+  period?: Period; 
+  statuses?: boolean[]; 
+  onPointPress?: (idx: number) => void;
+}) {
   if (!data || data.length === 0) return null;
   const min = Math.min(...data) - 0.5;
   const max = Math.max(...data) + 0.5;
+  
+  // Add horizontal margins for visual breathing room and text boundary protection
+  const PADDING_X = 36;
   const pts = data.map((v, i) => ({
-    x: data.length > 1 ? (i / (data.length - 1)) * CHART_W : CHART_W / 2,
+    x: data.length > 1 
+      ? PADDING_X + (i / (data.length - 1)) * (CHART_W - 2 * PADDING_X) 
+      : CHART_W / 2,
     y: CHART_H - ((v - min) / (max - min)) * CHART_H,
   }));
 
   const pathD = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
-  const areaD = `${pathD} L${CHART_W},${CHART_H} L0,${CHART_H} Z`;
+  const areaD = pts.length > 0 
+    ? `${pathD} L${pts[pts.length - 1].x},${CHART_H} L${pts[0].x},${CHART_H} Z` 
+    : '';
 
-  const lastPt = pts[pts.length - 1];
+  const timeLabels = ['Morn 🌅', 'Aft ☀️', 'Ngt 🌙'];
 
   return (
-    <Svg width={CHART_W} height={CHART_H + 20}>
+    <Svg width={CHART_W} height={CHART_H + 30}>
       <Defs>
         <SvgLinearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={Colors.lime} stopOpacity="0.25" />
           <Stop offset="1" stopColor={Colors.lime} stopOpacity="0" />
         </SvgLinearGradient>
       </Defs>
-      <Path d={areaD} fill="url(#lineGrad)" />
+      {areaD ? <Path d={areaD} fill="url(#lineGrad)" /> : null}
       <Path d={pathD} stroke={Colors.lime} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Today dot */}
-      <Circle cx={lastPt.x} cy={lastPt.y} r={6} fill={Colors.lime} opacity={0.25} />
-      <Circle cx={lastPt.x} cy={lastPt.y} r={4} fill={Colors.lime} />
-      <SvgText x={lastPt.x - 30} y={lastPt.y - 12} fill={Colors.lime} fontSize={11} fontWeight="700">
-        {data[data.length - 1]} kg
-      </SvgText>
+      
+      {/* Render points */}
+      {pts.map((pt, idx) => {
+        const isTodayView = period === 'today';
+        const isLogged = !isTodayView || (statuses && statuses[idx]);
+        
+        if (!isLogged) {
+          return (
+            <Circle
+              key={idx}
+              cx={pt.x}
+              cy={pt.y}
+              r={4}
+              fill={Colors.card}
+              stroke={Colors.lime}
+              strokeWidth={1.5}
+              strokeDasharray="2,2"
+            />
+          );
+        }
+
+        return (
+          <React.Fragment key={idx}>
+            <Circle cx={pt.x} cy={pt.y} r={6} fill={Colors.lime} opacity={0.25} />
+            <Circle cx={pt.x} cy={pt.y} r={4} fill={Colors.lime} />
+            {/* Tap handlers for fullscreen interactive chart */}
+            {onPointPress && (
+              <Circle
+                cx={pt.x}
+                cy={pt.y}
+                r={20}
+                fill="transparent"
+                onPress={() => onPointPress(idx)}
+              />
+            )}
+            {/* Value label for today's points or the last point */}
+            {(isTodayView || idx === pts.length - 1) && (
+              <SvgText 
+                x={pt.x} 
+                y={pt.y - 12} 
+                textAnchor="middle" 
+                fill={Colors.lime} 
+                fontSize={11} 
+                fontWeight="700"
+              >
+                {data[idx].toFixed(1)}
+              </SvgText>
+            )}
+          </React.Fragment>
+        );
+      })}
+
+      {/* Time labels for today's view */}
+      {period === 'today' && pts.map((pt, idx) => (
+        <SvgText
+          key={`lbl-${idx}`}
+          x={pt.x}
+          y={CHART_H + 18}
+          textAnchor="middle"
+          fill={Colors.text.primary}
+          fontSize={10}
+          fontWeight="600"
+        >
+          {timeLabels[idx]}
+        </SvgText>
+      ))}
     </Svg>
   );
 }
@@ -176,24 +253,56 @@ export default function WeightScreen() {
     user,
     weightLogs,
     addWeightLog,
+    deleteWeightLog,
   } = useAppStore();
 
   const streak = user.streak;
 
   // Modal control states
   const [logModalVisible, setLogModalVisible] = useState(false);
+  const [fullscreenModalVisible, setFullscreenModalVisible] = useState(false);
+  const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [logWeightValue, setLogWeightValue] = useState('78.4');
   const [logDateOffset, setLogDateOffset] = useState<'today' | 'yesterday'>('today');
+  const [logTimeOfDay, setLogTimeOfDay] = useState<'morning' | 'afternoon' | 'night'>('morning');
   const [logError, setLogError] = useState('');
+
+  // Intraday logs for today date
+  const todayDateStr = new Date().toISOString().split('T')[0];
+  const todayLogs = weightLogs.filter((log) => log.date === todayDateStr);
+  const morningWeight = todayLogs.find((l) => l.timeOfDay === 'morning')?.weight;
+  const afternoonWeight = todayLogs.find((l) => l.timeOfDay === 'afternoon')?.weight;
+  const nightWeight = todayLogs.find((l) => l.timeOfDay === 'night')?.weight;
+
+  const currentWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1].weight : 78.4;
+
+  const todayData = [
+    morningWeight !== undefined ? morningWeight : currentWeight,
+    afternoonWeight !== undefined ? afternoonWeight : (morningWeight !== undefined ? morningWeight : currentWeight),
+    nightWeight !== undefined ? nightWeight : (afternoonWeight !== undefined ? afternoonWeight : (morningWeight !== undefined ? morningWeight : currentWeight)),
+  ];
+
+  const todayStatus = [
+    morningWeight !== undefined,
+    afternoonWeight !== undefined,
+    nightWeight !== undefined,
+  ];
+
+  // Daily historic weights (taking last logged entry for each unique date)
+  const dailyWeightValues = Object.values(
+    weightLogs.reduce<Record<string, number>>((acc, log) => {
+      acc[log.date] = log.weight;
+      return acc;
+    }, {})
+  );
 
   // Derived stats
   const startWeight = 84.8;
   const goalWeight = 72.0;
-  const currentWeight = weightLogs[weightLogs.length - 1];
   const lostWeight = parseFloat((startWeight - currentWeight).toFixed(1));
 
   // Weekly difference calculation
-  const lastWeekWeight = weightLogs[Math.max(0, weightLogs.length - 8)];
+  const lastWeekWeight = dailyWeightValues[Math.max(0, dailyWeightValues.length - 8)] || startWeight;
   const weeklyChange = parseFloat((currentWeight - lastWeekWeight).toFixed(1));
   const weeklyChangeText = weeklyChange < 0 
     ? `${weeklyChange} this week` 
@@ -212,16 +321,29 @@ export default function WeightScreen() {
   const currentBmi = parseFloat((currentWeight / (heightM * heightM)).toFixed(1));
 
   // Slice chart data based on active period
-  const chartData = period === 'week' 
-    ? weightLogs.slice(-7) 
-    : period === 'month' 
-      ? weightLogs.slice(-30) 
-      : weightLogs;
+  const chartData = period === 'today'
+    ? todayData
+    : period === 'week' 
+      ? dailyWeightValues.slice(-7) 
+      : period === 'month' 
+        ? dailyWeightValues.slice(-30) 
+        : dailyWeightValues;
 
   const openLogModal = () => {
     setLogWeightValue(currentWeight.toString());
     setLogDateOffset('today');
     setLogError('');
+    
+    // Auto-select based on time of day
+    const hr = new Date().getHours();
+    if (hr < 12) {
+      setLogTimeOfDay('morning');
+    } else if (hr < 17) {
+      setLogTimeOfDay('afternoon');
+    } else {
+      setLogTimeOfDay('night');
+    }
+    
     setLogModalVisible(true);
   };
 
@@ -239,7 +361,7 @@ export default function WeightScreen() {
       return;
     }
 
-    addWeightLog(parseFloat(val.toFixed(1)), logDateOffset);
+    addWeightLog(parseFloat(val.toFixed(1)), logTimeOfDay, logDateOffset);
     setLogModalVisible(false);
   };
 
@@ -260,10 +382,10 @@ export default function WeightScreen() {
 
       {/* Period toggle */}
       <View style={styles.periodRow}>
-        {(['week', 'month', '3m'] as Period[]).map((p) => (
+        {(['today', 'week', 'month', '3m'] as Period[]).map((p) => (
           <PillButton
             key={p}
-            label={p === '3m' ? '3 Months' : p.charAt(0).toUpperCase() + p.slice(1)}
+            label={p === 'today' ? 'Today' : p === '3m' ? '3 Months' : p.charAt(0).toUpperCase() + p.slice(1)}
             active={period === p}
             onPress={() => setPeriod(p)}
             style={{ flex: 1 }}
@@ -272,9 +394,24 @@ export default function WeightScreen() {
       </View>
 
       {/* Graph Card */}
-      <GlassCard accentColor={Colors.lime}>
-        <SparkLine data={chartData} />
-      </GlassCard>
+      <TouchableOpacity 
+        onPress={() => setFullscreenModalVisible(true)} 
+        activeOpacity={0.9} 
+        style={styles.graphClickable}
+      >
+        <GlassCard accentColor={Colors.lime}>
+          <View style={styles.graphHeaderRow}>
+            <View style={styles.graphHeaderLeft}>
+              <Text style={styles.graphTitle}>Weight Trend</Text>
+              <Text style={styles.graphSubtitle}>Tap to inspect logs & view analysis</Text>
+            </View>
+            <View style={styles.graphZoomIconBubble}>
+              <Ionicons name="expand-outline" size={14} color={Colors.lime} />
+            </View>
+          </View>
+          <SparkLine data={chartData} period={period} statuses={period === 'today' ? todayStatus : undefined} />
+        </GlassCard>
+      </TouchableOpacity>
 
       {/* Log Weight CTA card */}
       <GlassCard accentColor={Colors.lime}>
@@ -412,6 +549,128 @@ export default function WeightScreen() {
         <Ionicons name="chevron-forward" size={18} color={Colors.lime} />
       </TouchableOpacity>
 
+      {/* Fullscreen Interactive Weight Analysis Modal */}
+      <Modal
+        visible={fullscreenModalVisible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => { setFullscreenModalVisible(false); setSelectedPointIndex(null); }}
+      >
+        <View style={[modalS.container, { paddingTop: insets.top }]}>
+          {/* Modal Header */}
+          <View style={modalS.header}>
+            <View>
+              <Text style={modalS.headerSub}>BODY ANALYTICS</Text>
+              <Text style={modalS.headerTitle}>Weight Analysis</Text>
+            </View>
+            <TouchableOpacity style={modalS.closeBtn} onPress={() => { setFullscreenModalVisible(false); setSelectedPointIndex(null); }} activeOpacity={0.8}>
+              <Ionicons name="close" size={20} color={Colors.text.primary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Modal Chart Card */}
+          <View style={modalS.chartContainer}>
+            <GlassCard accentColor={Colors.lime} style={modalS.chartGlass}>
+              <View style={modalS.chartTitleRow}>
+                <Text style={modalS.chartTitle}>Interactive Trend</Text>
+                <Text style={modalS.chartSub}>Select a point to view stats</Text>
+              </View>
+              <SparkLine 
+                data={chartData} 
+                period={period} 
+                statuses={period === 'today' ? todayStatus : undefined}
+                onPointPress={(idx) => setSelectedPointIndex(idx)}
+              />
+            </GlassCard>
+          </View>
+
+          {/* Selected Point Details Panel */}
+          {selectedPointIndex !== null ? (
+            <View style={modalS.infoCard}>
+              <View style={[modalS.infoIconBubble, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '35' }]}>
+                <Ionicons name="sparkles" size={18} color={Colors.lime} />
+              </View>
+              <View style={modalS.infoTexts}>
+                <Text style={modalS.infoLabel}>SELECTED WEIGH-IN</Text>
+                <Text style={modalS.infoTitle}>
+                  {chartData[selectedPointIndex].toFixed(1)} kg
+                  {period === 'today' && ` — ${['Morning 🌅', 'Afternoon ☀️', 'Night 🌙'][selectedPointIndex]}`}
+                </Text>
+              </View>
+              <TouchableOpacity style={modalS.infoClose} onPress={() => setSelectedPointIndex(null)} activeOpacity={0.7}>
+                <Ionicons name="close-circle-outline" size={18} color={Colors.muted} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={modalS.tapHint}>
+              <Ionicons name="finger-print-outline" size={16} color={Colors.lime} style={modalS.tapHintIcon} />
+              <Text style={modalS.tapHintText}>Tap dots on the graph to display weight breakdowns</Text>
+            </View>
+          )}
+
+          {/* Period toggles within the modal */}
+          <View style={modalS.periodRow}>
+            {(['today', 'week', 'month', '3m'] as Period[]).map((p) => (
+              <PillButton
+                key={p}
+                label={p === 'today' ? 'Today' : p === '3m' ? '3 Months' : p.charAt(0).toUpperCase() + p.slice(1)}
+                active={period === p}
+                onPress={() => { setPeriod(p); setSelectedPointIndex(null); }}
+                style={{ flex: 1 }}
+              />
+            ))}
+          </View>
+
+          {/* Log History Title */}
+          <View style={modalS.historyHeader}>
+            <View style={modalS.historyHeaderLeft}>
+              <Ionicons name="list-outline" size={18} color={Colors.lime} />
+              <Text style={modalS.historyTitle}>Weight History logs</Text>
+            </View>
+            <View style={modalS.historyBadge}>
+              <Text style={modalS.historyCount}>{weightLogs.length} entries</Text>
+            </View>
+          </View>
+
+          {/* Scrollable list of weight history logs */}
+          <ScrollView style={modalS.historyScroll} contentContainerStyle={modalS.historyScrollContent} showsVerticalScrollIndicator={false}>
+            {weightLogs.slice().reverse().map((log) => {
+              const emojiMap = { morning: '🌅 Morn', afternoon: '☀️ Aft', night: '🌙 Ngt' };
+              const dateObj = new Date(log.date);
+              const formattedDate = dateObj.toLocaleDateString([], { day: 'numeric', month: 'short' });
+              
+              const handleDelete = () => {
+                const actualIndex = weightLogs.findIndex((item) => item.id === log.id);
+                if (actualIndex !== -1) {
+                  deleteWeightLog(actualIndex);
+                  setSelectedPointIndex(null);
+                }
+              };
+
+              return (
+                <View key={log.id} style={modalS.logItem}>
+                  <View style={modalS.logLeft}>
+                    <View style={modalS.logIconWrap}>
+                      <Text style={modalS.logEmoji}>{log.timeOfDay === 'morning' ? '🌅' : log.timeOfDay === 'afternoon' ? '☀️' : '🌙'}</Text>
+                    </View>
+                    <View>
+                      <Text style={modalS.logTimeTag}>{emojiMap[log.timeOfDay]}</Text>
+                      <Text style={modalS.logDate}>{formattedDate}</Text>
+                    </View>
+                  </View>
+                  <View style={modalS.logCenter}>
+                    <Text style={modalS.logWeight}>{log.weight.toFixed(1)}<Text style={modalS.logUnit}> kg</Text></Text>
+                  </View>
+                  <TouchableOpacity style={modalS.logDeleteBtn} onPress={handleDelete} activeOpacity={0.7}>
+                    <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Slide-Up Weight Logger Modal (Option A - Recommended) */}
       <Modal
         visible={logModalVisible}
@@ -490,6 +749,33 @@ export default function WeightScreen() {
                       />
                     </View>
                     {!!logError && <Text style={styles.errorText}>{logError}</Text>}
+                  </View>
+
+                  {/* Time of Day Selector */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Time of Day</Text>
+                    <View style={styles.timePillRow}>
+                      {(['morning', 'afternoon', 'night'] as const).map((time) => {
+                        const isActive = logTimeOfDay === time;
+                        const emojiMap = { morning: '🌅 Morning', afternoon: '☀️ Afternoon', night: '🌙 Night' };
+                        return (
+                          <TouchableOpacity
+                            key={time}
+                            style={[
+                              styles.timePill,
+                              isActive && styles.timePillActive,
+                              isActive && { borderColor: time === 'morning' ? Colors.lime : time === 'afternoon' ? Colors.amber : '#6366F1' }
+                            ]}
+                            onPress={() => setLogTimeOfDay(time)}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={[styles.timePillText, isActive && styles.timePillTextActive, isActive && { color: time === 'morning' ? Colors.lime : time === 'afternoon' ? Colors.amber : '#6366F1' }]}>
+                              {emojiMap[time]}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
 
                   {/* Log Date Offset Selector (Today vs Yesterday) */}
@@ -906,5 +1192,271 @@ const styles = StyleSheet.create({
   saveBtnText: {
     ...Typography.bodyBold,
     color: Colors.white,
+  },
+  graphClickable: {
+    width: '100%',
+  },
+  graphHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  graphHeaderLeft: {
+    gap: 2,
+  },
+  graphTitle: {
+    ...Typography.bodyBold,
+    color: Colors.text.primary,
+  },
+  graphSubtitle: {
+    ...Typography.micro,
+    color: Colors.muted,
+  },
+  graphZoomIconBubble: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.lime + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.lime + '30',
+  },
+  timePillRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  timePill: {
+    flex: 1,
+    height: 40,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timePillActive: {
+    backgroundColor: Colors.overlay,
+  },
+  timePillText: {
+    ...Typography.captionBold,
+    color: Colors.muted,
+  },
+  timePillTextActive: {
+    fontWeight: '800',
+  },
+});
+
+const modalS = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginBottom: 8,
+  },
+  headerSub: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: Colors.lime,
+  },
+  headerTitle: {
+    ...Typography.h3,
+    color: Colors.text.primary,
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  chartContainer: {
+    width: '100%',
+    marginBottom: 12,
+  },
+  chartGlass: {
+    padding: 16,
+  },
+  chartTitleRow: {
+    marginBottom: 10,
+  },
+  chartTitle: {
+    ...Typography.bodyBold,
+    color: Colors.text.primary,
+  },
+  chartSub: {
+    ...Typography.micro,
+    color: Colors.muted,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  infoIconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoTexts: {
+    flex: 1,
+    gap: 2,
+  },
+  infoLabel: {
+    ...Typography.micro,
+    color: Colors.muted,
+    fontWeight: '700',
+  },
+  infoTitle: {
+    ...Typography.bodyBold,
+    color: Colors.text.primary,
+  },
+  infoClose: {
+    padding: 4,
+  },
+  tapHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.lime + '08',
+    borderColor: Colors.lime + '20',
+    borderWidth: 1,
+    borderRadius: Radius.pill,
+    marginBottom: 16,
+    alignSelf: 'center',
+  },
+  tapHintIcon: {
+    opacity: 0.8,
+  },
+  tapHintText: {
+    ...Typography.micro,
+    color: Colors.lime,
+    fontWeight: '600',
+  },
+  periodRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  historyHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  historyTitle: {
+    ...Typography.bodyBold,
+    color: Colors.text.primary,
+  },
+  historyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: Colors.cardBorder,
+    borderRadius: Radius.pill,
+  },
+  historyCount: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.text.secondary,
+  },
+  historyScroll: {
+    flex: 1,
+  },
+  historyScrollContent: {
+    gap: 10,
+    paddingBottom: 20,
+  },
+  logItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  logLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  logIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  logEmoji: {
+    fontSize: 14,
+  },
+  logTimeTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  logDate: {
+    fontSize: 9,
+    color: Colors.muted,
+    fontWeight: '500',
+  },
+  logCenter: {
+    alignItems: 'flex-end',
+    marginRight: 16,
+  },
+  logWeight: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.text.primary,
+  },
+  logUnit: {
+    fontSize: 11,
+    color: Colors.muted,
+    fontWeight: '500',
+  },
+  logDeleteBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.danger + '08',
   },
 });

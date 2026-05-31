@@ -1,5 +1,23 @@
 # Rollback Plan
 
+If version `1.7.1` (Visual Polish & Fullscreen Interactive Graph Modal) needs to be reverted due to gesture recognizer issues or SVG tap handler crashes on specific Native runtimes, use this guide to revert to the previous working state.
+
+## Rollback Procedure (Reverting to static non-expandable graph logs v1.7.0)
+
+1. **Restore weight screen codebase:**
+   Wipe the visual headers, tap handlers, expandable modals, and styled history items, restoring standard daily/intraday charts:
+   ```powershell
+   git checkout v1.7.0 -- app/(tabs)/weight.tsx
+   ```
+
+2. **Clean metro bundle cache:**
+   To guarantee Metro packager completely purges the new overlays and styles from compiled code:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.7.0` (Intraday Weight Tracking) needs to be reverted due to type casting errors or SVG coordinate plotting glitches on specific device platforms, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to daily weight array logs v1.6.0)

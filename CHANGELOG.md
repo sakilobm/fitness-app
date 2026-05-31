@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1] - 2026-05-31T16:50:00+05:30
+
+### Added — Visual Polish & Immersive Fullscreen Graph Analysis Modal
+
+**Architectural Decision:** Resolved visual limitations of small mobile viewports (clipped labels on today's chart and horizontal static layout constraints) by implementing center centering protection and designing an immersive fullscreen graph Modal analysis overlay:
+- **X-Axis Centering Bounds Protection:** Integrated `PADDING_X = 36` inside the `SparkLine` SVG chart to secure coordinate lines from edge clipping. Swapped hardcoded offset values with standard SVG `textAnchor="middle"` rendering, guaranteeing labels (**Morn 🌅**, **Aft ☀️**, **Ngt 🌙**) center perfectly beneath their dots without truncating.
+- **Zoom Trend Interactive Header:** Wrapped the weight trend chart card inside a highly responsive `TouchableOpacity` trigger, embedding a visual header ("Weight Trend" and "Tap to inspect logs & view analysis") alongside a glowing green expand vector icon to cue advanced interactivity.
+- **Immersive Fullscreen Modal Overlay:** Designed a gorgeous fullscreen Modal viewport (`fullscreenModalVisible`) loading scalable charts in a focused analysis dashboard.
+- **SVG Node Tap Gesture tooltips:** Programmed visual tap handlers (`onPress`) on SVG chart points. Clicking any coordinate highlights the node and overlays a details card dynamically presenting exact weight figures and corresponding times/dates.
+- **Full History logs CRUD Manager:** Created a scrollable history panel listing all logged entries in reverse chronological order at the bottom of the modal. Tapping the delete trash icon resolves the entry ID and dispatches `deleteWeightLog` on the central context, allowing full historical data scrubbing.
+
 ## [1.7.0] - 2026-05-31T16:45:00+05:30
 
 ### Added — Intraday Weight Tracking & Multi-Time Graph Visualization

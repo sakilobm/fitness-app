@@ -1,5 +1,20 @@
 # Cursor Test & Validation Log
 
+## [2026-05-31T16:50:00+05:30] - Visual Polish & Fullscreen Interactive Graph Modal Validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+- **Result:** Successfully completed with 0 errors and 0 warnings.
+- **Output:** Empty (no compile or typing errors across any TypeScript files)
+
+### Manual Verification
+- **Graph Horizontal Padding protection:** Implemented horizontal margin bounding (`PADDING_X = 36`) in `weight.tsx` SparkLine rendering. Confirmed Morning and Night nodes sit beautifully within safe visual regions.
+- **SVG Text Centering:** Utilized `textAnchor="middle"` on `<SvgText>` elements to center labels (**Morn 🌅**, **Aft ☀️**, **Ngt 🌙**) mathematically under chart dots, fully preventing bounds truncation.
+- **Tap-to-Zoom Header:** Wrapped the main Trend graph inside a visual `TouchableOpacity` component, rendering clear labels ("Weight Trend" and "Tap to inspect logs & view analysis") alongside a glowing expansion icon (`expand-outline`) to cue high interactivity.
+- **Fullscreen Modal Layout:** Created a stunning fullscreen Modal overlay (`fullscreenModalVisible`) that loads weight trends in a focused analytics view.
+- **Interactive Points Scrubbing:** Embedded tap handlers (`onPress`) on SVG chart circles. Clicking any coordinate highlights it and displays a card with detailed statistics (exact weight metrics and time slots).
+- **Weigh-ins CRUD History Manager:** Rendered a scrollable weight history list in reverse chronological order at the bottom of the modal. Tapping the trash icon searches for the entry ID and dispatches `deleteWeightLog` to the central store, removing entries and updating charts dynamically.
+
 ## [2026-05-31T16:45:00+05:30] - Intraday Weight Tracking (Morning, Afternoon, Night) Validation
 
 ### Automated Checks

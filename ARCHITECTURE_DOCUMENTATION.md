@@ -113,11 +113,16 @@ The Weight SparkLine Graph is powered by a custom SVG drawing engine. Depending 
    - Reducers compress the weight logs list by taking the last logged entry of each unique calendar date (`dailyWeightValues`).
    - Slices and plots daily values chronologically.
 
+### X-Axis Center-Alignment Fix
+To prevent text labels like **Morn 🌅**, **Aft ☀️**, and **Ngt 🌙** from clipping outside SVG margins, we introduced:
+- **`PADDING_X = 36`**: Horizontal boundaries protection padding.
+- **`textAnchor="middle"`**: SVG text property to anchor strings exactly in the middle of coordinate points.
+
 ---
 
-## 5. UI Component Hierarchy & Reusability
+## 5. Fullscreen Immersive Analysis Modal
 
-Core visual cards utilize custom premium components located in `src/components/ui`:
-* **`GlassCard`**: Features customized backing opacity, inner borders, and matching neon glow adjustments corresponding to screen themes.
-* **`ScreenHeader`**: centralizes navigation branding with colorful icon bubbles and bold section headers.
-* **`AppIcon`**: abstracts vector icon selection from Ionicons and MaterialCommunityIcons libraries to guarantee code reuse.
+Tapping on the main Weight Trend card launches a fullscreen interactive analysis viewport:
+* **Zoom Analysis**: Fully scalable charts displaying daily, weekly, monthly, and 3-month weight trends.
+* **Point Selection Details**: Native tap handlers (`onPress`) on SVG chart nodes let users click any point to display a glowing panel showing exact metrics (Weight, Date, Time of Day).
+* **Weight Log History Manager**: Displays a scrollable history list of all entries in reverse chronological order. Clicking the delete trash icon searches and triggers `deleteWeightLog` on the central store, removing entries with dynamic visual refitting.
