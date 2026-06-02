@@ -17,6 +17,9 @@ graph TD
         AppContext --> StateWater
         AppContext --> StateReminders
         AppContext --> StateSteps
+        AppContext --> StateStepHistory["stepHistory (StepLog[])"]
+        AppContext --> StateBMI["bmiLogs (BMILog[]) derived"]
+        AppContext --> StateWeightTrend["weightTrend (computed)"]
     end
 
     %% Navigation Gating and Authentication Stack Layer
@@ -46,6 +49,20 @@ graph TD
         ScreenHeader["ScreenHeader branding"]
         AppIcon["AppIcon Vector Unified"]
         ProgressRing["ProgressRing Circle SVG"]
+    end
+
+    %% Utility Modules
+    subgraph UtilLayer ["Utility Modules (src/utils)"]
+        BMIUtils["bmi.ts (BMI calc, classifier, suggestions)"]
+        StepsUtils["steps.ts (calorie/distance converters)"]
+    end
+
+    %% Standalone Feature Screens
+    subgraph FeatureScreens ["Feature Screens (root routes)"]
+        StepsScreen["Steps & Walking (steps.tsx)"]
+        WaterScreen["Hydration (water.tsx)"]
+        MetabolismScreen["Metabolism (metabolism.tsx)"]
+        BMIScreen["BMI Tracker (bmi.tsx)"]
     end
 
     %% Bidirectional Reactivity Bindings
@@ -81,3 +98,12 @@ graph TD
     WeightTab --> SparkLine["SVG SparkLine Plotter (intraday hollow estimates)"]
     WeightTab --> ProgressRing
     HomeTab --> ProgressRing
+
+    %% Feature screen bindings
+    StepsScreen <--> |"addManualSteps, stepHistory, stepsGoal"| AppContext
+    BMIScreen <--> |"bmiLogs, currentBMI, weightTrend"| AppContext
+    StepsScreen --> StepsUtils
+    StepsScreen --> BMIUtils
+    BMIScreen --> BMIUtils
+    HomeTab --> |"currentBMI, navigates to /bmi"| BMIScreen
+    HomeTab --> |"navigates to /steps"| StepsScreen

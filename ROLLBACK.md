@@ -1,5 +1,23 @@
 # Rollback Plan
 
+If version `1.8.4` (Android Release Build Path Restoration) needs to be reverted due to unexpected compilation failures or path regressions on other operating systems, use this guide to revert to the previous state.
+
+## Rollback Procedure (Reverting to redirected paths v1.8.3)
+
+1. **Restore Gradle build files:**
+   Restore the custom `buildDir` redirection block inside `android/build.gradle` and the `buildStagingDirectory` block inside `android/app/build.gradle` back to their v1.8.3 states:
+   ```powershell
+   git checkout v1.8.3 -- android/build.gradle android/app/build.gradle
+   ```
+
+2. **Stop Daemons and clean build cache:**
+   ```powershell
+   .\gradlew --stop
+   .\gradlew clean
+   ```
+
+---
+
 If version `1.8.2` (Native Storage Gallery Image Selection & Camera Upload) needs to be reverted due to permission failures, image picker crashes, or runtime compatibility issues with older Expo platforms, use this guide to revert to the previous working state.
 
 ## Rollback Procedure (Reverting to preset-avatar profile v1.8.1)

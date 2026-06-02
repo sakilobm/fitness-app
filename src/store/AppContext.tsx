@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog } from '../types';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog } from '../types';
 import { Colors } from '../constants/theme';
+import { calculateBMI, classifyBMI } from '../utils/bmi';
+import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
 
 interface AppContextType {
   // User Profile
@@ -43,8 +45,16 @@ interface AppContextType {
   stepsCount: number;
   setStepsCount: React.Dispatch<React.SetStateAction<number>>;
   addSteps: (steps: number) => void;
+  addManualSteps: (steps: number) => void;
   activeMinutes: number;
   setActiveMinutes: React.Dispatch<React.SetStateAction<number>>;
+  stepHistory: StepLog[];
+  updateStepsGoal: (goal: number) => void;
+
+  // BMI Tracking
+  bmiLogs: BMILog[];
+  currentBMI: number;
+  weightTrend: 'losing' | 'gaining' | 'stable';
 
   // Authentication State
   isAuthenticated: boolean;
@@ -229,6 +239,22 @@ const initialReminders: ReminderItem[] = [
   },
 ];
 
+// Generate 7-day step history with realistic demo data
+const generateInitialStepHistory = (): StepLog[] => {
+  const stepValues = [8400, 5200, 10300, 9100, 7800, 6240, 0];
+  const history: StepLog[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const steps = stepValues[6 - i];
+    history.push({
+      date: getDateStr(i),
+      steps,
+      caloriesBurned: stepsToCalories(steps, 78.4),
+      distanceKm: stepsToDistanceKm(steps, 178),
+    });
+  }
+  return history;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(initialUserProfile);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>(initialWeightLogs);
@@ -238,10 +264,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [stepsCount, setStepsCount] = useState<number>(6240);
   const [activeMinutes, setActiveMinutes] = useState<number>(48);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [stepHistory, setStepHistory] = useState<StepLog[]>(generateInitialStepHistory);
 
   const [waterAvg, setWaterAvg] = useState(2100);
   const [waterBest, setWaterBest] = useState(3200);
   const [waterStreak, setWaterStreak] = useState(8);
+
+  // ─── Computed BMI from current weight + height ────────────────────────────
+  const currentBMI = useMemo(() => {
+    return calculateBMI(user.weight, user.height);
+  }, [user.weight, user.height]);
+
+  // ─── BMI Logs derived from weight history ─────────────────────────────────
+  const bmiLogs = useMemo((): BMILog[] => {
+    // Group weightLogs by date, take last entry per date
+    const dateMap = new Map<string, WeightLog>();
+    weightLogs.forEach((log) => {
+      dateMap.set(log.date, log);
+    });
+
+    const logs: BMILog[] = [];
+    dateMap.forEach((log, date) => {
+      const bmi = calculateBMI(log.weight, user.height);
+      const result = classifyBMI(bmi);
+      logs.push({
+        date,
+        bmi,
+        weight: log.weight,
+        height: user.height,
+        category: result.category,
+      });
+    });
+
+    return logs.sort((a, b) => a.date.localeCompare(b.date));
+  }, [weightLogs, user.height]);
+
+  // ─── Weight Trend Detection ───────────────────────────────────────────────
+  const weightTrend = useMemo((): 'losing' | 'gaining' | 'stable' => {
+    if (weightLogs.length < 7) return 'stable';
+    
+    // Compare first half avg vs second half avg of recent 14 entries
+    const recent = weightLogs.slice(-14);
+    const mid = Math.floor(recent.length / 2);
+    const firstHalf = recent.slice(0, mid);
+    const secondHalf = recent.slice(mid);
+    
+    const avgFirst = firstHalf.reduce((s, l) => s + l.weight, 0) / firstHalf.length;
+    const avgSecond = secondHalf.reduce((s, l) => s + l.weight, 0) / secondHalf.length;
+    
+    const diff = avgSecond - avgFirst;
+    if (diff < -0.3) return 'losing';
+    if (diff > 0.3) return 'gaining';
+    return 'stable';
+  }, [weightLogs]);
 
   // Keep user profile weight synced with weight logs
   useEffect(() => {
@@ -270,6 +345,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setWaterStreak(8); // Defaults to active base streak
     }
   }, [waterLogs, user.waterGoal]);
+
+  // Sync stepsCount to today's step history entry
+  useEffect(() => {
+    const todayStr = getDateStr(0);
+    setStepHistory((prev) => {
+      const updated = [...prev];
+      const todayIdx = updated.findIndex((s) => s.date === todayStr);
+      const entry: StepLog = {
+        date: todayStr,
+        steps: stepsCount,
+        caloriesBurned: stepsToCalories(stepsCount, user.weight),
+        distanceKm: stepsToDistanceKm(stepsCount, user.height),
+      };
+      if (todayIdx >= 0) {
+        updated[todayIdx] = entry;
+      } else {
+        updated.push(entry);
+      }
+      // Keep only last 30 days
+      return updated.slice(-30);
+    });
+  }, [stepsCount, user.weight, user.height]);
 
   // Profile operations
   const updateUserGoal = (goal: string) => {
@@ -404,6 +501,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // Manual step entry — adds to today's count and syncs history
+  const addManualSteps = (steps: number) => {
+    if (steps <= 0) return;
+    setStepsCount((prev) => {
+      const newTotal = prev + steps;
+      setActiveMinutes((m) => m + Math.round(steps / 100));
+      return newTotal;
+    });
+  };
+
+  // Update steps goal
+  const updateStepsGoal = (goal: number) => {
+    setUser((u) => ({ ...u, stepsGoal: goal }));
+  };
+
   const loginUser = (email: string) => {
     setIsAuthenticated(true);
   };
@@ -449,8 +561,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         stepsCount,
         setStepsCount,
         addSteps,
+        addManualSteps,
         activeMinutes,
         setActiveMinutes,
+        stepHistory,
+        updateStepsGoal,
+        bmiLogs,
+        currentBMI,
+        weightTrend,
         isAuthenticated,
         loginUser,
         signupUser,

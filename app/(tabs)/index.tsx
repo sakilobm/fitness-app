@@ -10,6 +10,7 @@ import DonutChart from '@/components/ui/DonutChart';
 import { Colors, Radius } from '@/constants/theme';
 import { useAppStore } from '@/store';
 import { Meal } from '@/types';
+import { getBMIResult } from '@/utils/bmi';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -132,7 +133,10 @@ export default function HomeScreen() {
     weightLogs,
     stepsCount,
     activeMinutes,
+    currentBMI,
   } = useAppStore();
+
+  const bmiResult = getBMIResult(user.weight, user.height);
 
   // Dynamic calculations from context
   const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
@@ -360,6 +364,18 @@ export default function HomeScreen() {
         <View style={styles.waterText}>
           <Text style={styles.waterTitle}>Hydration reminder</Text>
           <Text style={styles.waterSub}>Next at 4:00 PM — tap to log now</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+      </TouchableOpacity>
+
+      {/* ════════════════════ BMI QUICK ACCESS ════════════════════ */}
+      <TouchableOpacity style={styles.waterChip} onPress={() => router.push('/bmi')} activeOpacity={0.8}>
+        <View style={[styles.waterIconBox, { backgroundColor: bmiResult.color + '18' }]}>
+          <MaterialCommunityIcons name="human" size={20} color={bmiResult.color} />
+        </View>
+        <View style={styles.waterText}>
+          <Text style={styles.waterTitle}>BMI: {currentBMI.toFixed(1)} — {bmiResult.label} {bmiResult.emoji}</Text>
+          <Text style={styles.waterSub}>Tap to view trends & health suggestions</Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
       </TouchableOpacity>

@@ -2,6 +2,63 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-06-02T10:09:00+05:30
+
+### Added — Step Tracking Enhancement, BMI Calculator & Tracking, Health Suggestions Engine
+
+**Architectural Decision:** Extended the centralized AppContext state store with step history tracking (`StepLog[]`), computed BMI derivations from existing `weightLogs[]`, and weight trend detection. Built two new utility modules (`src/utils/bmi.ts`, `src/utils/steps.ts`) for calculation logic and a rule-based health suggestion engine. Upgraded the existing Steps screen from hardcoded data to full context wiring, and created a new standalone BMI Tracker screen:
+
+#### 1. Enhanced Step Tracking (`app/steps.tsx`)
+- **Context Wiring:** Replaced 100% hardcoded data (steps, weekly bars, streaks, motion breakdown) with live `AppContext` state including `stepsCount`, `activeMinutes`, `stepHistory`, and `user.stepsGoal`.
+- **Manual Step Entry Modal:** Designed a bottom-sheet slide-up modal with quick-add pills (+500, +1000, +2000, +5000) and custom numeric input. Live preview shows estimated calories and distance before confirming.
+- **Dynamic Weekly Chart:** `WeekBars` SVG component now renders from rolling 7-day `stepHistory` with goal reference line and gradient-filled bars.
+- **Editable Step Goal:** New "Edit Goal" bottom-sheet modal with preset goals (5k, 7.5k, 10k, 12k, 15k) and custom input. Syncs to `user.stepsGoal` in context.
+- **Weekly Summary Stats:** Added a combined stats row below the chart showing total steps, calories burned, and distance walked for the week.
+- **Activity Tips Integration:** Embedded personalized exercise suggestions from the suggestion engine based on step goal completion percentage.
+
+#### 2. BMI Calculator & Tracking (`app/bmi.tsx`)
+- **BMI Hero Card:** Displays live BMI value computed from `user.weight` and `user.height` with classification badge (Underweight/Normal/Overweight/Obese) and WHO-standard color coding.
+- **BMI Gradient Gauge:** Custom horizontal SVG gauge spanning the 15–40 BMI range with animated white marker positioned at the user's current value. Category boundaries (18.5, 25, 30) marked with divider lines.
+- **BMI History Sparkline:** SVG line chart showing BMI changes over time derived from `weightLogs` + `user.height`. Includes normal zone band overlay (18.5–25.0) and trend statistics (current, change, lowest, highest).
+- **WHO Category Breakdown Cards:** Four styled cards showing all BMI categories with range labels. Active category highlighted with color border and "You" badge.
+- **Interactive BMI Calculator Modal:** Standalone calculator allowing users to input any weight/height combination with live BMI result preview and category classification.
+- **Weight Action Badge:** Dynamic badge showing "Lose/Gain X kg to reach normal BMI" or "You're in the healthy BMI range! 🎉".
+
+#### 3. Personalized Health Suggestions Engine (`src/utils/bmi.ts`)
+- **Rule-Based Engine:** Generates personalized health tips based on four input signals: BMI category, step goal completion %, weight trend direction (losing/gaining/stable), and daily water intake vs goal.
+- **Category-Specific Advice:** Tailored suggestions for each BMI category (e.g., underweight → calorie increase + strength training, overweight → mindful eating + daily movement).
+- **Priority-Weighted Tips:** Each suggestion tagged with `high`/`medium`/`low` priority and a category label (diet/exercise/lifestyle/hydration) for visual hierarchy.
+- **Cross-Signal Correlation:** Detects dangerous patterns (e.g., losing weight while underweight, gaining while obese) and surfaces high-priority warnings.
+
+#### 4. Data Layer Additions
+- **New Types:** `StepLog` (date, steps, caloriesBurned, distanceKm) and `BMILog` (date, bmi, weight, height, category) in `src/types/index.ts`.
+- **New AppContext Fields:** `stepHistory`, `addManualSteps()`, `updateStepsGoal()`, `bmiLogs` (auto-derived), `currentBMI` (computed), `weightTrend` (detected).
+- **Step Utilities (`src/utils/steps.ts`):** Research-based conversion formulas for steps → calories (weight-adjusted), steps → distance (height-adjusted stride), and display formatting.
+
+#### 5. Navigation & Home Dashboard
+- **BMI Route Registration:** Added `/bmi` to root Stack navigator in `app/_layout.tsx`.
+- **Home Dashboard BMI Chip:** New quick-access chip on the home dashboard showing current BMI value, category emoji, and label with tap-to-navigate to the full BMI Tracker screen.
+
+
+## [1.8.4] - 2026-06-01T13:17:00+05:30
+
+### Fixed — Android Release Build / Reverted Build Redirections to Fix Autolinking
+
+**Architectural Decision:** Restored standard native build and staging directories to align perfectly with React Native's autolinking JNI compilation requirements, relying fully on the upgraded Ninja v1.12.1 compiler and `CMAKE_OBJECT_PATH_MAX=1024` to handle Windows path constraints:
+- **Restored Standard Build Directories:** Reverted custom `buildDir` overrides in `android/build.gradle` and custom `buildStagingDirectory` overrides in `android/app/build.gradle`. This resolves CMake configuration errors where the autolinking engine was looking for code-generated JNI files under standard `node_modules/.../android/build` directories instead of the redirected out-of-tree folders.
+- **De-cluttered Autolinked Packages:** Completely deleted an obsolete empty `react-native-gesture-handler` folder in `node_modules` that had no `package.json` or `build.gradle` files. This stops the React Native CLI config scanner from incorrectly adding it as a project which previously triggered Gradle variant resolution and directory-missing failures.
+- **Successful APK Verification:** Verified a 100% clean build of the final Release APK for the `arm64-v8a` architecture, resulting in `BUILD SUCCESSFUL` inside 1m 36s.
+
+## [1.8.3] - 2026-05-31T21:44:00+05:30
+
+### Fixed — Android Release Build / C++ Object Path Length Windows Limits
+
+**Architectural Decision:** Upgraded local Android SDK build compiler and cleaned build paths to resolve Windows filesystem MAX_PATH compilation errors during Android Release APK creation:
+- **Deduplicated & Relocated `expo-modules-core`:** Moved the duplicate nested packages from `node_modules/expo/node_modules/expo-modules-core` up to the root `node_modules/expo-modules-core`. This shortened absolute package paths inside Android build configurations by more than 30 characters while keeping module resolution fully functional.
+- **Upgraded Compiler to Ninja v1.12.1:** Replaced the older, bundled `ninja.exe` inside the local Android SDK CMake directory (`C:\Users\sowbh\AppData\Local\Android\Sdk\cmake\3.22.1\bin\ninja.exe`) with the latest official `v1.12.1` release. Since Ninja v1.12.1 natively supports long paths on Windows by auto-prepending `\\?\` Unicode prefixes, it completely bypasses the legacy 260-character path limit for C++ builds without requiring system registry changes or administrator access.
+- **Enabled Long Object File Paths for CMake:** Added the `-DCMAKE_OBJECT_PATH_MAX=1024` argument within the `defaultConfig.externalNativeBuild.cmake` configuration block in `android/app/build.gradle`. This dynamically lifts the default 250-character path restriction when CMake and Ninja generate intermediate object files.
+- **Workspace Timestamp Sync:** Synchronized all files in the repository using a PowerShell timestamp touch pass, eliminating the clock-skew state that triggered infinite "manifest build.ninja still dirty" loops.
+
 ## [1.8.2] - 2026-05-31T17:07:00+05:30
 
 ### Added — Native Storage Gallery Image Selection & Camera Upload

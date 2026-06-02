@@ -151,3 +151,99 @@ To create a highly personal, premium user experience, the system supports dynami
 * **Live Custom URL Input:** A secure web URL input textbox lets users paste any direct image link, updating the visual preview circle and the floating camera bubble overlay instantly in real-time.
 * **Native Gallery & Camera Uploads:** Integrates native device picture picking and camera capture workflows using `expo-image-picker`. Tapping the camera icon opens an elegant, bottom-aligned pop-up Glass Card Action Sheet.
 * **Asynchronous Permissions Checking:** The helper functions `pickImageFromGallery` and `takePhotoWithCamera` verify media library and camera usage permissions contextually before launching pickers, catching cancel events gracefully and assigning safe, local URI paths.
+
+---
+
+## 8. Enhanced Step Tracking & Manual Entry
+
+The step tracking system was upgraded from a static display layer to a fully interactive, context-driven module:
+
+### Data Model
+```typescript
+export interface StepLog {
+  date: string;        // YYYY-MM-DD
+  steps: number;
+  caloriesBurned: number;
+  distanceKm: number;
+}
+```
+
+### Context Integration
+- **`stepHistory: StepLog[]`**: Rolling 30-day history stored in AppContext. Today's entry auto-syncs whenever `stepsCount` changes.
+- **`addManualSteps(steps: number)`**: Increments `stepsCount` and `activeMinutes` proportionally.
+- **`updateStepsGoal(goal: number)`**: Updates `user.stepsGoal` across all dependent views.
+
+### Conversion Utilities (`src/utils/steps.ts`)
+- **Steps → Calories**: `0.04 kcal/step × (weightKg / 70)` weight-adjusted formula.
+- **Steps → Distance**: Stride length = `height × 0.415`, then `steps × stride / 1000` for km.
+- **Steps → Active Minutes**: `steps / 100` average walking pace approximation.
+
+### Weekly Bar Chart
+The `WeekBars` SVG component renders the last 7 days from `stepHistory` with:
+- Gradient-filled bars for today, amber for goal-hit days, muted for below-goal
+- Dashed goal reference line at `user.stepsGoal`
+- Formatted value labels (e.g., "6.2k")
+
+---
+
+## 9. BMI Calculator, Tracking & Gauge Visualization
+
+A dedicated BMI Tracker screen (`app/bmi.tsx`) provides comprehensive body mass index monitoring:
+
+### Data Model
+```typescript
+export interface BMILog {
+  date: string;        // YYYY-MM-DD
+  bmi: number;
+  weight: number;
+  height: number;
+  category: 'underweight' | 'normal' | 'overweight' | 'obese';
+}
+```
+
+### Computed State (Derived, Not Stored)
+- **`currentBMI`**: `useMemo` computed from `user.weight` and `user.height` using the standard formula `weight / (height_m)²`.
+- **`bmiLogs`**: Auto-derived from `weightLogs` by grouping by date, taking the last weight entry per date, and computing BMI + classification for each.
+- **`weightTrend`**: Compares first-half vs second-half averages of the last 14 weight entries to detect `'losing'`, `'gaining'`, or `'stable'` trends.
+
+### BMI Gauge
+A custom horizontal SVG gradient gauge spanning BMI 15–40:
+- Four-color gradient: Blue (underweight) → Green (normal) → Amber (overweight) → Red (obese)
+- White circle marker positioned at `bmiToGaugePosition(bmi)` with the exact BMI value inside
+- Vertical divider lines at WHO boundaries (18.5, 25, 30)
+
+### Interactive Calculator Modal
+Bottom-sheet modal allowing any weight/height input with live BMI preview and category classification.
+
+---
+
+## 10. Personalized Health Suggestion Engine
+
+A rule-based suggestion engine (`src/utils/bmi.ts → generateSuggestions()`) generates personalized health tips:
+
+### Input Signals
+1. **BMI Category** — primary classifier for diet/exercise recommendations
+2. **Step Goal %** — `stepsCount / stepsGoal` for activity-level suggestions
+3. **Weight Trend** — `'losing' | 'gaining' | 'stable'` for trajectory-aware advice
+4. **Water Intake %** — `waterTotal / waterGoal` for hydration warnings
+
+### Output Format
+```typescript
+export interface HealthSuggestion {
+  id: string;
+  icon: string;        // Emoji icon
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  category: 'diet' | 'exercise' | 'lifestyle' | 'hydration';
+  accentColor: string;
+}
+```
+
+### Cross-Signal Correlation
+The engine detects dangerous combinations:
+- Losing weight while already underweight → high-priority warning
+- Gaining weight while overweight/obese → trend reversal advice
+- Below 50% water goal → dehydration warning regardless of BMI
+
+Suggestions are displayed on both the BMI Tracker screen (all categories) and the Steps screen (exercise-only filter).

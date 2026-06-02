@@ -66,3 +66,18 @@ export interface WeightLog {
   timeOfDay: 'morning' | 'afternoon' | 'night';
 }
 
+export interface StepLog {
+  date: string;        // YYYY-MM-DD
+  steps: number;
+  caloriesBurned: number;
+  distanceKm: number;
+}
+
+export interface BMILog {
+  date: string;        // YYYY-MM-DD
+  bmi: number;
+  weight: number;
+  height: number;
+  category: 'underweight' | 'normal' | 'overweight' | 'obese';
+}
+

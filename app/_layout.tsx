@@ -43,6 +43,7 @@ function NavigationGate() {
       <Stack.Screen name="steps" options={{ headerShown: false }} />
       <Stack.Screen name="water" options={{ headerShown: false }} />
       <Stack.Screen name="metabolism" options={{ headerShown: false }} />
+      <Stack.Screen name="bmi" options={{ headerShown: false }} />
     </Stack>
   );
 }
