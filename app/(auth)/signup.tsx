@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -15,12 +15,11 @@ import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
-import { useAppStore } from '@/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase, performOAuth } from '@/lib/supabase';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { signupUser } = useAppStore();
 
   // Input states
   const [name, setName] = useState('');
@@ -30,6 +29,7 @@ export default function SignupScreen() {
 
   // validation / loaders / focus states
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const [nameFocus, setNameFocus] = useState(false);
   const [emailFocus, setEmailFocus] = useState(false);
   const [passwordFocus, setPasswordFocus] = useState(false);
@@ -63,7 +63,7 @@ export default function SignupScreen() {
 
   const strength = getPasswordStrength(password);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     setErrorMessage('');
     setNameTouched(true);
     setEmailTouched(true);
@@ -83,21 +83,40 @@ export default function SignupScreen() {
 
     setIsSigningUp(true);
 
-    // Simulate signup request
-    setTimeout(() => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: name.trim(),
+        },
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
       setIsSigningUp(false);
-      signupUser(name, email);
-      // Gating will route us to tabs
-    }, 1200);
+    } else {
+      setIsSigningUp(false);
+      if (!data.session) {
+        // Email confirmation required — session won't exist until they verify
+        setConfirmationSent(true);
+      }
+      // If session exists, onAuthStateChange handles routing automatically
+    }
   };
 
-  const handleSocialBypass = (platform: 'Google' | 'Apple') => {
+  const handleSocialBypass = async (platform: 'Google' | 'Apple') => {
     setIsSigningUp(true);
     setErrorMessage('');
-    setTimeout(() => {
+    try {
+      await performOAuth(platform.toLowerCase() as 'google' | 'apple');
+      // On success, state will update automatically via AppContext listener
+    } catch (error: any) {
+      setErrorMessage(error.message || `Failed to sign up with ${platform}`);
+    } finally {
       setIsSigningUp(false);
-      signupUser(platform === 'Google' ? 'Google Guest' : 'Apple Guest', 'guest.user@fitforge.com');
-    }, 800);
+    }
   };
 
   // Borders outline calculations
@@ -124,6 +143,34 @@ export default function SignupScreen() {
     }
     return Colors.cardBorder;
   };
+
+  if (confirmationSent) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.confirmContainer}>
+          <GlassCard style={styles.confirmCard} accentColor={Colors.lime}>
+            <Text style={styles.confirmIcon}>📬</Text>
+            <Text style={styles.confirmTitle}>Check your email</Text>
+            <Text style={styles.confirmBody}>
+              We sent a confirmation link to{'\n'}
+              <Text style={styles.confirmEmail}>{email}</Text>
+            </Text>
+            <Text style={styles.confirmHint}>
+              Tap the link in the email to activate your account. Check your spam folder if you don't see it.
+            </Text>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              activeOpacity={0.8}
+              onPress={() => router.replace('/(auth)/login')}
+            >
+              <Text style={styles.confirmButtonText}>Back to Sign In</Text>
+            </TouchableOpacity>
+          </GlassCard>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -585,5 +632,56 @@ const styles = StyleSheet.create({
   toggleAuthAction: {
     ...Typography.captionBold,
     color: Colors.text.accent,
+  },
+  confirmContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+  },
+  confirmCard: {
+    backgroundColor: Colors.card,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  confirmIcon: {
+    fontSize: 52,
+    marginBottom: Spacing.xs,
+  },
+  confirmTitle: {
+    ...Typography.h2,
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  confirmBody: {
+    ...Typography.body,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  confirmEmail: {
+    ...Typography.bodyBold,
+    color: Colors.text.primary,
+  },
+  confirmHint: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  confirmButton: {
+    height: 50,
+    backgroundColor: Colors.lime,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.sm,
+    alignSelf: 'stretch',
+  },
+  confirmButtonText: {
+    ...Typography.bodyBold,
+    color: Colors.white,
   },
 });

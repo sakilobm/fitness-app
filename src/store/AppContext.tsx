@@ -3,6 +3,7 @@ import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog
 import { Colors } from '../constants/theme';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
+import { supabase } from '../lib/supabase';
 
 interface AppContextType {
   // User Profile
@@ -270,6 +271,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [waterBest, setWaterBest] = useState(3200);
   const [waterStreak, setWaterStreak] = useState(8);
 
+  // ─── Supabase Authentication Listener ───────────────────────────────────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // ─── Computed BMI from current weight + height ────────────────────────────
   const currentBMI = useMemo(() => {
     return calculateBMI(user.weight, user.height);
@@ -517,16 +531,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const loginUser = (email: string) => {
-    setIsAuthenticated(true);
+    // Handled by Supabase signIn directly now
   };
 
   const signupUser = (name: string, email: string) => {
-    setUser((u) => ({ ...u, name }));
-    setIsAuthenticated(true);
+    // Handled by Supabase signUp directly now
   };
 
-  const logoutUser = () => {
-    setIsAuthenticated(false);
+  const logoutUser = async () => {
+    await supabase.auth.signOut();
   };
 
   return (

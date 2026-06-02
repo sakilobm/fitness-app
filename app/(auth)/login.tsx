@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -15,12 +15,11 @@ import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
-import { useAppStore } from '@/store';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase, performOAuth } from '@/lib/supabase';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { loginUser } = useAppStore();
 
   // Input states
   const [email, setEmail] = useState('');
@@ -40,7 +39,7 @@ export default function LoginScreen() {
     return emailRegex.test(text);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setErrorMessage('');
     setEmailTouched(true);
 
@@ -55,21 +54,31 @@ export default function LoginScreen() {
 
     setIsLoggingIn(true);
 
-    // Simulate server response delay
-    setTimeout(() => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
       setIsLoggingIn(false);
-      loginUser(email);
-      // Gating will reactively route us to tabs
-    }, 1200);
+    } else {
+      // The auth state listener in _layout.tsx will handle the routing
+      setIsLoggingIn(false);
+    }
   };
 
-  const handleSocialBypass = (platform: 'Google' | 'Apple') => {
+  const handleSocialBypass = async (platform: 'Google' | 'Apple') => {
     setIsLoggingIn(true);
     setErrorMessage('');
-    setTimeout(() => {
+    try {
+      await performOAuth(platform.toLowerCase() as 'google' | 'apple');
+      // On success, state will update automatically via AppContext listener
+    } catch (error: any) {
+      setErrorMessage(error.message || `Failed to sign in with ${platform}`);
+    } finally {
       setIsLoggingIn(false);
-      loginUser(platform === 'Google' ? 'google.user@fitforge.com' : 'apple.user@fitforge.com');
-    }, 800);
+    }
   };
 
   // Determine Email Field border color dynamically
