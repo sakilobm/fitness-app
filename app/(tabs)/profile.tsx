@@ -295,6 +295,9 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{userName}</Text>
+            {user.email ? (
+              <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text>
+            ) : null}
             <Text style={styles.profileMotto} numberOfLines={1}>"{userMotto}"</Text>
 
             <View style={styles.profileHeaderActions}>
@@ -1044,6 +1047,11 @@ const styles = StyleSheet.create({
   },
   profileInfo: { flex: 1, gap: 4 },
   profileName: { ...Typography.h3, color: Colors.text.primary },
+  profileEmail: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+    marginTop: 1,
+  },
   profileMotto: {
     ...Typography.caption,
     color: Colors.text.secondary,

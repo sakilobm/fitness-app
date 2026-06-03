@@ -6,7 +6,7 @@ This document explains the software architecture of the Fitness App. It serves a
 
 ## 1. High-Level Architectural Pattern
 
-The Fitness App is built on a **Centralized Global State Engine** using React's native Context API and **Expo Router** for secure, path-based routing. 
+The Fitness App is built on a **Zustand State Management Engine** with a React Context Adapter (`AppContext.tsx`) for secure, backwards-compatible, and high-performance state streaming. Page routing is managed by **Expo Router** using path-based stack and tab layouts.
 
 All core feature views are wrapped inside a master `AppProvider` context and gated by a reactive `<NavigationGate>` component. This guarantees that unauthenticated requests are securely rerouted to the onboarding carousel, while authenticated sessions enjoy seamless inter-screen state reactivity across all modules.
 
@@ -32,15 +32,20 @@ graph TD
 
 ---
 
-## 2. Centralized State Store (`AppContext.tsx`)
+## 2. Granular State Stores & Custom Domain Hooks
 
-The global store handles all local storage simulation and synchronous states. The context exposes features categorized as:
-* **User Profile Engine:** Manages account stats (height, streak, levels, XP) and targets (calorie goal, step target, workout frequency).
-* **Weight Tracker:** Implements structured weight records with intraday logging slots (Morning, Afternoon, Night).
-* **Macro Tracker:** Aggregates food item lists bucketed by meal types (Breakfast, Lunch, Dinner, Snacks).
-* **Hydration Flow:** Tracks water volumes logged during the day.
-* **Reminders Scheduler:** Manages active alert configurations (frequency, schedule, category colors).
-* **Step Burn Metrics:** Tracks total steps and translates them to active duration and calorie burns.
+The application utilizes **Zustand (`src/store/fitnessStore.ts`)** as its primary state engine. Rather than consuming a single monolithic context that triggers app-wide re-renders on minor logs (e.g. typing a character, logging a cup of water), we enforce **Selector-Based State Consumption**. 
+
+Developers consume state via specialized domain hooks that fetch only the relevant state slices:
+
+* **`useDietTracker()`**: Streams meal logs and calorie goals for macro updates.
+* **`useWorkoutEngine()`**: Streams step history, goals, and active durations.
+* **`useHydrationTracker()`**: Consumes water logs and handles hydration goal adjustments.
+* **`useProfileSettings()`**: Provides user profile configurations and mottos.
+* **`useDashboardEngine()`**: Manages custom widget grids, layout order, and visibility toggles.
+
+### Backwards-Compatibility Adapter
+For screens that still rely on the legacy context provider, `AppProvider` (in `AppContext.tsx`) acts as an adapter, binding its fields and action methods directly to the Zustand store under the hood.
 
 ---
 
@@ -247,3 +252,36 @@ The engine detects dangerous combinations:
 - Below 50% water goal → dehydration warning regardless of BMI
 
 Suggestions are displayed on both the BMI Tracker screen (all categories) and the Steps screen (exercise-only filter).
+
+---
+
+## 11. Segmented Caching Storage Layer (`src/utils/storage.ts`)
+
+To support fast 60 FPS interfaces with massive tracking history arrays, we implement a partitioned key-value storage engine in Local Storage:
+* **Partitioned Keys:** Log items are saved under partition keys: `logs:{domain}:{YYYY-MM}` (e.g. `logs:water:2026-06`).
+* **Chunk Loading:** App loads only the current month and the previous month's logs during startup hydration (`hydrateRecentLogs`), completely preventing memory inflation.
+* **Granular Deletion & Updates:** Write operations load only the relevant partition, update/append, and write back, keeping write times constant and small.
+
+---
+
+## 12. Centralized Health Calculations Utility Layer (`src/utils/healthCalculations.ts`)
+
+Core mathematical equations are extracted into a zero-dependency, pure-functional calculation layer with complete JSDoc annotations:
+1. **Body Mass Index (BMI):** Standard ratio calculation with input boundary protection.
+2. **Basal Metabolic Rate (BMR):** Mifflin-St Jeor equation adjusting for weight, height, age, and biological gender.
+3. **Total Daily Energy Expenditure (TDEE):** Calculates caloric maintenance thresholds based on Harris-Benedict multipliers.
+4. **Active Calorie Burns:** Estimates calorie expenditures dynamically using MET steps and active duration signals.
+5. **Macronutrient targets:** Maps calorie targets to custom carb, protein, and fat allocations depending on active goals (Fat Loss vs Muscle Gain).
+
+---
+
+## 13. Dynamic Dashboard Registry Grid (`src/features/dashboard/components/WidgetRegistry.tsx`)
+
+To enable custom user layouts, we implement a type-safe **Dashboard Grid Registry**:
+* **Generic `<MetricCard>` Container:** Handles unified styles (glassmorphism borders, icons, headers) and accepts configuration variants.
+* **Component Registry Mapping:** Maps config type strings directly to specific widget visualizers:
+  - `radial_chart`: Multi-segmented Donut charts (macronutrients, hydration).
+  - `linear_progress`: Horizontal bar gauges (step goals).
+  - `numeric_delta`: Highlights trend trajectories and differences (weight trends).
+  - `compact_chip`: Small status indicators (workout focus duration).
+* **TypeScript Generics:** Enforces strict mapping constraints matching each visualization layout's target data props.

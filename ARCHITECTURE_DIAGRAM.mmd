@@ -1,25 +1,27 @@
 graph TD
     %% Global Store Layer
-    subgraph StoreLayer ["Global State Engine (AppContext.tsx)"]
-        AppContext["AppContext (React Context)"]
-        AppProvider["AppProvider Wrapper"]
-        StateUser["user (UserProfile)"]
-        StateWeight["weightLogs (WeightLog[])"]
-        StateMeals["meals (Meal[])"]
-        StateWater["waterLogs (LogEntry[])"]
-        StateReminders["reminders (ReminderItem[])"]
-        StateSteps["stepsCount (number)"]
+    subgraph StoreLayer ["State Management & Cache Layer"]
+        useFitnessStore["Zustand Store (fitnessStore.ts)"]
+        AppContext["AppContext Adapter (AppContext.tsx)"]
+        StorageUtils["Storage Cache (storage.ts)"]
         
-        AppProvider --> AppContext
-        AppContext --> StateUser
-        AppContext --> StateWeight
-        AppContext --> StateMeals
-        AppContext --> StateWater
-        AppContext --> StateReminders
-        AppContext --> StateSteps
-        AppContext --> StateStepHistory["stepHistory (StepLog[])"]
-        AppContext --> StateBMI["bmiLogs (BMILog[]) derived"]
-        AppContext --> StateWeightTrend["weightTrend (computed)"]
+        useFitnessStore --> |"State Hydration & Persistence"| StorageUtils
+        AppContext --> |"Delegates state & actions"| useFitnessStore
+    end
+
+    %% Selector Domain Hooks
+    subgraph HookLayer ["Custom Domain Selector Hooks"]
+        useDietTracker["useDietTracker()"]
+        useWorkoutEngine["useWorkoutEngine()"]
+        useHydrationTracker["useHydrationTracker()"]
+        useProfileSettings["useProfileSettings()"]
+        useDashboardEngine["useDashboardEngine()"]
+        
+        useDietTracker --> useFitnessStore
+        useWorkoutEngine --> useFitnessStore
+        useHydrationTracker --> useFitnessStore
+        useProfileSettings --> useFitnessStore
+        useDashboardEngine --> useFitnessStore
     end
 
     %% Navigation Gating and Authentication Stack Layer
@@ -43,6 +45,22 @@ graph TD
         ProfileTab["Profile Configuration (profile.tsx)"]
     end
 
+    %% Dynamic Component Registry
+    subgraph RegistryLayer ["Dashboard Widget Registry"]
+        WidgetRegistry["WidgetRegistry.tsx"]
+        MetricCard["MetricCard Generic Container"]
+        RadialChart["Radial Chart Widget"]
+        LinearProgress["Linear Progress Widget"]
+        NumericDelta["Numeric Delta Widget"]
+        CompactChip["Compact Chip Widget"]
+
+        WidgetRegistry --> MetricCard
+        MetricCard --> RadialChart
+        MetricCard --> LinearProgress
+        MetricCard --> NumericDelta
+        MetricCard --> CompactChip
+    end
+
     %% Component Dependencies
     subgraph UILayer ["Shared Component Utilities (src/components/ui)"]
         GlassCard["GlassCard Component"]
@@ -53,8 +71,9 @@ graph TD
 
     %% Utility Modules
     subgraph UtilLayer ["Utility Modules (src/utils)"]
-        BMIUtils["bmi.ts (BMI calc, classifier, suggestions)"]
-        StepsUtils["steps.ts (calorie/distance converters)"]
+        BMIUtils["bmi.ts (BMI suggestions)"]
+        StepsUtils["steps.ts (step conversions)"]
+        HealthCalculations["healthCalculations.ts (pure calculations)"]
     end
 
     %% Standalone Feature Screens
@@ -66,19 +85,21 @@ graph TD
     end
 
     %% Bidirectional Reactivity Bindings
-    NavigationGate <--> |"Queries isAuthenticated and segments"| AppContext
+    NavigationGate <--> |"Queries isAuthenticated"| AppContext
     NavigationGate --> |"Unauthenticated redirect"| Onboarding
     NavigationGate --> |"Authenticated redirect"| HomeTab
     
-    Login --> |"Dispatches loginUser()"| AppContext
-    Signup --> |"Dispatches signupUser()"| AppContext
-    ProfileTab --> |"🚪 Log Out dispatches logoutUser()"| AppContext
+    Login --> |"Supabase Auth"| AppContext
+    Signup --> |"Supabase Auth"| AppContext
+    ProfileTab --> |"🚪 Log Out"| AppContext
 
-    HomeTab <--> |"Reads weightLogs, meals, steps, water"| AppContext
-    WeightTab <--> |"Reads / Upserts intraday WeightLog (Morning/Aft/Ngt)"| AppContext
-    NutritionTab <--> |"Logs food portions, updates calorie counts"| AppContext
-    RemindersTab <--> |"Configures CRUD reminder scheduler schedules"| AppContext
-    ProfileTab <--> |"Dispatches user profile goals & targets updates"| AppContext
+    HomeTab <--> |"Reads via Zustand & Registry"| useDashboardEngine
+    HomeTab --> |"Renders widget grid"| MetricCard
+    
+    WeightTab <--> |"Reads/Writes WeightLog"| AppContext
+    NutritionTab <--> |"Logs food portions"| AppContext
+    RemindersTab <--> |"Configures reminders CRUD"| AppContext
+    ProfileTab <--> |"Updates user profile goals"| AppContext
 
     %% Components association
     HomeTab --> GlassCard
@@ -95,15 +116,18 @@ graph TD
     ScreenHeader --> AppIcon
 
     %% Custom SVG widgets
-    WeightTab --> SparkLine["SVG SparkLine Plotter (intraday hollow estimates)"]
+    WeightTab --> SparkLine["SVG SparkLine Plotter"]
     WeightTab --> ProgressRing
     HomeTab --> ProgressRing
 
     %% Feature screen bindings
-    StepsScreen <--> |"addManualSteps, stepHistory, stepsGoal"| AppContext
-    BMIScreen <--> |"bmiLogs, currentBMI, weightTrend"| AppContext
+    StepsScreen <--> |"useWorkoutEngine()"| useWorkoutEngine
+    BMIScreen <--> |"bmiLogs, currentBMI"| AppContext
+    
     StepsScreen --> StepsUtils
     StepsScreen --> BMIUtils
     BMIScreen --> BMIUtils
-    HomeTab --> |"currentBMI, navigates to /bmi"| BMIScreen
-    HomeTab --> |"navigates to /steps"| StepsScreen
+    BMIScreen --> HealthCalculations
+    
+    HomeTab --> BMIScreen
+    HomeTab --> StepsScreen

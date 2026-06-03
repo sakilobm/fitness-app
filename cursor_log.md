@@ -1,5 +1,35 @@
 # Cursor Test & Validation Log
 
+## [2026-06-03T12:22:00+05:30] - Zustand Store, Caching Storage, Component Registry & Health Calculations Validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with 0 errors and 0 warnings.
+  - **Output:** Empty (successful compilation across the entire project).
+- **Command:** `node testing/test_health_calculations.js`
+  - **Result:** Successfully executed with exit code 0.
+  - **Output:** 
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Zustand Metrics Store (`src/store/fitnessStore.ts`):** Created the central Zustand store (`useFitnessStore`) containing profile states, logs, and layout configurations. Defined modular selector-based domain hooks (`useDietTracker`, `useWorkoutEngine`, `useHydrationTracker`, `useProfileSettings`, `useDashboardEngine`) to optimize view re-renders.
+- **Backwards-Compatibility Wrapper (`src/store/AppContext.tsx`):** Refactored the legacy `AppProvider` context so that its states and actions map directly to the Zustand store, preventing compile/run crashes on existing views.
+- **Segmented AsyncStorage Caching (`src/utils/storage.ts`):** Implemented domain-prefix and year-month partition-key storage (e.g. `logs:water:2026-06`) to ensure constant-time write speeds and lazy-loaded hydration of only the latest 2 months of logs at startup.
+- **Pure calculations utilities (`src/utils/healthCalculations.ts`):** Formulated zero-dependency pure calculations for BMI, BMR, TDEE, Active Calorie burn (MET), and macros targets.
+- **Component Registry System (`src/features/dashboard/components/WidgetRegistry.tsx`):** Engineered generic `<MetricCard>` component wrappers mapping layout keys to visualizers (`radial_chart`, `linear_progress`, `numeric_delta`, `compact_chip`) using TypeScript generics to enforce exact visual configurations.
+- **Interactive Dashboard Customizer (`app/(tabs)/index.tsx`):** Replaced static indicators with a dynamic widget grid. Designed a slide-up customization modal allowing users to reorder and toggle widget visibility dynamically.
+
 ## [2026-06-01T13:17:00+05:30] - Android Build Redirections Restoration & Autolinking Fix
 
 ### Automated Checks

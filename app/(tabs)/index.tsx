@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import GlassCard from '@/components/ui/GlassCard';
 import DonutChart from '@/components/ui/DonutChart';
+import AppIcon from '@/components/ui/AppIcon';
 import { Colors, Radius } from '@/constants/theme';
-import { useAppStore } from '@/store';
-import { Meal } from '@/types';
+import { useFitnessStore } from '@/store/fitnessStore';
+import { MetricCard, WidgetConfig, WidgetType } from '@/features/dashboard/components/WidgetRegistry';
 import { getBMIResult } from '@/utils/bmi';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -22,110 +23,11 @@ const _now = new Date();
 const greetingStr = _now.getHours() < 12 ? 'Good morning' : _now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
 const dateStr = `${DAY_NAMES[_now.getDay()]}, ${_now.getDate()} ${MONTH_NAMES[_now.getMonth()]}`;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function AppIcon({ lib, name, size, color }: { lib: 'Ionicons' | 'MCI'; name: string; size: number; color: string }) {
-  if (lib === 'MCI') return <MaterialCommunityIcons name={name as MCIName} size={size} color={color} />;
-  return <Ionicons name={name as IoniconName} size={size} color={color} />;
-}
-
-function NutritionCard() {
-  const [period, setPeriod] = useState<'Today' | 'Week'>('Today');
-  
-  const { user, meals } = useAppStore();
-
-  // Dynamic calculations from context
-  const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
-  const goalKcal = user.calorieGoal;
-  
-  const totalProtein = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.protein, 0), 0);
-  const totalCarbs = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.carbs, 0), 0);
-  const totalFat = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.fat, 0), 0);
-
-  const DONUT_PCT = Math.min(Math.round((totalKcal / goalKcal) * 100), 100);
-  const DONUT_DAY = 8;
-  const DONUT_TREND = totalKcal > goalKcal ? 'Over limit' : `${DONUT_PCT}% hit`;
-
-  const DONUT_SEGS = [
-    { label: 'Carbs',    current: Math.round(totalCarbs),   goal: 240, color: '#FB923C' },
-    { label: 'Proteins', current: Math.round(totalProtein), goal: 140, color: '#A78BFA' },
-    { label: 'Fats',     current: Math.round(totalFat),     goal: 110, color: '#0D9488' },
-  ];
-
-  return (
-    <View style={card.shell}>
-      {/* Title + period */}
-      <View style={card.row1}>
-        <Text style={card.title}>Nutrition</Text>
-        <TouchableOpacity
-          style={card.periodBtn}
-          onPress={() => setPeriod((p) => (p === 'Today' ? 'Week' : 'Today'))}
-          activeOpacity={0.75}
-        >
-          <Text style={card.periodTxt}>{period}</Text>
-          <Ionicons name="chevron-down" size={13} color={Colors.lime} />
-        </TouchableOpacity>
-      </View>
-      {/* Kcal */}
-      <View style={card.row2}>
-        <View style={card.kcalIconBox}>
-          <MaterialCommunityIcons name="run" size={18} color={Colors.lime} />
-        </View>
-        <Text style={card.kcalBig}>
-          <Text style={{ color: Colors.text.primary }}>{totalKcal.toLocaleString()}</Text>
-          <Text style={card.kcalSep}>/{goalKcal.toLocaleString()} kcal</Text>
-        </Text>
-      </View>
-      {/* Donut + macros */}
-      <View style={card.row3}>
-        <DonutChart
-          size={172} strokeWidth={20} gapSize={14}
-          rounded
-          trackColor="rgba(0,0,0,0.07)"
-          innerFill="#F0EDE8"
-          showInnerDots
-          segments={DONUT_SEGS.map((s) => ({ value: s.current, color: s.color }))}
-        >
-          <View style={card.dayBadge}>
-            <Text style={card.dayBadgeTxt}>Day {DONUT_DAY}</Text>
-          </View>
-          <Text style={card.donutPct}>{DONUT_PCT}%</Text>
-          <Text style={card.donutTrend}>{DONUT_TREND}</Text>
-        </DonutChart>
-        <View style={card.macroList}>
-          {DONUT_SEGS.map((m, i) => (
-            <View key={m.label} style={[card.macroRow, i < DONUT_SEGS.length - 1 && card.macroRowBorder]}>
-              <View style={[card.macroBorderBar, { backgroundColor: m.color }]} />
-              <View style={card.macroTexts}>
-                <Text style={card.macroLabel}>{m.label}</Text>
-                <Text numberOfLines={1}>
-                  <Text style={[card.macroCurrent, { color: m.color }]}>{m.current}</Text>
-                  <Text style={card.macroGoal}>/{m.goal}g</Text>
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-      {/* Ask advice */}
-      <View style={card.row4}>
-        <TouchableOpacity style={card.adviceBtn} activeOpacity={0.8}>
-          <Ionicons name="sparkles" size={14} color={Colors.lime} />
-          <Text style={card.adviceTxt}>Ask advice</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={card.actionBtn} activeOpacity={0.8} onPress={() => router.push('/(tabs)/nutrition')}>
-          <Ionicons name="arrow-forward" size={18} color={Colors.bg} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const [isCustomizeVisible, setIsCustomizeVisible] = useState(false);
   
+  // Zustand State hooks
   const {
     user,
     meals,
@@ -133,17 +35,119 @@ export default function HomeScreen() {
     weightLogs,
     stepsCount,
     activeMinutes,
-    currentBMI,
-  } = useAppStore();
+    dashboardGrid,
+    setDashboardGrid,
+    toggleWidgetVisibility,
+  } = useFitnessStore();
 
-  const bmiResult = getBMIResult(user.weight, user.height);
-
-  // Dynamic calculations from context
+  // Dynamic calculations
   const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
+  const totalProtein = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.protein, 0), 0);
+  const totalCarbs = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.carbs, 0), 0);
+  const totalFat = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.fat, 0), 0);
+  
   const totalWaterMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
+  
   const currentWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1].weight : 78.4;
+  const previousWeight = weightLogs.length > 1 ? weightLogs[weightLogs.length - 2].weight : 78.4;
+  const weightTrend = currentWeight < previousWeight ? 'losing' as const : currentWeight > previousWeight ? 'gaining' as const : 'stable' as const;
 
+  const bmiResult = getBMIResult(currentWeight, user.height);
   const activeKcal = Math.round(stepsCount * 0.045 + activeMinutes * 7.5);
+
+  // Define configurations dynamically for Registry matching
+  const widgetConfigs: Record<string, WidgetConfig<any>> = {
+    steps: {
+      id: 'steps',
+      type: 'linear_progress',
+      title: 'Daily Steps',
+      icon: { lib: 'Ionicons', name: 'footsteps' },
+      color: Colors.lime,
+      data: {
+        value: stepsCount,
+        target: user.stepsGoal,
+        progressColor: Colors.lime,
+        unit: 'steps',
+      },
+      onPress: () => router.push('/steps'),
+    },
+    water: {
+      id: 'water',
+      type: 'radial_chart',
+      title: 'Hydration',
+      icon: { lib: 'Ionicons', name: 'water' },
+      color: Colors.chart.water,
+      data: {
+        value: totalWaterMl,
+        target: user.waterGoal,
+        segments: [{ value: totalWaterMl, color: Colors.chart.water }],
+        centerLabel: `${(totalWaterMl / 1000).toFixed(1)}L`,
+        centerSublabel: 'Hydrated',
+      },
+      onPress: () => router.push('/water'),
+    },
+    nutrition: {
+      id: 'nutrition',
+      type: 'radial_chart',
+      title: 'Nutrition',
+      icon: { lib: 'MCI', name: 'food-apple' },
+      color: Colors.amber,
+      data: {
+        value: totalKcal,
+        target: user.calorieGoal,
+        segments: [
+          { value: totalCarbs, color: '#FB923C' },
+          { value: totalProtein, color: '#A78BFA' },
+          { value: totalFat, color: '#0D9488' },
+        ],
+        centerLabel: `${totalKcal} kcal`,
+        centerSublabel: 'Consumed',
+      },
+      onPress: () => router.push('/(tabs)/nutrition'),
+    },
+    weight: {
+      id: 'weight',
+      type: 'numeric_delta',
+      title: 'Weight Tracker',
+      icon: { lib: 'MCI', name: 'scale-bathroom' },
+      color: '#6366F1',
+      data: {
+        currentValue: currentWeight,
+        previousValue: previousWeight,
+        unit: 'kg',
+        trend: weightTrend,
+      },
+      onPress: () => router.push('/(tabs)/weight'),
+    },
+    workout_focus: {
+      id: 'workout_focus',
+      type: 'compact_chip',
+      title: 'Today Focus',
+      icon: { lib: 'MCI', name: 'dumbbell' },
+      color: '#EC4899',
+      data: {
+        value: 'Upper Body',
+        status: '45 min',
+        statusColor: '#EC4899',
+      },
+    },
+  };
+
+  const ALL_WIDGETS = [
+    { id: 'steps', label: 'Steps Tracker' },
+    { id: 'nutrition', label: 'Nutrition & Macros' },
+    { id: 'water', label: 'Hydration Tracking' },
+    { id: 'weight', label: 'Weight Analysis' },
+    { id: 'workout_focus', label: 'Workout Focus' },
+  ];
+
+  const moveWidget = (fromIdx: number, toIdx: number) => {
+    if (toIdx < 0 || toIdx >= dashboardGrid.length) return;
+    const newGrid = [...dashboardGrid];
+    const [movedItem] = newGrid.splice(fromIdx, 1);
+    newGrid.splice(toIdx, 0, movedItem);
+    setDashboardGrid(newGrid);
+  };
 
   const ACTIVITY_METRICS = [
     { lib: 'Ionicons' as const, icon: 'flame',         color: Colors.amber,       value: activeKcal.toLocaleString(), unit: 'kcal',  label: 'Burned', route: '/steps' },
@@ -158,60 +162,43 @@ export default function HomeScreen() {
     { lib: 'Ionicons' as const, icon: 'footsteps',     color: '#6366F1',          label: 'Steps',  value: stepsCount.toLocaleString(),               route: '/steps'            },
   ];
 
-  // Dynamic chronologically sorted Activity Timeline
   const getTimeline = () => {
     const feed = [];
-    
-    // Add breakfast if logged
     const bfMeal = meals.find((m) => m.id === 'breakfast');
     const bfKcal = bfMeal ? bfMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
     if (bfKcal > 0) {
       feed.push({ time: '07:30', label: 'Breakfast', kcal: bfKcal, lib: 'MCI' as const, icon: 'egg-fried', color: Colors.amber });
     }
-    
-    // Add morning walk simulated based on steps
     if (stepsCount > 3000) {
       feed.push({ time: '09:15', label: 'Morning Walk', kcal: -150, lib: 'MCI' as const, icon: 'walk', color: Colors.lime });
     }
-    
-    // Add lunch if logged
     const lhMeal = meals.find((m) => m.id === 'lunch');
     const lhKcal = lhMeal ? lhMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
     if (lhKcal > 0) {
       feed.push({ time: '12:30', label: 'Lunch', kcal: lhKcal, lib: 'MCI' as const, icon: 'food-apple', color: Colors.amber });
     }
-    
-    // Add snack if logged
     const snMeal = meals.find((m) => m.id === 'snacks');
     const snKcal = snMeal ? snMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
     if (snKcal > 0) {
       feed.push({ time: '15:30', label: 'Snack', kcal: snKcal, lib: 'Ionicons' as const, icon: 'nutrition', color: '#FB923C' });
     }
-
-    // Add hydration checks from actual logs
     if (waterLogs.length > 0) {
       const latestWater = waterLogs[waterLogs.length - 1];
       feed.push({ time: latestWater.time, label: `Logged Hydration`, kcal: latestWater.ml, lib: 'Ionicons' as const, icon: 'water', color: Colors.chart.water });
     }
-
-    // Add dinner if logged
     const dnMeal = meals.find((m) => m.id === 'dinner');
     const dnKcal = dnMeal ? dnMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
     if (dnKcal > 0) {
       feed.push({ time: '19:30', label: 'Dinner', kcal: dnKcal, lib: 'MCI' as const, icon: 'silverware-fork-knife', color: Colors.amber });
     }
-
-    // Fallback if timeline is completely empty
     if (feed.length === 0) {
       feed.push({ time: '08:00', label: 'Start your journey!', kcal: 0, lib: 'Ionicons' as const, icon: 'rocket-outline', color: Colors.lime });
     }
-
     return feed.sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const TIMELINE = getTimeline();
 
-  // Compute initials dynamically
   const initials = user.name
     .split(' ')
     .map((n) => n[0] || '')
@@ -227,7 +214,6 @@ export default function HomeScreen() {
     >
       {/* ════════════════════ APPLE-STYLE HEADER ════════════════════ */}
       <View style={styles.header}>
-        {/* Left: greeting + name + date/chips row */}
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{greetingStr},</Text>
           <Text style={styles.name}>{user.name}</Text>
@@ -245,10 +231,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Right: avatar */}
         <TouchableOpacity style={styles.avatar} onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.85}>
-          <Text style={styles.avatarTxt}>{initials}</Text>
-          {/* Online dot */}
+          {user.profilePic ? (
+            <Image source={{ uri: user.profilePic }} style={styles.avatarImg} />
+          ) : (
+            <Text style={styles.avatarTxt}>{initials}</Text>
+          )}
           <View style={styles.avatarDot} />
         </TouchableOpacity>
       </View>
@@ -277,21 +265,33 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      {/* ════════════════════ NUTRITION CARD ════════════════════ */}
-      <NutritionCard />
+      {/* ════════════════════ DYNAMIC METRICS GRID ════════════════════ */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Today's Metrics</Text>
+        <TouchableOpacity style={styles.editBtn} onPress={() => setIsCustomizeVisible(true)}>
+          <Ionicons name="settings-outline" size={14} color={Colors.lime} />
+          <Text style={styles.editBtnTxt}>Customize</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.gridContainer}>
+        {dashboardGrid.map((widgetId) => {
+          const config = widgetConfigs[widgetId];
+          if (!config) return null;
+          return <MetricCard key={widgetId} config={config} />;
+        })}
+      </View>
 
       {/* ════════════════════ TODAY'S FOCUS HERO ════════════════════ */}
       <TouchableOpacity style={styles.hero} activeOpacity={0.9}>
         <View style={styles.heroBg} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroBody}>
-          {/* Badge */}
           <View style={styles.heroBadge}>
             <View style={styles.heroBadgeDot} />
             <Text style={styles.heroBadgeTxt}>TODAY'S FOCUS</Text>
           </View>
           <Text style={styles.heroTitle}>Upper Body{'\n'}Strength</Text>
-          {/* Stats row */}
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Ionicons name="timer-outline" size={14} color={Colors.muted} />
@@ -318,7 +318,6 @@ export default function HomeScreen() {
       {/* ════════════════════ QUICK LOG ════════════════════ */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Quick Log</Text>
-        <TouchableOpacity><Text style={styles.sectionAction}>See All</Text></TouchableOpacity>
       </View>
       <View style={styles.quickLogRow}>
         {QUICK_LOGS.map((item) => (
@@ -374,101 +373,72 @@ export default function HomeScreen() {
           <MaterialCommunityIcons name="human" size={20} color={bmiResult.color} />
         </View>
         <View style={styles.waterText}>
-          <Text style={styles.waterTitle}>BMI: {currentBMI.toFixed(1)} — {bmiResult.label} {bmiResult.emoji}</Text>
+          <Text style={styles.waterTitle}>BMI: {bmiResult.value.toFixed(1)} — {bmiResult.label} {bmiResult.emoji}</Text>
           <Text style={styles.waterSub}>Tap to view trends & health suggestions</Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
       </TouchableOpacity>
+
+      {/* ════════════════════ CUSTOMIZER MODAL ════════════════════ */}
+      <Modal visible={isCustomizeVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <GlassCard style={styles.customizerPane}>
+            <View style={styles.customizerHeader}>
+              <Text style={styles.customizerTitle}>Customize Dashboard</Text>
+              <TouchableOpacity onPress={() => setIsCustomizeVisible(false)}>
+                <Ionicons name="close-circle-outline" size={26} color={Colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.customizerScroll}>
+              {ALL_WIDGETS.map((widget, idx) => {
+                const isVisible = dashboardGrid.includes(widget.id);
+                const gridIdx = dashboardGrid.indexOf(widget.id);
+                return (
+                  <View key={widget.id} style={styles.customizerRow}>
+                    <Text style={styles.customizerLabel}>{widget.label}</Text>
+                    <View style={styles.customizerActions}>
+                      <TouchableOpacity
+                        onPress={() => toggleWidgetVisibility(widget.id)}
+                        style={[styles.toggleBtn, isVisible ? styles.toggleBtnActive : styles.toggleBtnInactive]}
+                      >
+                        <Text style={[styles.toggleBtnText, { color: isVisible ? Colors.bg : Colors.text.primary }]}>
+                          {isVisible ? 'Visible' : 'Hidden'}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        disabled={!isVisible || gridIdx <= 0}
+                        onPress={() => moveWidget(gridIdx, gridIdx - 1)}
+                        style={[styles.reorderBtn, (!isVisible || gridIdx <= 0) && styles.reorderBtnDisabled]}
+                      >
+                        <Ionicons name="arrow-up" size={16} color={(!isVisible || gridIdx <= 0) ? Colors.muted : Colors.lime} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        disabled={!isVisible || gridIdx >= dashboardGrid.length - 1}
+                        onPress={() => moveWidget(gridIdx, gridIdx + 1)}
+                        style={[styles.reorderBtn, (!isVisible || gridIdx >= dashboardGrid.length - 1) && styles.reorderBtnDisabled]}
+                      >
+                        <Ionicons name="arrow-down" size={16} color={(!isVisible || gridIdx >= dashboardGrid.length - 1) ? Colors.muted : Colors.lime} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity style={styles.closeCustomizer} onPress={() => setIsCustomizeVisible(false)}>
+              <Text style={styles.closeCustomizerText}>Done</Text>
+            </TouchableOpacity>
+          </GlassCard>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
-
-// ─── Nutrition Card Styles ────────────────────────────────────────────────────
-
-const card = StyleSheet.create({
-  shell: {
-    backgroundColor: Colors.card,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    overflow: 'hidden',
-    shadowColor: '#1C1C1E',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.09,
-    shadowRadius: 14,
-    elevation: 5,
-  },
-  row1: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 6,
-  },
-  title: { fontSize: 22, fontWeight: '800', color: Colors.text.primary, letterSpacing: -0.3 },
-  periodBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.lime + '18', borderRadius: Radius.pill,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderWidth: 1, borderColor: Colors.lime + '33',
-  },
-  periodTxt: { fontSize: 12, fontWeight: '700', color: Colors.lime },
-  row2: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4,
-  },
-  kcalIconBox: {
-    width: 30, height: 30, borderRadius: 10,
-    backgroundColor: Colors.lime + '18',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.lime + '30',
-  },
-  kcalBig: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  kcalSep: { fontSize: 15, fontWeight: '500', color: Colors.muted },
-  row3: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, gap: 12,
-  },
-  dayBadge: {
-    backgroundColor: 'rgba(0,0,0,0.07)', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 4, marginBottom: 6,
-  },
-  dayBadgeTxt: { fontSize: 12, fontWeight: '500', color: Colors.muted },
-  donutPct: {
-    fontSize: 38, fontWeight: '800', color: Colors.text.primary,
-    lineHeight: 42, letterSpacing: -1.5,
-  },
-  donutTrend: { fontSize: 13, fontWeight: '700', color: Colors.lime, marginTop: 3 },
-  macroList: { flex: 1 },
-  macroRow: { flexDirection: 'row', alignItems: 'stretch', paddingVertical: 10 },
-  macroRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)' },
-  macroBorderBar: { width: 3, borderRadius: 3, marginRight: 12, alignSelf: 'stretch', minHeight: 36 },
-  macroTexts: { flex: 1, justifyContent: 'center', gap: 3 },
-  macroLabel: { fontSize: 11, fontWeight: '600', color: Colors.muted, letterSpacing: 0.3 },
-  macroCurrent: { fontSize: 16, fontWeight: '800', letterSpacing: -0.3 },
-  macroGoal: { fontSize: 12, color: Colors.muted, fontWeight: '500' },
-  row4: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingBottom: 18, paddingTop: 4,
-  },
-  adviceBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.lime + '14', borderRadius: Radius.pill,
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderWidth: 1, borderColor: Colors.lime + '2A',
-  },
-  adviceTxt: { fontSize: 13, fontWeight: '700', color: Colors.lime },
-  actionBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: Colors.text.primary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-});
-
-// ─── Screen Styles ────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingHorizontal: 20, gap: 18 },
 
-  // ── Header ──────────────────────────────────────────────────────────────────
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -523,7 +493,7 @@ const styles = StyleSheet.create({
   },
   xpTxt: { fontSize: 11, fontWeight: '700', color: Colors.lime },
 
-  // Avatar with online dot
+  // Avatar
   avatar: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: Colors.lime + '18',
@@ -536,6 +506,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  avatarImg: { width: 48, height: 48, borderRadius: 24 },
   avatarTxt: { fontSize: 15, fontWeight: '800', color: Colors.lime },
   avatarDot: {
     position: 'absolute', bottom: 1, right: 1,
@@ -544,7 +515,7 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.card,
   },
 
-  // ── Activity Strip ──────────────────────────────────────────────────────────
+  // Activity Strip
   activityStrip: {
     flexDirection: 'row',
     backgroundColor: Colors.card,
@@ -593,7 +564,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // ── Hero card ───────────────────────────────────────────────────────────────
+  // Grid
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -5,
+  },
+
+  // Hero card
   hero: {
     borderRadius: Radius.lg,
     overflow: 'hidden',
@@ -655,7 +633,7 @@ const styles = StyleSheet.create({
   },
   heroBtnTxt: { fontSize: 14, fontWeight: '700', color: Colors.bg, letterSpacing: 0.1 },
 
-  // ── Section headers ─────────────────────────────────────────────────────────
+  // Section headers
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -663,9 +641,18 @@ const styles = StyleSheet.create({
     marginBottom: -4,
   },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.text.primary, letterSpacing: -0.3 },
-  sectionAction: { fontSize: 13, fontWeight: '600', color: Colors.lime },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.lime + '12',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.sm,
+  },
+  editBtnTxt: { fontSize: 12, fontWeight: '600', color: Colors.lime },
 
-  // ── Quick log ───────────────────────────────────────────────────────────────
+  // Quick log
   quickLogRow: { flexDirection: 'row', gap: 10 },
   quickLogCard: {
     flex: 1,
@@ -689,7 +676,7 @@ const styles = StyleSheet.create({
   quickLogLabel: { fontSize: 10, fontWeight: '600', color: Colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
   quickLogValue: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
-  // ── Timeline ────────────────────────────────────────────────────────────────
+  // Timeline
   timelineScroll: { marginHorizontal: -20, paddingLeft: 20 },
   timelineCard: {
     width: 108, marginRight: 10,
@@ -703,7 +690,7 @@ const styles = StyleSheet.create({
   timelineLabel: { fontSize: 11, fontWeight: '600', color: Colors.text.primary, textAlign: 'center' },
   timelineKcal: { fontSize: 11, fontWeight: '700' },
 
-  // ── Water chip ──────────────────────────────────────────────────────────────
+  // Water chip
   waterChip: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: Colors.card,
@@ -723,4 +710,97 @@ const styles = StyleSheet.create({
   waterText: { flex: 1 },
   waterTitle: { fontSize: 14, fontWeight: '700', color: Colors.text.primary },
   waterSub: { fontSize: 12, fontWeight: '400', color: Colors.muted, marginTop: 1 },
+
+  // Customizer styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'flex-end',
+  },
+  customizerPane: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  customizerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  customizerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.text.primary,
+  },
+  customizerScroll: {
+    maxHeight: 340,
+    marginBottom: 20,
+  },
+  customizerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  customizerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  customizerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toggleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 70,
+  },
+  toggleBtnActive: {
+    backgroundColor: Colors.lime,
+  },
+  toggleBtnInactive: {
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+  },
+  toggleBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  reorderBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  reorderBtnDisabled: {
+    opacity: 0.4,
+  },
+  closeCustomizer: {
+    backgroundColor: Colors.text.primary,
+    borderRadius: Radius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeCustomizerText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.bg,
+  },
 });

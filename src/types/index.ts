@@ -44,6 +44,7 @@ export interface ReminderItem {
 
 export interface UserProfile {
   name: string;
+  email?: string;
   age: number;
   height: number;
   weight: number;

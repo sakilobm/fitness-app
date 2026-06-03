@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-06-03T12:22:00+05:30
+
+### Added — Zustand State Engine, Granular Selector Hooks, Segmented Caching, Dynamic Dashboard Widget Registry, Pure Health Utility Layer
+
+**Architectural Decision:** Restructured state management and data layouts from monolithic contexts and raw UI code blocks to a decoupled, scalable architecture featuring Zustand, custom selector hooks, partitioned AsyncStorage caches, zero-dependency pure calculations, and a component widget registry:
+
+#### 1. Zustand Store & Custom Selector Hooks (`src/store/fitnessStore.ts`)
+- **Granular Store:** Engineered a Zustand store (`useFitnessStore`) managing profile, weight logs, meals, water, reminders, steps, and layout states.
+- **Selector-Based Consumption:** Implemented dedicated domain hooks (`useDietTracker`, `useWorkoutEngine`, `useHydrationTracker`, `useProfileSettings`, `useDashboardEngine`) to ensure components subscribe only to their relevant state slices, guaranteeing 60 FPS performance by preventing application-wide re-renders.
+- **Backwards-Compatibility Adapter (`src/store/AppContext.tsx`):** Refactored the legacy `AppProvider` to forward state reads and actions directly to the Zustand store, preventing breaking changes in existing tab views.
+
+#### 2. Segmented Local Storage Caching (`src/utils/storage.ts`)
+- **Partitioned Keys:** Implemented domain-prefix and year-month partitioned caching in AsyncStorage (e.g. `logs:water:2026-06`) to ensure constant-time writes regardless of history size.
+- **Hydration Strategy:** Configured the app to load only the active 2 months of logs during startup, preventing memory leaks and lag.
+
+#### 3. Pure Health Calculations Layer (`src/utils/healthCalculations.ts`)
+- **Zero-Dependency Utilities:** Extracted core math equations into a pure functional folder with detailed JSDoc annotations, covering BMI, BMR (Mifflin-St Jeor), TDEE (Harris-Benedict), Active Calorie Burn (MET), and Macronutrient goals distribution.
+
+#### 4. Dynamic Dashboard Widget Registry (`src/features/dashboard/components/WidgetRegistry.tsx`)
+- **Type-Safe registry:** Built a generic `<MetricCard>` container mapping widget keys to custom visualization components (`radial_chart`, `linear_progress`, `numeric_delta`, `compact_chip`) using TypeScript generics to enforce data shapes.
+- **Dashboard Customizer Modal (`app/(tabs)/index.tsx`):** Designed an interactive customization panel on the Home dashboard allowing users to reorder and toggle widget visibility dynamically.
+
 ## [1.9.0] - 2026-06-02T10:09:00+05:30
 
 ### Added — Step Tracking Enhancement, BMI Calculator & Tracking, Health Suggestions Engine

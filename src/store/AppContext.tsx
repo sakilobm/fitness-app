@@ -256,286 +256,180 @@ const generateInitialStepHistory = (): StepLog[] => {
   return history;
 };
 
+import { useFitnessStore } from './fitnessStore';
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile>(initialUserProfile);
-  const [weightLogs, setWeightLogs] = useState<WeightLog[]>(initialWeightLogs);
-  const [meals, setMeals] = useState<Meal[]>(initialMeals);
-  const [waterLogs, setWaterLogs] = useState<LogEntry[]>(initialWaterLogs);
-  const [reminders, setReminders] = useState<ReminderItem[]>(initialReminders);
-  const [stepsCount, setStepsCount] = useState<number>(6240);
-  const [activeMinutes, setActiveMinutes] = useState<number>(48);
+  const store = useFitnessStore();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [stepHistory, setStepHistory] = useState<StepLog[]>(generateInitialStepHistory);
 
-  const [waterAvg, setWaterAvg] = useState(2100);
-  const [waterBest, setWaterBest] = useState(3200);
-  const [waterStreak, setWaterStreak] = useState(8);
-
-  // ─── Supabase Authentication Listener ───────────────────────────────────────
+  // Sync profile when authentication state changes
   useEffect(() => {
+    const syncUserFromSession = (session: any) => {
+      if (!session?.user) return;
+      const meta = session.user.user_metadata ?? {};
+      const name = meta.full_name || meta.name || meta.user_name || session.user.email?.split('@')[0] || 'User';
+      const email = session.user.email ?? meta.email;
+      const profilePic = meta.avatar_url || meta.picture;
+      store.setUser({
+        name,
+        email,
+        ...(profilePic ? { profilePic } : {}),
+      });
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
+      syncUserFromSession(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      syncUserFromSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // ─── Computed BMI from current weight + height ────────────────────────────
-  const currentBMI = useMemo(() => {
-    return calculateBMI(user.weight, user.height);
-  }, [user.weight, user.height]);
+  // Hydrate partitioned logs from AsyncStorage once on load
+  useEffect(() => {
+    store.hydrateStore();
+  }, []);
 
-  // ─── BMI Logs derived from weight history ─────────────────────────────────
+  // Water calculations
+  const [waterAvg, setWaterAvg] = useState(2100);
+  const [waterBest, setWaterBest] = useState(3200);
+  const [waterStreak, setWaterStreak] = useState(8);
+
+  useEffect(() => {
+    const totalMl = store.waterLogs.reduce((sum, item) => sum + item.ml, 0);
+    setWaterAvg(Math.round((2100 * 4 + totalMl) / 5));
+    if (totalMl > waterBest) {
+      setWaterBest(totalMl);
+    }
+    if (totalMl >= store.user.waterGoal) {
+      setWaterStreak(9);
+    } else {
+      setWaterStreak(8);
+    }
+  }, [store.waterLogs, store.user.waterGoal]);
+
+  // Derived variables
+  const currentBMI = useMemo(() => {
+    return calculateBMI(store.user.weight, store.user.height);
+  }, [store.user.weight, store.user.height]);
+
   const bmiLogs = useMemo((): BMILog[] => {
-    // Group weightLogs by date, take last entry per date
     const dateMap = new Map<string, WeightLog>();
-    weightLogs.forEach((log) => {
+    store.weightLogs.forEach((log) => {
       dateMap.set(log.date, log);
     });
 
     const logs: BMILog[] = [];
     dateMap.forEach((log, date) => {
-      const bmi = calculateBMI(log.weight, user.height);
+      const bmi = calculateBMI(log.weight, store.user.height);
       const result = classifyBMI(bmi);
       logs.push({
         date,
         bmi,
         weight: log.weight,
-        height: user.height,
+        height: store.user.height,
         category: result.category,
       });
     });
 
     return logs.sort((a, b) => a.date.localeCompare(b.date));
-  }, [weightLogs, user.height]);
+  }, [store.weightLogs, store.user.height]);
 
-  // ─── Weight Trend Detection ───────────────────────────────────────────────
   const weightTrend = useMemo((): 'losing' | 'gaining' | 'stable' => {
-    if (weightLogs.length < 7) return 'stable';
-    
-    // Compare first half avg vs second half avg of recent 14 entries
-    const recent = weightLogs.slice(-14);
+    if (store.weightLogs.length < 7) return 'stable';
+    const recent = store.weightLogs.slice(-14);
     const mid = Math.floor(recent.length / 2);
     const firstHalf = recent.slice(0, mid);
     const secondHalf = recent.slice(mid);
-    
     const avgFirst = firstHalf.reduce((s, l) => s + l.weight, 0) / firstHalf.length;
     const avgSecond = secondHalf.reduce((s, l) => s + l.weight, 0) / secondHalf.length;
-    
     const diff = avgSecond - avgFirst;
     if (diff < -0.3) return 'losing';
     if (diff > 0.3) return 'gaining';
     return 'stable';
-  }, [weightLogs]);
+  }, [store.weightLogs]);
 
-  // Keep user profile weight synced with weight logs
-  useEffect(() => {
-    if (weightLogs.length > 0) {
-      const latestWeight = weightLogs[weightLogs.length - 1]?.weight || 78.4;
-      setUser((u) => (u.weight !== latestWeight ? { ...u, weight: latestWeight } : u));
-    }
-  }, [weightLogs]);
-
-  // Recalculate Water streaks/averages automatically when water logs update
-  useEffect(() => {
-    const totalMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
-    
-    // Average updates slightly over time based on new inputs
-    setWaterAvg(Math.round((2100 * 4 + totalMl) / 5));
-    
-    // Best day updates if today beats previous peak
-    if (totalMl > waterBest) {
-      setWaterBest(totalMl);
-    }
-    
-    // Streak calculations: if goal is met today
-    if (totalMl >= user.waterGoal) {
-      setWaterStreak(9); // Increments simulated streak
+  // Adapters for context structure
+  const setUserAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      store.setUser(updated(store.user));
     } else {
-      setWaterStreak(8); // Defaults to active base streak
+      store.setUser(updated);
     }
-  }, [waterLogs, user.waterGoal]);
-
-  // Sync stepsCount to today's step history entry
-  useEffect(() => {
-    const todayStr = getDateStr(0);
-    setStepHistory((prev) => {
-      const updated = [...prev];
-      const todayIdx = updated.findIndex((s) => s.date === todayStr);
-      const entry: StepLog = {
-        date: todayStr,
-        steps: stepsCount,
-        caloriesBurned: stepsToCalories(stepsCount, user.weight),
-        distanceKm: stepsToDistanceKm(stepsCount, user.height),
-      };
-      if (todayIdx >= 0) {
-        updated[todayIdx] = entry;
-      } else {
-        updated.push(entry);
-      }
-      // Keep only last 30 days
-      return updated.slice(-30);
-    });
-  }, [stepsCount, user.weight, user.height]);
-
-  // Profile operations
-  const updateUserGoal = (goal: string) => {
-    setUser((u) => ({ ...u, goal }));
   };
 
-  const updateUserMotto = (motto: string) => {
-    setUser((u) => ({ ...u, motto }));
+  const setWeightLogsAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      const next = updated(store.weightLogs);
+      useFitnessStore.setState({ weightLogs: next });
+    } else {
+      useFitnessStore.setState({ weightLogs: updated });
+    }
   };
 
-  // Weight operations
-  const addWeightLog = (weight: number, timeOfDay: 'morning' | 'afternoon' | 'night', dateOffset?: 'today' | 'yesterday') => {
-    const targetDate = getPastDateStr(dateOffset === 'yesterday' ? 1 : 0);
-    setWeightLogs((prev) => {
-      const newLogs = [...prev];
-      // Check if an entry with this date and timeOfDay already exists, if so overwrite it
-      const existingIndex = newLogs.findIndex((log) => log.date === targetDate && log.timeOfDay === timeOfDay);
-      if (existingIndex !== -1) {
-        newLogs[existingIndex] = {
-          ...newLogs[existingIndex],
-          weight,
-        };
-      } else {
-        newLogs.push({
-          id: 'w_log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          weight,
-          date: targetDate,
-          timeOfDay,
-        });
-      }
-      // Keep sorted by date chronologically, then by timeOfDay order
-      const timeOrder = { morning: 0, afternoon: 1, night: 2 };
-      return newLogs.sort((a, b) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
-        return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
-      });
-    });
+  const setMealsAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      const next = updated(store.meals);
+      useFitnessStore.setState({ meals: next });
+    } else {
+      useFitnessStore.setState({ meals: updated });
+    }
   };
 
-  const deleteWeightLog = (index: number) => {
-    setWeightLogs((prev) => {
-      if (prev.length <= 1) return prev; // Keep at least one baseline weight
-      const newLogs = [...prev];
-      newLogs.splice(index, 1);
-      return newLogs;
-    });
+  const setWaterLogsAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      const next = updated(store.waterLogs);
+      useFitnessStore.setState({ waterLogs: next });
+    } else {
+      useFitnessStore.setState({ waterLogs: updated });
+    }
   };
 
-  // Nutrition operations
-  const addFoodToMeal = (mealId: string, item: FoodItem) => {
-    setMeals((prev) =>
-      prev.map((meal) => {
-        if (meal.id === mealId) {
-          return {
-            ...meal,
-            items: [...meal.items, item],
-          };
-        }
-        return meal;
-      })
-    );
+  const setRemindersAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      const next = updated(store.reminders);
+      useFitnessStore.setState({ reminders: next });
+    } else {
+      useFitnessStore.setState({ reminders: updated });
+    }
   };
 
-  const deleteFoodFromMeal = (mealId: string, itemIndex: number) => {
-    setMeals((prev) =>
-      prev.map((meal) => {
-        if (meal.id === mealId) {
-          const newItems = [...meal.items];
-          newItems.splice(itemIndex, 1);
-          return {
-            ...meal,
-            items: newItems,
-          };
-        }
-        return meal;
-      })
-    );
+  const setStepsCountAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      const next = updated(store.stepsCount);
+      useFitnessStore.setState({ stepsCount: next });
+    } else {
+      useFitnessStore.setState({ stepsCount: updated });
+    }
   };
 
-  // Water operations
-  const addWaterLog = (ml: number) => {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    const newEntry: LogEntry = {
-      id: Date.now().toString(),
-      time: timeStr,
-      ml,
-    };
-    setWaterLogs((prev) => [...prev, newEntry]);
+  const setActiveMinutesAdapter = (updated: any) => {
+    if (typeof updated === 'function') {
+      const next = updated(store.activeMinutes);
+      useFitnessStore.setState({ activeMinutes: next });
+    } else {
+      useFitnessStore.setState({ activeMinutes: updated });
+    }
   };
 
-  const deleteWaterLog = (id: string) => {
-    setWaterLogs((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const setWaterGoal = (goal: number) => {
-    setUser((u) => ({ ...u, waterGoal: goal }));
-  };
-
-  // Reminders operations
-  const addReminder = (reminder: Omit<ReminderItem, 'id'>) => {
-    const newReminder: ReminderItem = {
-      ...reminder,
-      id: 'rem_' + Date.now().toString(),
-    };
-    setReminders((prev) => [...prev, newReminder]);
-  };
-
-  const updateReminder = (id: string, reminder: Partial<ReminderItem>) => {
-    setReminders((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...reminder } : item))
-    );
-  };
-
-  const deleteReminder = (id: string) => {
-    setReminders((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const toggleReminder = (id: string) => {
-    setReminders((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item))
-    );
-  };
-
-  // Steps operations
-  const addSteps = (steps: number) => {
-    setStepsCount((prev) => {
-      const newSteps = prev + steps;
-      // Increment active minutes as a factor of steps added
-      setActiveMinutes((m) => m + Math.round(steps / 130));
-      return newSteps;
-    });
-  };
-
-  // Manual step entry — adds to today's count and syncs history
-  const addManualSteps = (steps: number) => {
-    if (steps <= 0) return;
-    setStepsCount((prev) => {
-      const newTotal = prev + steps;
-      setActiveMinutes((m) => m + Math.round(steps / 100));
-      return newTotal;
-    });
-  };
-
-  // Update steps goal
-  const updateStepsGoal = (goal: number) => {
-    setUser((u) => ({ ...u, stepsGoal: goal }));
+  const deleteWeightLogAdapter = (index: number) => {
+    const log = store.weightLogs[index];
+    if (log) {
+      store.deleteWeightLog(log.id);
+    }
   };
 
   const loginUser = (email: string) => {
-    // Handled by Supabase signIn directly now
+    // Handled by Supabase directly
   };
 
   const signupUser = (name: string, email: string) => {
-    // Handled by Supabase signUp directly now
+    // Handled by Supabase directly
   };
 
   const logoutUser = async () => {
@@ -545,40 +439,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
-        user,
-        setUser,
-        updateUserGoal,
-        updateUserMotto,
-        weightLogs,
-        setWeightLogs,
-        addWeightLog,
-        deleteWeightLog,
-        meals,
-        setMeals,
-        addFoodToMeal,
-        deleteFoodFromMeal,
-        waterLogs,
-        setWaterLogs,
-        addWaterLog,
-        deleteWaterLog,
-        setWaterGoal,
+        user: store.user,
+        setUser: setUserAdapter,
+        updateUserGoal: store.updateUserGoal,
+        updateUserMotto: store.updateUserMotto,
+        weightLogs: store.weightLogs,
+        setWeightLogs: setWeightLogsAdapter,
+        addWeightLog: store.addWeightLog,
+        deleteWeightLog: deleteWeightLogAdapter,
+        meals: store.meals,
+        setMeals: setMealsAdapter,
+        addFoodToMeal: store.addFoodToMeal,
+        deleteFoodFromMeal: store.deleteFoodFromMeal,
+        waterLogs: store.waterLogs,
+        setWaterLogs: setWaterLogsAdapter,
+        addWaterLog: store.addWaterLog,
+        deleteWaterLog: store.deleteWaterLog,
+        setWaterGoal: store.setWaterGoal,
         waterAvg,
         waterBest,
         waterStreak,
-        reminders,
-        setReminders,
-        addReminder,
-        updateReminder,
-        deleteReminder,
-        toggleReminder,
-        stepsCount,
-        setStepsCount,
-        addSteps,
-        addManualSteps,
-        activeMinutes,
-        setActiveMinutes,
-        stepHistory,
-        updateStepsGoal,
+        reminders: store.reminders,
+        setReminders: setRemindersAdapter,
+        addReminder: store.addReminder,
+        updateReminder: store.updateReminder,
+        deleteReminder: store.deleteReminder,
+        toggleReminder: store.toggleReminder,
+        stepsCount: store.stepsCount,
+        setStepsCount: setStepsCountAdapter,
+        addSteps: store.addSteps,
+        addManualSteps: store.addManualSteps,
+        activeMinutes: store.activeMinutes,
+        setActiveMinutes: setActiveMinutesAdapter,
+        stepHistory: store.stepHistory,
+        updateStepsGoal: store.updateStepsGoal,
         bmiLogs,
         currentBMI,
         weightTrend,
@@ -600,3 +494,4 @@ export const useAppStore = () => {
   }
   return context;
 };
+

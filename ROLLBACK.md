@@ -1,5 +1,36 @@
 # Rollback Plan
 
+If version `2.0.0` (Zustand State, Component Registry & Segmented Storage Refactor) needs to be reverted due to library conflicts, performance issues, or state-sync bugs, use this guide to revert to the previous state.
+
+## Rollback Procedure (Reverting to legacy context and static grid v1.9.0)
+
+1. **Restore screens, stores, and schemas:**
+   Revert the home screen, AppContext provider, and index exports back to their v1.9.0 states:
+   ```powershell
+   git checkout v1.9.0 -- app/(tabs)/index.tsx src/store/AppContext.tsx src/store/index.ts
+   ```
+
+2. **Clean up new shared feature files and utils:**
+   Remove the new Zustand store, segmented storage helper, pure calculations utilities, and component registry feature folders:
+   ```powershell
+   Remove-Item -Recurse -Force src/features/dashboard
+   Remove-Item -Force src/store/fitnessStore.ts src/utils/storage.ts src/utils/healthCalculations.ts testing/test_health_calculations.js testing/run_all_test_scripts.sh
+   ```
+
+3. **Uninstall dependencies:**
+   Remove Zustand and AsyncStorage:
+   ```powershell
+   npm uninstall zustand @react-native-async-storage/async-storage
+   ```
+
+4. **Clean metro bundle cache:**
+   To guarantee Metro completely purges state modifications:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `1.8.4` (Android Release Build Path Restoration) needs to be reverted due to unexpected compilation failures or path regressions on other operating systems, use this guide to revert to the previous state.
 
 ## Rollback Procedure (Reverting to redirected paths v1.8.3)
