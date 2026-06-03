@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
 import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog } from '../types';
 import { Colors } from '../constants/theme';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
@@ -20,6 +21,7 @@ interface FitnessState {
 
   // Nutrition/Food Tracking
   meals: Meal[];
+  setMeals: (updater: Meal[] | ((meals: Meal[]) => Meal[])) => void;
   addFoodToMeal: (mealId: string, item: FoodItem) => void;
   deleteFoodFromMeal: (mealId: string, itemIndex: number) => void;
 
@@ -51,6 +53,9 @@ interface FitnessState {
 
   // Hydration state
   hydrateStore: () => Promise<void>;
+  
+  // Backend Sync
+  initializeFromSupabase: () => Promise<void>;
 }
 
 // Initial Values matching AppContext
@@ -223,11 +228,28 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   stepHistory: generateInitialStepHistory(),
   dashboardGrid: defaultDashboardGrid,
 
-  setUser: (updatedUser) => set((state) => ({ user: { ...state.user, ...updatedUser } })),
+  setUser: (updatedUser) => {
+    set((state) => ({ user: { ...state.user, ...updatedUser } }));
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('profiles').update(updatedUser).eq('id', data.user.id).then();
+      }
+    });
+  },
   
-  updateUserGoal: (goal) => set((state) => ({ user: { ...state.user, goal } })),
+  updateUserGoal: (goal) => {
+    set((state) => ({ user: { ...state.user, goal } }));
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) supabase.from('profiles').update({ goal }).eq('id', data.user.id).then();
+    });
+  },
   
-  updateUserMotto: (motto) => set((state) => ({ user: { ...state.user, motto } })),
+  updateUserMotto: (motto) => {
+    set((state) => ({ user: { ...state.user, motto } }));
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) supabase.from('profiles').update({ motto }).eq('id', data.user.id).then();
+    });
+  },
 
   addWeightLog: (weight, timeOfDay, dateOffset) => {
     const targetDate = getPastDateStr(dateOffset === 'yesterday' ? 1 : 0);
@@ -258,6 +280,19 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     });
 
     mmkvSaveLog('weight', targetDate, logEntry);
+    
+    // Supabase sync
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('weight_logs').insert({
+          id: newLogId,
+          user_id: data.user.id,
+          weight,
+          date: targetDate,
+          time_of_day: timeOfDay
+        }).then();
+      }
+    });
   },
 
   deleteWeightLog: (id) => {
@@ -273,8 +308,15 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       };
     });
 
-    if (deletedLog) mmkvDeleteLog('weight', deletedLog.date, id);
+    if (deletedLog) {
+      mmkvDeleteLog('weight', deletedLog.date, id);
+      supabase.from('weight_logs').delete().eq('id', id).then();
+    }
   },
+
+  setMeals: (updater) => set((state) => ({
+    meals: typeof updater === 'function' ? updater(state.meals) : updater
+  })),
 
   addFoodToMeal: (mealId, item) => {
     set((state) => {
@@ -318,6 +360,17 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     }));
 
     mmkvSaveLog('water', getPastDateStr(0), logEntry);
+    
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('water_logs').insert({
+          id: logEntry.id,
+          user_id: data.user.id,
+          time: logEntry.time,
+          ml: logEntry.ml
+        }).then();
+      }
+    });
   },
 
   deleteWaterLog: (id) => {
@@ -325,9 +378,15 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       waterLogs: state.waterLogs.filter((item) => item.id !== id),
     }));
     mmkvDeleteLog('water', getPastDateStr(0), id);
+    supabase.from('water_logs').delete().eq('id', id).then();
   },
 
-  setWaterGoal: (goal) => set((state) => ({ user: { ...state.user, waterGoal: goal } })),
+  setWaterGoal: (goal) => {
+    set((state) => ({ user: { ...state.user, waterGoal: goal } }));
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) supabase.from('profiles').update({ water_goal: goal }).eq('id', data.user.id).then();
+    });
+  },
 
   addReminder: (reminder) => {
     const newReminder: ReminderItem = {
@@ -442,6 +501,58 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     if (recentWeight.length > 0) {
       const timeOrder: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
       const sorted = (recentWeight as WeightLog[]).sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
+      });
+      set({ weightLogs: sorted });
+    }
+  },
+  
+  initializeFromSupabase: async () => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return;
+    const userId = authData.user.id;
+    
+    // Fetch Profile
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (profile) {
+      set((state) => ({
+        user: {
+          ...state.user,
+          name: profile.name,
+          age: profile.age,
+          height: profile.height,
+          weight: profile.weight,
+          goal: profile.goal,
+          motto: profile.motto,
+          calorieGoal: profile.calorie_goal,
+          waterGoal: profile.water_goal,
+          stepsGoal: profile.steps_goal,
+          workoutGoal: profile.workout_goal,
+          level: profile.level,
+          xp: profile.xp,
+          streak: profile.streak,
+          profilePic: profile.profile_pic,
+        }
+      }));
+    }
+    
+    // Fetch Water
+    const { data: waterLogs } = await supabase.from('water_logs').select('*').eq('user_id', userId);
+    if (waterLogs) {
+      set({ waterLogs: waterLogs.map((log: any) => ({ id: log.id, time: log.time, ml: log.ml })) });
+    }
+    
+    // Fetch Weight
+    const { data: weightLogs } = await supabase.from('weight_logs').select('*').eq('user_id', userId);
+    if (weightLogs) {
+      const timeOrder: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
+      const sorted = weightLogs.map((log: any) => ({
+        id: log.id,
+        weight: log.weight,
+        date: log.date,
+        timeOfDay: log.time_of_day,
+      })).sort((a: any, b: any) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
       });

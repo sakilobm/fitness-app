@@ -139,7 +139,7 @@ export default function NutritionScreen() {
   };
 
   const toggleMeal = (id: string) => {
-    setMeals((ms) => ms.map((m) => (m.id === id ? { ...m, expanded: !m.expanded } : m)));
+    setMeals((ms: Meal[]) => ms.map((m: Meal) => (m.id === id ? { ...m, expanded: !m.expanded } : m)));
   };
 
   const mealKcal = (m: Meal) => m.items.reduce((s, i) => s + i.kcal, 0);
@@ -206,8 +206,8 @@ export default function NutritionScreen() {
     addFoodToMeal(activeMealId, foodToLog);
     
     // Autoexpand log group locally
-    setMeals((prev) =>
-      prev.map((m) => (m.id === activeMealId ? { ...m, expanded: true } : m))
+    setMeals((prev: Meal[]) =>
+      prev.map((m: Meal) => (m.id === activeMealId ? { ...m, expanded: true } : m))
     );
     setShowModal(false);
   };

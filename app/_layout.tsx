@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { useAuth, AuthProvider } from '@/providers/AuthProvider';
 import { useEffect, useState } from 'react';
+import { useFitnessStore } from '@/store/fitnessStore';
 
 function NavigationGate() {
   const { phase } = useAuth();
@@ -26,8 +27,10 @@ function NavigationGate() {
       // Redirect to onboarding
       router.replace('/(auth)/onboarding');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to core tab home dashboard
-      router.replace('/(tabs)');
+      // Sync from DB before redirecting to dashboard
+      useFitnessStore.getState().initializeFromSupabase().then(() => {
+        router.replace('/(tabs)');
+      });
     }
   }, [isAuthenticated, segments, isReady]);
 
