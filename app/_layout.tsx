@@ -5,8 +5,13 @@ import { Colors } from '@/constants/theme';
 import { useAuth, AuthProvider } from '@/providers/AuthProvider';
 import { useEffect, useState } from 'react';
 import { useFitnessStore } from '@/store/fitnessStore';
+import * as SplashScreen from 'expo-splash-screen';
+import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 
-function NavigationGate() {
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void }) {
   const { phase } = useAuth();
   const isAuthenticated = phase === 'SIGNED_IN';
   const segments = useSegments();
@@ -18,21 +23,33 @@ function NavigationGate() {
   }, []);
 
   useEffect(() => {
-    if (!isReady || !segments[0]) return;
+    if (!isReady || !segments[0] || phase === 'BOOTING') return;
 
     // Resolve what page the user is currently targeting
     const inAuthGroup = segments[0] === '(auth)';
+    const isSetup = (segments as string[])[1] === 'setup';
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to onboarding
       router.replace('/(auth)/onboarding');
-    } else if (isAuthenticated && inAuthGroup) {
-      // Sync from DB before redirecting to dashboard
+      setTimeout(() => setIsAppReady(true), 100);
+    } else if (isAuthenticated && inAuthGroup && !isSetup) {
+      // Sync from DB before redirecting to dashboard or setup
       useFitnessStore.getState().initializeFromSupabase().then(() => {
-        router.replace('/(tabs)');
+        const user = useFitnessStore.getState().user;
+        // Simple heuristic for new user: default stats
+        if (user.level === 1 && user.xp === 0 && user.weight === 70 && user.height === 170) {
+          router.replace('/(auth)/setup');
+        } else {
+          router.replace('/(tabs)');
+        }
+        setTimeout(() => setIsAppReady(true), 100);
       });
+    } else {
+      // Already authenticated and in the correct place
+      setTimeout(() => setIsAppReady(true), 100);
     }
-  }, [isAuthenticated, segments, isReady]);
+  }, [isAuthenticated, segments, isReady, phase]);
 
   return (
     <Stack
@@ -53,12 +70,15 @@ function NavigationGate() {
 }
 
 export default function RootLayout() {
+  const [isAppReady, setIsAppReady] = useState(false);
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
         {/* Light theme → dark status bar icons */}
         <StatusBar style="dark" />
-        <NavigationGate />
+        <NavigationGate setIsAppReady={setIsAppReady} />
+        <AnimatedSplashScreen isAppReady={isAppReady} />
       </AuthProvider>
     </SafeAreaProvider>
   );

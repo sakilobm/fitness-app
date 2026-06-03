@@ -232,7 +232,15 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     set((state) => ({ user: { ...state.user, ...updatedUser } }));
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        supabase.from('profiles').update(updatedUser).eq('id', data.user.id).then();
+        // Map camelCase to snake_case for DB
+        const dbUpdate: any = { ...updatedUser };
+        if ('calorieGoal' in dbUpdate) { dbUpdate.calorie_goal = dbUpdate.calorieGoal; delete dbUpdate.calorieGoal; }
+        if ('waterGoal' in dbUpdate) { dbUpdate.water_goal = dbUpdate.waterGoal; delete dbUpdate.waterGoal; }
+        if ('stepsGoal' in dbUpdate) { dbUpdate.steps_goal = dbUpdate.stepsGoal; delete dbUpdate.stepsGoal; }
+        if ('workoutGoal' in dbUpdate) { dbUpdate.workout_goal = dbUpdate.workoutGoal; delete dbUpdate.workoutGoal; }
+        if ('profilePic' in dbUpdate) { dbUpdate.profile_pic = dbUpdate.profilePic; delete dbUpdate.profilePic; }
+        
+        supabase.from('profiles').update(dbUpdate).eq('id', data.user.id).then();
       }
     });
   },
