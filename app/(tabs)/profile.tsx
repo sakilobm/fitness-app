@@ -20,8 +20,9 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import * as ImagePicker from 'expo-image-picker';
-import { useProfileSettings } from '@/store/fitnessStore';
+import { useProfileSettings, useThemeMode } from '@/store/fitnessStore';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'expo-router';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -65,12 +66,13 @@ const AVATAR_PRESETS = [
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user, setUser } = useProfileSettings();
   const logoutUser = async () => {
     await supabase.auth.signOut();
   };
 
-  const [darkTheme, setDarkTheme] = useState(true);
+  const { isDarkMode, setIsDarkMode } = useThemeMode();
   const [notifications, setNotifications] = useState(true);
   const [unitKg, setUnitKg] = useState(true);
   const [unitMl, setUnitMl] = useState(true);
@@ -417,15 +419,24 @@ export default function ProfileScreen() {
       <GlassCard>
         <SectionHeader title="Settings" accentColor={Colors.muted} />
         <View style={styles.settingsList}>
+          {/* Action: Recalibrate Fitness Goals via Setup Wizard */}
+          <TouchableOpacity style={styles.settingRow} activeOpacity={0.75} onPress={() => router.push('/(auth)/setup')}>
+            <View style={[styles.settingIconWrap, { backgroundColor: Colors.bubble.green }]}>
+              <Ionicons name="sparkles" size={18} color={Colors.lime} />
+            </View>
+            <Text style={[styles.settingLabel, { color: Colors.lime }]}>Recalibrate Fitness Engine</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
+          </TouchableOpacity>
+
           <View style={styles.settingRow}>
             <View style={[styles.settingIconWrap, { backgroundColor: '#6366F1' + '15' }]}>
               <Ionicons name="moon" size={18} color="#6366F1" />
             </View>
             <Text style={styles.settingLabel}>Dark Theme</Text>
             <Switch
-              value={darkTheme} onValueChange={setDarkTheme}
+              value={isDarkMode} onValueChange={setIsDarkMode}
               trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '88' }}
-              thumbColor={darkTheme ? Colors.lime : Colors.muted}
+              thumbColor={isDarkMode ? Colors.lime : Colors.muted}
             />
           </View>
 

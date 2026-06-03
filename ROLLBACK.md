@@ -1,5 +1,23 @@
 # Rollback Plan
 
+If version `2.1.0` (Premium Onboarding Animations, InteractiveCard scaling & Multi-Phase Loading Overhaul) needs to be reverted due to layout transitions performance issues or Reanimated library crashes, use this guide to revert.
+
+## Rollback Procedure (Reverting to static single-color setup wizard v2.0.0)
+
+1. **Restore wizard and weight tracking screens:**
+   Revert the setup and weight files back to their v2.0.0 states:
+   ```powershell
+   git checkout v2.0.0 -- app/(auth)/setup.tsx app/(tabs)/weight.tsx testing/run_all_test_scripts.sh
+   ```
+
+2. **Clean Metro bundle cache:**
+   Ensure compiled assets are rebuilt cleanly:
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.0.0` (Zustand State, Component Registry & Segmented Storage Refactor) needs to be reverted due to library conflicts, performance issues, or state-sync bugs, use this guide to revert to the previous state.
 
 ## Rollback Procedure (Reverting to legacy context and static grid v1.9.0)

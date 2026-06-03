@@ -65,8 +65,6 @@ export default function AnimatedSplashScreen({ isAppReady }: Props) {
     }
   }, [isAppReady]);
 
-  if (isAnimationComplete) return null;
-
   const containerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
@@ -80,6 +78,8 @@ export default function AnimatedSplashScreen({ isAppReady }: Props) {
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${iconRotate.value}deg` }],
   }));
+
+  if (isAnimationComplete) return null;
 
   return (
     <Animated.View style={[styles.container, containerStyle]}>

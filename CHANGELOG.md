@@ -2,6 +2,99 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.1] - 2026-06-03T23:20:24+05:30
+
+### Fixed — Industry-Standard React Context Theming in Setup Wizard
+
+**Problem:** Light theme was broken for all inputs (age, height, weight) and sub-components (ChoiceCard, StepHeader, StepDots). Static `StyleSheet.create` calls used hardcoded `DARK_PALETTE.*` constants — they never re-evaluated when `isDarkMode` changed.
+
+**Root Cause:** `StyleSheet.create` is evaluated once at module load time. Any palette values baked into static stylesheets are frozen forever.
+
+**Fix — React Context pattern (industry standard):**
+- Defined `ThemeCtx = React.createContext<Palette>(DARK_PALETTE)` at module level.
+- `SetupWizardScreen` wraps its entire return in `<ThemeCtx.Provider value={D}>`, where `D` is `isDarkMode ? DARK_PALETTE : LIGHT_PALETTE`.
+- All sub-components (`StepDots`, `ChoiceCard`, `MetricInput`, `StepHeader`) call `const D = useT()` (alias for `React.useContext(ThemeCtx)`) — they get the live palette instantly with zero prop drilling.
+- All static `StyleSheet.create` calls referencing palette-dependent colors removed from sub-components; replaced with inline style objects that read `D.*` at render time.
+- `StatusBar barStyle` now reads `D.statusBar` so it switches between `light-content` / `dark-content` correctly.
+
+#### Rollback
+```
+git checkout HEAD~1 -- app/(auth)/setup.tsx
+```
+
+## [2.3.0] - 2026-06-03T23:06:51+05:30
+
+### Added — Persisted Dark / Light Theme System
+
+**Architectural Decision:** Extended the Zustand store with a persisted `isDarkMode` boolean and wired the setup wizard and profile toggle to it so the theme choice survives app restarts.
+
+#### Store Changes (`src/store/fitnessStore.ts`)
+- Added `isDarkMode: boolean` (default `true`) and `setIsDarkMode: (value: boolean) => void` to `FitnessState` interface and store state.
+- Exported `useThemeMode()` custom hook: `{ isDarkMode, setIsDarkMode }` — readable from any screen.
+
+#### Setup Wizard (`app/(auth)/setup.tsx`)
+- Defined two palette constants: `DARK_PALETTE` (`#0A0A0F` canvas) and `LIGHT_PALETTE` (`#F4F3EF` warm cream canvas).
+- Converted the static `StyleSheet.create(...)` into a `makeStyles(D: Palette)` factory called inside the component via `React.useMemo`, so styles regenerate instantly when theme changes.
+- Sub-components (`ChoiceCard`, `MetricInput`) call `useThemeMode()` directly for inline dynamic colors.
+- Static sub-component stylesheet (dotS, choiceS, miS, shS) falls back to `DARK_PALETTE` constants as stable defaults (only text/colors are overridden via inline props at render time).
+
+#### Profile Screen (`app/(tabs)/profile.tsx`)
+- Replaced local `useState(true)` for `darkTheme` with `useThemeMode()` from the store.
+- The Dark Theme switch now persists across sessions and immediately affects the setup wizard.
+
+#### Rollback Notes
+- To revert: `git checkout HEAD~1 -- app/(auth)/setup.tsx src/store/fitnessStore.ts app/(tabs)/profile.tsx`
+
+## [2.2.0] - 2026-06-03T23:00:00+05:30
+
+### Changed — Full Premium UI Rewrite: Setup Wizard (`app/(auth)/setup.tsx`)
+
+**Architectural Decision:** Completely replaced the existing setup wizard UI with a dark, cinematic, glassmorphic design system to provide a world-class first-impression onboarding experience.
+
+#### Design System Changes
+- **Dark Canvas:** All screens now render on `#0A0A0F` deep background (separate from the main app theme) to create visual drama during onboarding.
+- **Segmented Step Dots:** Replaced the thin progress bar with animated step-dot indicators (growing pill shape for active, filled dot for done, grey for upcoming) for clearer progress communication.
+- **Labeled Step Badges:** Each step renders a pill badge (`01 BASICS`, `02 METRICS`, etc.) with the step's accent color to establish context immediately.
+
+#### Component Additions
+- **`ChoiceCard`:** Reusable animated card (scale spring + glow shadow) for activity/goal selection — uses `borderColor` interpolation for a smooth glow-in on selection.
+- **`MetricInput`:** Full-height tappable metric card with large display-size numbers, label, unit badge, and focus color animation.
+- **`StepHeader`:** Composable header block (badge + title + subtitle) with staggered `FadeInUp` entrance animations.
+- **`PulseRing`:** Radial pulsing ring for the calibration step — uses `withDelay` + `withRepeat` for offset rings creating a sonar/radar feel.
+- **`StepDots`:** Dynamic progress indicator with morphing pill for the active step.
+
+#### Screen-Level Changes
+- **Welcome (Step 0):** Triple concentric decorative rings around a glowing center orb + feature pills row.
+- **Basics (Step 1):** Large sex selector cards (full icon + label + check badge) + metric input for age.
+- **Metrics (Step 2):** Dual metric inputs + live BMI preview card with color-coded status badge (Normal/Overweight/etc.).
+- **Activity (Step 3):** Full ChoiceCard list with individual accent colors per level.
+- **Goal (Step 4):** ChoiceCard list + "Most Popular" badge overlay for Burn Fat option.
+- **Calibration (Step 5):** Sonar pulse rings, animated phase icon, phase progress dots, live task status list (Done/Running per phase).
+- **Results (Step 6):** Trophy orb + horizontal metric cards with inline editable values.
+
+#### Rollback Notes
+- Previous version backed up implicitly via git. To rollback: `git checkout HEAD~1 -- app/(auth)/setup.tsx`
+
+## [2.1.0] - 2026-06-03T19:50:00+05:30
+
+### Added — Premium Animations & Overhauled Interactive Onboarding Setup Wizard
+
+**Architectural Decision:** Enhanced the onboarding/recalibration setup page (`app/(auth)/setup.tsx`) to feature high-end spring animations, entry transitions, and an interactive multi-phase calibration loading experience to provide a premium, modern user onboarding feel:
+
+#### 1. Page Transition & Card Animations (`app/(auth)/setup.tsx`)
+- **Layout Transitions:** Integrated Reanimated's `FadeInRight` entering transitions on every wizard step view to slide and fade screens smoothly as the user navigates.
+- **Interactive Card Scaling (`InteractiveCard`):** Created a spring-driven selection card wrapper that scales selected items (Biological Sex, Activity Level, Goals) to `1.04x` with custom border highlights and soft shadow glows on selection.
+- **Smooth Progress Bar:** Animated the progress bar width transition smoothly using a Reanimated shared value and timing curve.
+
+#### 2. Multi-Phase Calibration Loading screen (`app/(auth)/setup.tsx`)
+- **Dynamic 5-Phase Loading Cycle:** Upgraded the calibration phase (Step 5) to cycle through 5 distinct steps (Vitals, Training, Hydration, Caloric, Completion) over a 5-second window.
+- **Color & Icon Transitions:** Dynamically transitions between matching colors (Red, Blue, Water Blue, Amber, Teal) and corresponding Ionicons (`heart`, `barbell`, `water`, `flame`, `trophy`) inside a dual pulsing orb structure.
+- **3D Pop & Rotation:** Rotates the icon 360 degrees and performs a pop scale animation on each phase change to increase engagement.
+- **Structured Logs & Diagnostics:** Implemented correlation IDs, structured console logs, and safe error bounds catching during engine metrics calculations.
+
+### Fixed — Compilation & Type Safety Checks
+- **Weight History Deletions (`app/(tabs)/weight.tsx`):** Fixed a type parameter mismatch where `deleteWeightLog` was passed an array index instead of the log's string ID, resolving type-checking errors.
+
 ## [2.0.0] - 2026-06-03T12:22:00+05:30
 
 ### Added — Zustand State Engine, Granular Selector Hooks, Segmented Caching, Dynamic Dashboard Widget Registry, Pure Health Utility Layer

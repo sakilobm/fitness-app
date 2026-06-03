@@ -642,7 +642,7 @@ export default function WeightScreen() {
               const handleDelete = () => {
                 const actualIndex = weightLogs.findIndex((item) => item.id === log.id);
                 if (actualIndex !== -1) {
-                  deleteWeightLog(actualIndex);
+                  deleteWeightLog(log.id);
                   setSelectedPointIndex(null);
                 }
               };

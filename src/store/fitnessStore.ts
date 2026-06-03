@@ -51,6 +51,10 @@ interface FitnessState {
   setDashboardGrid: (grid: string[]) => void;
   toggleWidgetVisibility: (id: string) => void;
 
+  // App Theme Preference
+  isDarkMode: boolean;
+  setIsDarkMode: (value: boolean) => void;
+
   // Hydration state
   hydrateStore: () => Promise<void>;
   
@@ -227,6 +231,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   activeMinutes: 48,
   stepHistory: generateInitialStepHistory(),
   dashboardGrid: defaultDashboardGrid,
+  isDarkMode: true,
 
   setUser: (updatedUser) => {
     set((state) => ({ user: { ...state.user, ...updatedUser } }));
@@ -487,6 +492,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   updateStepsGoal: (goal) => set((state) => ({ user: { ...state.user, stepsGoal: goal } })),
 
   setDashboardGrid: (grid) => set({ dashboardGrid: grid }),
+
+  setIsDarkMode: (value) => set({ isDarkMode: value }),
 
   toggleWidgetVisibility: (id) => {
     set((state) => {
@@ -751,4 +758,14 @@ export function useBmiTracker() {
     addWeightLog,
     deleteWeightLog,
   };
+}
+
+/**
+ * Custom hook for App Theme (Dark / Light mode).
+ * Reads isDarkMode from the persisted Zustand store so any screen can react to it.
+ */
+export function useThemeMode() {
+  const isDarkMode   = useFitnessStore((s) => s.isDarkMode);
+  const setIsDarkMode = useFitnessStore((s) => s.setIsDarkMode);
+  return { isDarkMode, setIsDarkMode };
 }

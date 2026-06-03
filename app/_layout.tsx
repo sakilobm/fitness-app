@@ -9,7 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 
 // Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(() => { });
 
 function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void }) {
   const { phase } = useAuth();

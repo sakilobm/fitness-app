@@ -18,7 +18,7 @@ echo "✅ TypeScript compilation checks passed!"
 
 # 2. Compile calculations file for node runner
 echo "Step 2: Compiling Health Calculations module..."
-npx tsc src/utils/healthCalculations.ts --outDir testing/dist --module commonjs --target es2020 --skipLibCheck --esModuleInterop
+npx tsc src/utils/healthCalculations.ts --ignoreConfig --outDir testing/dist --module commonjs --target es2020 --skipLibCheck --esModuleInterop
 COMPILE_EXIT=$?
 
 if [ $COMPILE_EXIT -ne 0 ]; then

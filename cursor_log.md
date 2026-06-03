@@ -1,5 +1,30 @@
 # Cursor Test & Validation Log
 
+## [2026-06-03T19:50:00+05:30] - Onboarding setup wizard animation, interactive scaling cards, and multi-phase loading calibration validation
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; npx tsc src/utils/healthCalculations.ts --ignoreConfig --outDir testing/dist --module commonjs --target es2020 --skipLibCheck --esModuleInterop; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Interactive Card Selections (`app/(auth)/setup.tsx`):** Created the `InteractiveCard` component utilizing React Native Reanimated `withSpring` animations. Selection changes animate scaling to `1.04` and apply active borders + shadow colors on the fly.
+- **Dynamic Phase Loading (`app/(auth)/setup.tsx`):** Overhauled Step 5 from a simple activity spinner to a 5-step progress indicator cycling through Red, Blue, Cyan, Amber, and Teal themes. Rotates the inner Ionicon by 360 degrees and performs a pop animation on phase changes.
+- **Step Layout Slide Transitions (`app/(auth)/setup.tsx`):** Wrapped wizard screens in `<Animated.View entering={FadeInRight.springify().damping(18)}>` to execute fluid step-by-step layout transition slide-in animations.
+- **TypeScript & Parameter Alignments (`app/(tabs)/weight.tsx`):** Fixed type safety in `deleteWeightLog()` by supplying the string `log.id` instead of a number array index, resolving compiler warnings.
+
 ## [2026-06-03T12:22:00+05:30] - Zustand Store, Caching Storage, Component Registry & Health Calculations Validation
 
 ### Automated Checks
