@@ -9,7 +9,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { AppIcon, AppIconDef } from '@/components/ui';
 import { Colors, Typography, Radius } from '@/constants/theme';
-import { useAppStore } from '@/store';
+import { useFitnessStore } from '@/store/fitnessStore';
 import { ReminderItem, IconDef, IoniconName, MCIName } from '@/types';
 
 const ALL_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -107,7 +107,7 @@ export default function RemindersScreen() {
     updateReminder,
     deleteReminder,
     toggleReminder,
-  } = useAppStore();
+  } = useFitnessStore();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [category, setCategory] = useState('All');

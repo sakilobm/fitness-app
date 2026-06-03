@@ -12,7 +12,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import { router } from 'expo-router';
-import { useAppStore } from '@/store';
+import { useFitnessStore, useHydrationTracker } from '@/store/fitnessStore';
 
 const { width: W } = Dimensions.get('window');
 const CYLINDER_W = 120;
@@ -88,8 +88,8 @@ const QUICK_AMOUNTS = [150, 250, 500];
 export default function WaterScreen() {
   const insets = useSafeAreaInsets();
 
+  const { user } = useFitnessStore();
   const {
-    user,
     waterLogs: log,
     addWaterLog: addWater,
     deleteWaterLog: handleDeleteLog,
@@ -97,7 +97,7 @@ export default function WaterScreen() {
     waterAvg: avgDay,
     waterBest: bestDay,
     waterStreak: streakVal,
-  } = useAppStore();
+  } = useHydrationTracker();
 
   const goalMl = user.waterGoal;
 

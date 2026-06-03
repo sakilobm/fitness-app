@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog } from '../types';
+import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog } from '../types';
 import { Colors } from '../constants/theme';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
@@ -517,12 +517,21 @@ export function useHydrationTracker() {
   const deleteWaterLog = useFitnessStore((state) => state.deleteWaterLog);
   const setWaterGoal = useFitnessStore((state) => state.setWaterGoal);
 
+  // Dynamic calculations (from AppContext)
+  const totalMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
+  const waterAvg = Math.round((2100 * 4 + totalMl) / 5);
+  const waterBest = Math.max(3200, totalMl);
+  const waterStreak = totalMl >= waterGoal ? 9 : 8;
+
   return {
     waterLogs,
     waterGoal,
     addWaterLog,
     deleteWaterLog,
     setWaterGoal,
+    waterAvg,
+    waterBest,
+    waterStreak,
   };
 }
 
@@ -570,5 +579,57 @@ export function useDashboardEngine() {
     dashboardGrid,
     setDashboardGrid,
     toggleWidgetVisibility,
+  };
+}
+
+/**
+ * Custom hook for BMI and Weight Tracking.
+ */
+export function useBmiTracker() {
+  const weightLogs = useFitnessStore((state) => state.weightLogs);
+  const height = useFitnessStore((state) => state.user.height);
+  const weight = useFitnessStore((state) => state.user.weight);
+  const addWeightLog = useFitnessStore((state) => state.addWeightLog);
+  const deleteWeightLog = useFitnessStore((state) => state.deleteWeightLog);
+
+  const currentBMI = calculateBMI(weight, height);
+
+  const bmiLogs: BMILog[] = [];
+  const dateMap = new Map<string, WeightLog>();
+  weightLogs.forEach((log) => dateMap.set(log.date, log));
+  
+  dateMap.forEach((log, date) => {
+    const bmi = calculateBMI(log.weight, height);
+    const result = classifyBMI(bmi);
+    bmiLogs.push({
+      date,
+      bmi,
+      weight: log.weight,
+      height,
+      category: result.category,
+    });
+  });
+  bmiLogs.sort((a, b) => a.date.localeCompare(b.date));
+
+  let weightTrend: 'losing' | 'gaining' | 'stable' = 'stable';
+  if (weightLogs.length >= 7) {
+    const recent = weightLogs.slice(-14);
+    const mid = Math.floor(recent.length / 2);
+    const firstHalf = recent.slice(0, mid);
+    const secondHalf = recent.slice(mid);
+    const avgFirst = firstHalf.reduce((s, l) => s + l.weight, 0) / (firstHalf.length || 1);
+    const avgSecond = secondHalf.reduce((s, l) => s + l.weight, 0) / (secondHalf.length || 1);
+    const diff = avgSecond - avgFirst;
+    if (diff < -0.3) weightTrend = 'losing';
+    else if (diff > 0.3) weightTrend = 'gaining';
+  }
+
+  return {
+    weightLogs,
+    currentBMI,
+    bmiLogs,
+    weightTrend,
+    addWeightLog,
+    deleteWeightLog,
   };
 }

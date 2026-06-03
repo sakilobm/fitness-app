@@ -18,7 +18,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
-import { useAppStore } from '@/store';
+import { useProfileSettings, useBmiTracker } from '@/store/fitnessStore';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
 
@@ -249,12 +249,12 @@ export default function WeightScreen() {
   const insets = useSafeAreaInsets();
   const [period, setPeriod] = useState<Period>('week');
 
+  const { user } = useProfileSettings();
   const {
-    user,
     weightLogs,
     addWeightLog,
     deleteWeightLog,
-  } = useAppStore();
+  } = useBmiTracker();
 
   const streak = user.streak;
 

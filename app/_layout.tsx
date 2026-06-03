@@ -2,11 +2,12 @@ import { Stack, useSegments, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
-import { AppProvider, useAppStore } from '@/store';
+import { useAuth, AuthProvider } from '@/providers/AuthProvider';
 import { useEffect, useState } from 'react';
 
 function NavigationGate() {
-  const { isAuthenticated } = useAppStore();
+  const { phase } = useAuth();
+  const isAuthenticated = phase === 'SIGNED_IN';
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -51,11 +52,11 @@ function NavigationGate() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AppProvider>
+      <AuthProvider>
         {/* Light theme → dark status bar icons */}
         <StatusBar style="dark" />
         <NavigationGate />
-      </AppProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

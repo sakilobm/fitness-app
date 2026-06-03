@@ -18,7 +18,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Colors, Typography, Radius } from '@/constants/theme';
-import { useAppStore } from '@/store';
+import { useFitnessStore } from '@/store/fitnessStore';
 import { FoodItem, Meal } from '@/types';
 
 const FOOD_LIBRARY: FoodItem[] = [
@@ -104,7 +104,7 @@ export default function NutritionScreen() {
     deleteFoodFromMeal,
     waterLogs,
     addWaterLog,
-  } = useAppStore();
+  } = useFitnessStore();
 
   const [showModal, setShowModal] = useState(false);
   const [activeMealId, setActiveMealId] = useState<string>('breakfast');

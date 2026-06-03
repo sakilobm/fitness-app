@@ -20,7 +20,8 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius } from '@/constants/theme';
 import * as ImagePicker from 'expo-image-picker';
-import { useAppStore } from '@/store';
+import { useProfileSettings } from '@/store/fitnessStore';
+import { supabase } from '@/lib/supabase';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -64,7 +65,10 @@ const AVATAR_PRESETS = [
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { user, setUser, logoutUser } = useAppStore();
+  const { user, setUser } = useProfileSettings();
+  const logoutUser = async () => {
+    await supabase.auth.signOut();
+  };
 
   const [darkTheme, setDarkTheme] = useState(true);
   const [notifications, setNotifications] = useState(true);

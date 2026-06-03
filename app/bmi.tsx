@@ -15,7 +15,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius, Shadows } from '@/constants/theme';
 import { router } from 'expo-router';
-import { useAppStore } from '@/store';
+import { useProfileSettings, useBmiTracker, useWorkoutEngine, useHydrationTracker } from '@/store/fitnessStore';
 import {
   getBMIResult, BMI_CATEGORIES, bmiToGaugePosition,
   getIdealWeightRange, getWeightToNormal,
@@ -221,10 +221,10 @@ const catStyles = StyleSheet.create({
 
 export default function BMIScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    user, bmiLogs, currentBMI, weightTrend,
-    stepsCount, waterLogs,
-  } = useAppStore();
+  const { user } = useProfileSettings();
+  const { bmiLogs, currentBMI, weightTrend } = useBmiTracker();
+  const { stepsCount } = useWorkoutEngine();
+  const { waterLogs } = useHydrationTracker();
 
   const [showCalcModal, setShowCalcModal] = useState(false);
   const [calcWeight, setCalcWeight] = useState(user.weight.toString());

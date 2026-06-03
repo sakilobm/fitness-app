@@ -14,7 +14,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
 import { Colors, Typography, Radius, Shadows } from '@/constants/theme';
 import { router } from 'expo-router';
-import { useAppStore } from '@/store';
+import { useWorkoutEngine, useHydrationTracker, useBmiTracker, useProfileSettings } from '@/store/fitnessStore';
 import { stepsToCalories, stepsToDistanceKm, formatStepCount, getDayLabel } from '@/utils/steps';
 import { generateSuggestions, getBMIResult } from '@/utils/bmi';
 
@@ -166,9 +166,11 @@ export default function StepsScreen() {
   const insets = useSafeAreaInsets();
   const {
     stepsCount, addManualSteps, activeMinutes,
-    user, stepHistory, updateStepsGoal,
-    waterLogs, weightTrend, currentBMI,
-  } = useAppStore();
+    stepHistory, updateStepsGoal,
+  } = useWorkoutEngine();
+  const { user } = useProfileSettings();
+  const { waterLogs } = useHydrationTracker();
+  const { weightTrend, currentBMI } = useBmiTracker();
 
   const [goalView, setGoalView] = useState<'daily' | 'weekly'>('daily');
   const [showAddModal, setShowAddModal] = useState(false);
