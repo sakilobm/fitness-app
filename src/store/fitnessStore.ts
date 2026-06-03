@@ -1,9 +1,10 @@
 import { create } from 'zustand';
-import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog } from '../types';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog } from '../types';
 import { Colors } from '../constants/theme';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
-import { savePartitionedLog, deletePartitionedLog, hydrateRecentLogs } from '../utils/storage';
+import { zustandMMKVStorage, mmkvSaveLog, mmkvDeleteLog, mmkvHydrateLogs } from '../utils/mmkvStorage';
 
 interface FitnessState {
   // User Profile
@@ -206,7 +207,7 @@ const generateInitialStepHistory = (): StepLog[] => {
 // Available dashboard grid items by default
 const defaultDashboardGrid = ['activity', 'nutrition', 'water', 'weight', 'workout_focus'];
 
-export const useFitnessStore = create<FitnessState>((set, get) => ({
+export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   user: initialUserProfile,
   weightLogs: generateInitialWeightLogs(),
   meals: initialMeals,
@@ -256,27 +257,23 @@ export const useFitnessStore = create<FitnessState>((set, get) => ({
       };
     });
 
-    // Persistent cache async sync
-    savePartitionedLog('weight', targetDate, logEntry);
+    mmkvSaveLog('weight', targetDate, logEntry);
   },
 
   deleteWeightLog: (id) => {
+    const deletedLog = get().weightLogs.find((log) => log.id === id);
+
     set((state) => {
       const remainingLogs = state.weightLogs.filter((log) => log.id !== id);
       const sortedLogs = remainingLogs.length > 0 ? remainingLogs : state.weightLogs;
       const latestWeight = sortedLogs[sortedLogs.length - 1]?.weight || state.user.weight;
-      
-      // Attempt async deletion
-      const deletedLog = state.weightLogs.find((log) => log.id === id);
-      if (deletedLog) {
-        deletePartitionedLog('weight', deletedLog.date, id);
-      }
-
       return {
         weightLogs: sortedLogs,
-        user: { ...state.user, weight: latestWeight }
+        user: { ...state.user, weight: latestWeight },
       };
     });
+
+    if (deletedLog) mmkvDeleteLog('weight', deletedLog.date, id);
   },
 
   addFoodToMeal: (mealId, item) => {
@@ -290,9 +287,7 @@ export const useFitnessStore = create<FitnessState>((set, get) => ({
       return { meals: updatedMeals };
     });
 
-    // Cache nutrition item
-    const today = getPastDateStr(0);
-    savePartitionedLog('nutrition', today, { id: `${mealId}_${Date.now()}`, mealId, item });
+    mmkvSaveLog('nutrition', getPastDateStr(0), { id: `${mealId}_${Date.now()}`, mealId, item });
   },
 
   deleteFoodFromMeal: (mealId, itemIndex) => {
@@ -322,17 +317,14 @@ export const useFitnessStore = create<FitnessState>((set, get) => ({
       waterLogs: [...state.waterLogs, logEntry],
     }));
 
-    // Cache water intake
-    const today = getPastDateStr(0);
-    savePartitionedLog('water', today, logEntry);
+    mmkvSaveLog('water', getPastDateStr(0), logEntry);
   },
 
   deleteWaterLog: (id) => {
-    const today = getPastDateStr(0);
     set((state) => ({
       waterLogs: state.waterLogs.filter((item) => item.id !== id),
     }));
-    deletePartitionedLog('water', today, id);
+    mmkvDeleteLog('water', getPastDateStr(0), id);
   },
 
   setWaterGoal: (goal) => set((state) => ({ user: { ...state.user, waterGoal: goal } })),
@@ -391,9 +383,7 @@ export const useFitnessStore = create<FitnessState>((set, get) => ({
       };
     });
 
-    // Save to partitioned storage
-    const today = getPastDateStr(0);
-    savePartitionedLog('steps', today, { steps, timestamp: Date.now() });
+    mmkvSaveLog('steps', getPastDateStr(0), { id: `s_${Date.now()}`, steps, timestamp: Date.now() });
   },
 
   addManualSteps: (steps) => {
@@ -442,24 +432,37 @@ export const useFitnessStore = create<FitnessState>((set, get) => ({
   },
 
   hydrateStore: async () => {
-    // Hydrate latest 2 months of logs from segmented storage
-    const recentWater = await hydrateRecentLogs('water', 2);
-    const recentWeight = await hydrateRecentLogs('weight', 2);
-    
-    if (recentWater.length > 0) {
-      set({ waterLogs: recentWater });
-    }
-    
+    // With MMKV + persist middleware the store rehydrates automatically on startup.
+    // This function is kept for manual refresh (e.g. pull-to-refresh) — synchronous reads.
+    const recentWater = mmkvHydrateLogs('water', 2);
+    const recentWeight = mmkvHydrateLogs('weight', 2);
+
+    if (recentWater.length > 0) set({ waterLogs: recentWater });
+
     if (recentWeight.length > 0) {
-      // Sort weight logs
       const timeOrder: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
-      const sorted = recentWeight.sort((a, b) => {
+      const sorted = (recentWeight as WeightLog[]).sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
       });
       set({ weightLogs: sorted });
     }
   },
+}),
+{
+  name: 'fitforge-store',
+  storage: createJSONStorage(() => zustandMMKVStorage),
+  partialize: (state: FitnessState) => ({
+    user:          state.user,
+    weightLogs:    state.weightLogs,
+    waterLogs:     state.waterLogs,
+    meals:         state.meals,
+    reminders:     state.reminders,
+    stepsCount:    state.stepsCount,
+    activeMinutes: state.activeMinutes,
+    stepHistory:   state.stepHistory,
+    dashboardGrid: state.dashboardGrid,
+  }),
 }));
 
 // ─── Custom Domain Hook Layer (Selector-Based State Consumption) ───────────────
@@ -527,17 +530,32 @@ export function useHydrationTracker() {
  * Custom hook for Profile settings.
  */
 export function useProfileSettings() {
-  const user = useFitnessStore((state) => state.user);
-  const setUser = useFitnessStore((state) => state.setUser);
-  const updateUserGoal = useFitnessStore((state) => state.updateUserGoal);
-  const updateUserMotto = useFitnessStore((state) => state.updateUserMotto);
+  const name         = useFitnessStore((s) => s.user.name);
+  const email        = useFitnessStore((s) => s.user.email);
+  const age          = useFitnessStore((s) => s.user.age);
+  const height       = useFitnessStore((s) => s.user.height);
+  const weight       = useFitnessStore((s) => s.user.weight);
+  const goal         = useFitnessStore((s) => s.user.goal);
+  const motto        = useFitnessStore((s) => s.user.motto);
+  const profilePic   = useFitnessStore((s) => s.user.profilePic);
+  const calorieGoal  = useFitnessStore((s) => s.user.calorieGoal);
+  const waterGoal    = useFitnessStore((s) => s.user.waterGoal);
+  const stepsGoal    = useFitnessStore((s) => s.user.stepsGoal);
+  const workoutGoal  = useFitnessStore((s) => s.user.workoutGoal);
+  const level        = useFitnessStore((s) => s.user.level);
+  const xp           = useFitnessStore((s) => s.user.xp);
+  const streak       = useFitnessStore((s) => s.user.streak);
+  const setUser         = useFitnessStore((s) => s.setUser);
+  const updateUserGoal  = useFitnessStore((s) => s.updateUserGoal);
+  const updateUserMotto = useFitnessStore((s) => s.updateUserMotto);
 
-  return {
-    user,
-    setUser,
-    updateUserGoal,
-    updateUserMotto,
-  };
+  // Reconstruct user object for screens that need the full shape (edit modal etc.)
+  const user = { name, email, age, height, weight, goal, motto, profilePic,
+                 calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak };
+
+  return { user, name, email, age, height, weight, goal, motto, profilePic,
+           calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
+           setUser, updateUserGoal, updateUserMotto };
 }
 
 /**

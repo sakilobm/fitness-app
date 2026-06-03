@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import DonutChart from '@/components/ui/DonutChart';
 import GlassCard from '@/components/ui/GlassCard';
@@ -27,7 +27,7 @@ export interface NumericDeltaData {
   currentValue: number;
   previousValue: number;
   unit: string;
-  trend: 'up' | 'down' | 'stable';
+  trend: 'losing' | 'gaining' | 'stable';
 }
 
 export interface CompactChipData {
@@ -60,9 +60,13 @@ export interface WidgetConfig<T extends WidgetType> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 1. Radial Chart Widget
-export function RadialChartWidget({ data, color }: { data: any; color: string }) {
-  const radialData = data as RadialChartData;
-  const percentage = Math.min(Math.round((radialData.value / radialData.target) * 100), 100);
+export const RadialChartWidget = React.memo(function RadialChartWidget(
+  { data, color: _color }: { data: RadialChartData; color: string }
+) {
+  const percentage = useMemo(
+    () => Math.min(Math.round((data.value / data.target) * 100), 100),
+    [data.value, data.target]
+  );
   return (
     <View style={widgetStyles.radialContainer}>
       <DonutChart
@@ -73,78 +77,91 @@ export function RadialChartWidget({ data, color }: { data: any; color: string })
         trackColor="rgba(0,0,0,0.06)"
         innerFill="#F0EDE8"
         showInnerDots
-        segments={radialData.segments}
+        segments={data.segments}
       >
         <Text style={widgetStyles.radialPercent}>{percentage}%</Text>
-        <Text style={widgetStyles.radialSub}>{radialData.centerSublabel}</Text>
+        <Text style={widgetStyles.radialSub}>{data.centerSublabel}</Text>
       </DonutChart>
       <View style={widgetStyles.radialTexts}>
-        <Text style={widgetStyles.radialBigVal}>{radialData.centerLabel}</Text>
-        <Text style={widgetStyles.radialGoal}>Goal: {radialData.target}</Text>
+        <Text style={widgetStyles.radialBigVal}>{data.centerLabel}</Text>
+        <Text style={widgetStyles.radialGoal}>Goal: {data.target}</Text>
       </View>
     </View>
   );
-}
+});
 
 // 2. Linear Progress Widget
-export function LinearProgressWidget({ data, color }: { data: any; color: string }) {
-  const linearData = data as LinearProgressData;
-  const progress = Math.min(linearData.value / linearData.target, 1);
+export const LinearProgressWidget = React.memo(function LinearProgressWidget(
+  { data, color: _color }: { data: LinearProgressData; color: string }
+) {
+  const progress = useMemo(
+    () => Math.min(data.value / data.target, 1),
+    [data.value, data.target]
+  );
   return (
     <View style={widgetStyles.linearContainer}>
       <View style={widgetStyles.linearHeader}>
         <Text style={widgetStyles.linearValue}>
-          {linearData.value.toLocaleString()} <Text style={widgetStyles.linearUnit}>{linearData.unit}</Text>
+          {data.value.toLocaleString()} <Text style={widgetStyles.linearUnit}>{data.unit}</Text>
         </Text>
-        <Text style={widgetStyles.linearGoal}>/ {linearData.target.toLocaleString()}</Text>
+        <Text style={widgetStyles.linearGoal}>/ {data.target.toLocaleString()}</Text>
       </View>
       <View style={widgetStyles.linearBarBg}>
         <View
           style={[
             widgetStyles.linearBarFill,
-            { backgroundColor: linearData.progressColor, width: `${progress * 100}%` },
+            { backgroundColor: data.progressColor, width: `${progress * 100}%` },
           ]}
         />
       </View>
     </View>
   );
-}
+});
 
 // 3. Numeric Delta Widget
-export function NumericDeltaWidget({ data, color }: { data: any; color: string }) {
-  const deltaData = data as NumericDeltaData;
-  const delta = deltaData.currentValue - deltaData.previousValue;
-  const isPositive = delta > 0;
-  const deltaText = isPositive ? `+${delta.toFixed(1)}` : `${delta.toFixed(1)}`;
-  const trendIcon = deltaData.trend === 'up' ? 'arrow-up-outline' : deltaData.trend === 'down' ? 'arrow-down-outline' : 'remove-outline';
+export const NumericDeltaWidget = React.memo(function NumericDeltaWidget(
+  { data, color }: { data: NumericDeltaData; color: string }
+) {
+  const { isPositive, deltaText, trendIcon } = useMemo(() => {
+    const d = data.currentValue - data.previousValue;
+    const pos = d > 0;
+    return {
+      isPositive: pos,
+      deltaText: pos ? `+${d.toFixed(1)}` : `${d.toFixed(1)}`,
+      trendIcon: data.trend === 'gaining' ? 'arrow-up-outline'
+               : data.trend === 'losing'  ? 'arrow-down-outline'
+               : 'remove-outline',
+    };
+  }, [data.currentValue, data.previousValue, data.trend]);
 
   return (
     <View style={widgetStyles.deltaContainer}>
       <Text style={[widgetStyles.deltaBigValue, { color }]}>
-        {deltaData.currentValue.toFixed(1)} <Text style={widgetStyles.deltaUnit}>{deltaData.unit}</Text>
+        {data.currentValue.toFixed(1)} <Text style={widgetStyles.deltaUnit}>{data.unit}</Text>
       </Text>
       <View style={widgetStyles.deltaRow}>
         <AppIcon lib="Ionicons" name={trendIcon} size={14} color={isPositive ? Colors.lime : Colors.danger} />
         <Text style={[widgetStyles.deltaText, { color: isPositive ? Colors.lime : Colors.danger }]}>
-          {deltaText} {deltaData.unit} ({deltaData.trend})
+          {deltaText} {data.unit} ({data.trend})
         </Text>
       </View>
     </View>
   );
-}
+});
 
 // 4. Compact Chip Widget
-export function CompactChipWidget({ data, color }: { data: any; color: string }) {
-  const chipData = data as CompactChipData;
+export const CompactChipWidget = React.memo(function CompactChipWidget(
+  { data, color: _color }: { data: CompactChipData; color: string }
+) {
   return (
     <View style={widgetStyles.chipContainer}>
-      <Text style={widgetStyles.chipValue}>{chipData.value}</Text>
-      <View style={[widgetStyles.chipStatusBox, { backgroundColor: chipData.statusColor + '18' }]}>
-        <Text style={[widgetStyles.chipStatusText, { color: chipData.statusColor }]}>{chipData.status}</Text>
+      <Text style={widgetStyles.chipValue}>{data.value}</Text>
+      <View style={[widgetStyles.chipStatusBox, { backgroundColor: data.statusColor + '18' }]}>
+        <Text style={[widgetStyles.chipStatusText, { color: data.statusColor }]}>{data.status}</Text>
       </View>
     </View>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Registry Mapping & Container
@@ -158,11 +175,7 @@ const REGISTRY: Record<WidgetType, React.FC<{ data: any; color: string }>> = {
 };
 
 
-/**
- * MetricCard is a highly reusable, type-safe widget container.
- * Generics enforce that config.data structure matches the layout type config.type.
- */
-export function MetricCard<T extends WidgetType>({ config }: { config: WidgetConfig<T> }) {
+function MetricCardInner<T extends WidgetType>({ config }: { config: WidgetConfig<T> }) {
   const WidgetComponent = REGISTRY[config.type] as React.FC<any>;
   if (!WidgetComponent) return null;
 
@@ -189,6 +202,12 @@ export function MetricCard<T extends WidgetType>({ config }: { config: WidgetCon
     </TouchableOpacity>
   );
 }
+
+export const MetricCard = React.memo(MetricCardInner, (prev, next) =>
+  prev.config.id === next.config.id &&
+  JSON.stringify(prev.config.data) === JSON.stringify(next.config.data) &&
+  prev.config.color === next.config.color
+) as typeof MetricCardInner;
 
 const widgetStyles = StyleSheet.create({
   cardWrapper: {
