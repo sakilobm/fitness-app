@@ -1,5 +1,42 @@
 # Rollback Plan
 
+If version `2.5.0` (Settings preferences and decoupled profile screen) needs to be reverted due to layout issues, navigation conflicts, or conversion bugs, use this guide.
+
+## Rollback Procedure (Reverting to v2.4.3)
+
+1. **Revert modified settings and profile screen files:**
+   ```powershell
+   git checkout v2.4.3 -- app/settings.tsx app/(tabs)/profile.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.4.3` (expo-system-ui integration) needs to be reverted due to build errors or package conflicts, use this guide.
+
+## Rollback Procedure (Reverting to v2.4.2)
+
+1. **Uninstall package:**
+   ```powershell
+   npm uninstall expo-system-ui
+   ```
+
+2. **Regenerate native folders:**
+   ```powershell
+   npx expo prebuild --clean
+   ```
+
+3. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.4.2` (Theme Adoption on Steps and Water screens) needs to be reverted due to layout issues, SVG rendering errors, or modal display problems, use this guide.
 
 ## Rollback Procedure (Reverting to v2.4.1)

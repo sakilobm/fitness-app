@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2026-06-04T17:30:00+05:30
+
+### Added — Full Settings Preferences & Decoupled Profile Screen
+
+**Architectural Decision:** Decoupled settings controls and user profile edit forms entirely from the Profile tab (`app/(tabs)/profile.tsx`) into the dedicated settings screen (`app/settings.tsx`), eliminating nearly 800 lines of duplicated JSX/styling. Implemented display-level preference conversions (weight `kg` vs `lbs`, liquid volume `ml` vs `oz`) dynamically in Settings and Profile views, keeping the store/DB normalized in metric formats (`kg`, `ml`).
+
+**Changes:**
+- **Dynamic Unit Conversions (`app/settings.tsx`):**
+  - Integrated dynamic weight conversion: `formWeight` converts on-the-fly when toggling units (`kg` vs `lbs`), updating basic metrics inputs seamlessly.
+  - Implemented unit-aware daily hydration target adjusters: updates by `250 ml` or `8 oz` depending on preference, with custom quick-add pills.
+  - Enabled haptic feedback on all selectors and adjusters.
+  - Updated the manual backup sync button to reload preference states from store synchronously.
+- **Profile Screen Clean-up (`app/(tabs)/profile.tsx`):**
+  - Removed duplicated settings options and local modals.
+  - Set header action and edit button triggers to route to `/settings`.
+  - Configured user weight and daily hydration target display to render dynamically in preferred units.
+  - Added a premium, glassmorphic settings navigation card at the bottom of the profile tab.
+
+#### Rollback
+See ROLLBACK.md section for v2.5.0.
+
+## [2.4.3] - 2026-06-04T16:54:00+05:30
+
+### Added — expo-system-ui integration
+
+**Architectural Decision:** Installed and configured `expo-system-ui` to fully support system-level dark mode behavior on Android. This silences the Expo prebuild warnings and configures native boot/splash backgrounds to render dark mode immediately upon app start, eliminating the bright white screen flash.
+
+**Changes:**
+- **Installed `expo-system-ui`:** Installed the SDK 56-compatible native package via Expo CLI.
+- **Regenerated Android native folder (`npx expo prebuild`):** Executed prebuild successfully, confirming no warnings are shown during generation.
+
+#### Rollback
+See ROLLBACK.md section for v2.4.3.
+
 ## [2.4.2] - 2026-06-04T14:12:00+05:30
 
 ### Fixed — Theme Adoption on Steps and Water screens

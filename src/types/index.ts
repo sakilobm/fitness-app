@@ -58,6 +58,10 @@ export interface UserProfile {
   xp: number;
   streak: number;
   profilePic?: string;
+  weightUnit?: 'kg' | 'lbs';
+  volumeUnit?: 'ml' | 'oz';
+  notificationsEnabled?: boolean;
+  hapticsEnabled?: boolean;
 }
 
 export interface WeightLog {

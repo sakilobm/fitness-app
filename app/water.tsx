@@ -14,6 +14,8 @@ import { Typography, Radius, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import { router } from 'expo-router';
 import { useFitnessStore, useHydrationTracker } from '@/store/fitnessStore';
+import { mlToOz, ozToMl } from '@/utils/units';
+import { triggerHaptic } from '@/utils/haptics';
 
 const { width: W } = Dimensions.get('window');
 const CYLINDER_W = 120;
@@ -104,6 +106,7 @@ export default function WaterScreen() {
     waterStreak: streakVal,
   } = useHydrationTracker();
 
+  const isOz = user.volumeUnit === 'oz';
   const goalMl = user.waterGoal;
 
   // Custom Amount Modal States
@@ -113,12 +116,12 @@ export default function WaterScreen() {
 
   // Edit Goal Modal States
   const [showGoalModal, setShowGoalModal] = useState(false);
-  const [tempGoalVal, setTempGoalVal] = useState(goalMl);
+  const [tempGoalVal, setTempGoalVal] = useState(isOz ? mlToOz(goalMl) : goalMl);
 
   // Sync temp goal when store goal changes
   useEffect(() => {
-    setTempGoalVal(goalMl);
-  }, [goalMl]);
+    setTempGoalVal(isOz ? mlToOz(goalMl) : goalMl);
+  }, [goalMl, isOz]);
 
   // Dynamic Portions Calculations
   const totalMl = log.reduce((s, e) => s + e.ml, 0);
@@ -126,10 +129,12 @@ export default function WaterScreen() {
   const goalMet = totalMl >= goalMl;
 
   const handleSaveGoal = () => {
-    if (tempGoalVal < 500 || tempGoalVal > 10000) {
+    const targetMl = isOz ? ozToMl(tempGoalVal) : tempGoalVal;
+    if (targetMl < 500 || targetMl > 10000) {
       return;
     }
-    handleSaveGoalStore(tempGoalVal);
+    handleSaveGoalStore(targetMl);
+    triggerHaptic('success');
     setShowGoalModal(false);
   };
 
@@ -153,8 +158,8 @@ export default function WaterScreen() {
         <View style={styles.heroSection}>
           <WaterCylinder filled={filled} />
           <View style={styles.heroText}>
-            <Text style={styles.mlNum}>{totalMl}<Text style={styles.mlUnit}> ml</Text></Text>
-            <Text style={styles.mlGoal}>of {goalMl} ml goal</Text>
+            <Text style={styles.mlNum}>{isOz ? mlToOz(totalMl) : totalMl}<Text style={styles.mlUnit}>{isOz ? ' oz' : ' ml'}</Text></Text>
+            <Text style={styles.mlGoal}>of {isOz ? mlToOz(goalMl) : goalMl} {isOz ? 'oz' : 'ml'} goal</Text>
             <View style={[styles.mlBadge, goalMet && styles.goalMetBadge]}>
               <Ionicons name={goalMet ? "trophy" : "water"} size={11} color={goalMet ? colors.amber : colors.chart.water} />
               <Text style={[styles.mlBadgeText, goalMet && styles.goalMetBadgeText]}>
@@ -178,22 +183,26 @@ export default function WaterScreen() {
       <GlassCard accentColor={colors.chart.water}>
         <SectionHeader title="Quick Add" accentColor={colors.chart.water} />
         <View style={styles.quickRow}>
-          {QUICK_AMOUNTS.map((ml) => (
-            <TouchableOpacity
-              key={ml}
-              style={styles.quickBtn}
-              onPress={() => addWater(ml)}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="water" size={20} color={colors.chart.water} />
-              <Text style={styles.quickMl}>{ml} ml</Text>
-            </TouchableOpacity>
-          ))}
+          {(isOz ? [8, 12, 16] : [150, 250, 500]).map((amt) => {
+            const mlValue = isOz ? ozToMl(amt) : amt;
+            return (
+              <TouchableOpacity
+                key={amt}
+                style={styles.quickBtn}
+                onPress={() => { addWater(mlValue); triggerHaptic('selection'); }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="water" size={20} color={colors.chart.water} />
+                <Text style={styles.quickMl}>{amt} {isOz ? 'oz' : 'ml'}</Text>
+              </TouchableOpacity>
+            );
+          })}
           <TouchableOpacity
             style={[styles.quickBtn, styles.customBtn]}
             onPress={() => {
               setCustomVal('');
               setCustomError('');
+              triggerHaptic('selection');
               setShowCustom(true);
             }}
             activeOpacity={0.75}
@@ -224,11 +233,11 @@ export default function WaterScreen() {
                   <Text style={styles.logTime}>{entry.time}</Text>
                   <View style={styles.logPill}>
                     <Ionicons name="water" size={10} color={colors.chart.water} />
-                    <Text style={styles.logPillText}>{entry.ml} ml</Text>
+                    <Text style={styles.logPillText}>{isOz ? `${mlToOz(entry.ml)} oz` : `${entry.ml} ml`}</Text>
                   </View>
                   
                   {/* Delete button (Option A - Recommended) */}
-                  <TouchableOpacity style={styles.deleteLogBtn} onPress={() => handleDeleteLog(entry.id)} activeOpacity={0.75}>
+                  <TouchableOpacity style={styles.deleteLogBtn} onPress={() => { handleDeleteLog(entry.id); triggerHaptic('selection'); }} activeOpacity={0.75}>
                     <Ionicons name="close-circle" size={16} color={colors.danger + '88'} />
                   </TouchableOpacity>
                 </View>
@@ -242,7 +251,8 @@ export default function WaterScreen() {
       <TouchableOpacity 
         style={styles.goalCardWrapper}
         onPress={() => {
-          setTempGoalVal(goalMl);
+          setTempGoalVal(isOz ? mlToOz(goalMl) : goalMl);
+          triggerHaptic('selection');
           setShowGoalModal(true);
         }}
         activeOpacity={0.9}
@@ -258,8 +268,8 @@ export default function WaterScreen() {
               <Ionicons name="trophy" size={20} color={colors.chart.water} />
             </View>
             <View style={styles.goalContent}>
-              <Text style={styles.goalValue}>{goalMl} ml</Text>
-              <Text style={styles.goalRange}>Recommended: 2,000–3,000 ml/day</Text>
+              <Text style={styles.goalValue}>{isOz ? mlToOz(goalMl) : goalMl} {isOz ? 'oz' : 'ml'}</Text>
+              <Text style={styles.goalRange}>Recommended: {isOz ? '70–100 oz' : '2,000–3,000 ml'}/day</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.chart.water} />
           </View>
@@ -269,8 +279,8 @@ export default function WaterScreen() {
       {/* Stats row connected to state */}
       <View style={styles.statsRow}>
         <StatBadge label="Streak" value={`${streakVal + (goalMet ? 1 : 0)}d 🔥`} color={colors.chart.water} />
-        <StatBadge label="Best Day" value={`${bestDay} ml`} color={colors.chart.water} />
-        <StatBadge label="Avg/Day" value={`${avgDay} ml`} color={colors.lime} />
+        <StatBadge label="Best Day" value={isOz ? `${mlToOz(bestDay)} oz` : `${bestDay} ml`} color={colors.chart.water} />
+        <StatBadge label="Avg/Day" value={isOz ? `${mlToOz(avgDay)} oz` : `${avgDay} ml`} color={colors.lime} />
       </View>
 
       {/* Reminder chip */}
@@ -301,13 +311,13 @@ export default function WaterScreen() {
 
               {/* Exact Value Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Milliliters (ml)</Text>
+                <Text style={styles.inputLabel}>{isOz ? 'Fluid Ounces (oz)' : 'Milliliters (ml)'}</Text>
                 <View style={[styles.inputFieldWrap, !!customError && styles.inputFieldError]}>
                   <Ionicons name="water-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
-                    placeholder="250"
+                    placeholder={isOz ? '8' : '250'}
                     placeholderTextColor={colors.muted}
                     value={customVal}
                     onChangeText={(t) => {
@@ -324,12 +334,16 @@ export default function WaterScreen() {
               <TouchableOpacity
                 style={styles.modalSaveBtn}
                 onPress={() => {
-                  const ml = parseInt(customVal, 10);
-                  if (isNaN(ml) || ml <= 0 || ml > 5000) {
-                    setCustomError('Enter amount between 10 and 5000 ml');
+                  const amt = parseInt(customVal, 10);
+                  const minAmt = isOz ? 1 : 10;
+                  const maxAmt = isOz ? 150 : 5000;
+                  if (isNaN(amt) || amt <= minAmt || amt > maxAmt) {
+                    setCustomError(`Enter amount between ${minAmt} and ${maxAmt} ${isOz ? 'oz' : 'ml'}`);
                     return;
                   }
+                  const ml = isOz ? ozToMl(amt) : amt;
                   addWater(ml);
+                  triggerHaptic('success');
                   setCustomVal('');
                   setShowCustom(false);
                 }}
@@ -368,14 +382,14 @@ export default function WaterScreen() {
               <View style={styles.goalPillsContainer}>
                 <Text style={styles.inputLabel}>Quick Targets</Text>
                 <View style={styles.goalPillsRow}>
-                  {[1500, 2000, 2500, 3000, 3500].map((g) => (
+                  {(isOz ? [50, 70, 85, 100, 120] : [1500, 2000, 2500, 3000, 3500]).map((g) => (
                     <TouchableOpacity
                       key={g}
                       style={[styles.goalPill, tempGoalVal === g && styles.goalPillActive]}
-                      onPress={() => setTempGoalVal(g)}
+                      onPress={() => { setTempGoalVal(g); triggerHaptic('selection'); }}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.goalPillText, tempGoalVal === g && styles.goalPillTextActive]}>{g} ml</Text>
+                      <Text style={[styles.goalPillText, tempGoalVal === g && styles.goalPillTextActive]}>{g} {isOz ? 'oz' : 'ml'}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -383,7 +397,7 @@ export default function WaterScreen() {
 
               {/* Exact Custom goal input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Or Enter Precise Target (ml)</Text>
+                <Text style={styles.inputLabel}>Or Enter Precise Target ({isOz ? 'oz' : 'ml'})</Text>
                 <View style={styles.inputFieldWrap}>
                   <Ionicons name="trophy-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
@@ -398,15 +412,27 @@ export default function WaterScreen() {
                     maxLength={4}
                   />
                 </View>
-                {(tempGoalVal < 500 || tempGoalVal > 10000) && tempGoalVal !== 0 && (
-                  <Text style={styles.errorText}>Enter range between 500 and 10000 ml</Text>
-                )}
+                {(() => {
+                  const checkVal = isOz ? ozToMl(tempGoalVal) : tempGoalVal;
+                  const isErr = (checkVal < 500 || checkVal > 10000) && tempGoalVal !== 0;
+                  if (isErr) {
+                    return (
+                      <Text style={styles.errorText}>
+                        {isOz ? 'Enter range between 17 and 338 oz' : 'Enter range between 500 and 10000 ml'}
+                      </Text>
+                    );
+                  }
+                  return null;
+                })()}
               </View>
 
               <TouchableOpacity
                 style={styles.modalSaveBtn}
                 onPress={handleSaveGoal}
-                disabled={tempGoalVal < 500 || tempGoalVal > 10000}
+                disabled={(() => {
+                  const val = isOz ? ozToMl(tempGoalVal) : tempGoalVal;
+                  return val < 500 || val > 10000;
+                })()}
                 activeOpacity={0.8}
               >
                 <Ionicons name="checkmark-circle" size={16} color={colors.white} />

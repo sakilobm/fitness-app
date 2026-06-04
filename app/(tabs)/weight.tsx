@@ -22,6 +22,8 @@ import { useProfileSettings, useBmiTracker } from '@/store/fitnessStore';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Typography, Radius, Spacing, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
+import { kgToLbs, lbsToKg } from '@/utils/units';
+import { triggerHaptic } from '@/utils/haptics';
 
 const { width: W } = Dimensions.get('window');
 const CHART_W = W - 64;
@@ -267,6 +269,7 @@ export default function WeightScreen() {
   } = useBmiTracker();
 
   const streak = user.streak;
+  const isLbs = user.weightUnit === 'lbs';
 
   // Modal control states
   const [logModalVisible, setLogModalVisible] = useState(false);
@@ -309,29 +312,35 @@ export default function WeightScreen() {
   // Derived stats
   const startWeight = 84.8;
   const goalWeight = 72.0;
-  const lostWeight = parseFloat((startWeight - currentWeight).toFixed(1));
+
+  // Conversions for display
+  const displayCurrentWeight = isLbs ? kgToLbs(currentWeight) : currentWeight;
+  const displayGoalWeight = isLbs ? kgToLbs(goalWeight) : goalWeight;
+  const displayStartWeight = isLbs ? kgToLbs(startWeight) : startWeight;
+  const displayLostWeight = parseFloat((displayStartWeight - displayCurrentWeight).toFixed(1));
 
   // Weekly difference calculation
   const lastWeekWeight = dailyWeightValues[Math.max(0, dailyWeightValues.length - 8)] || startWeight;
-  const weeklyChange = parseFloat((currentWeight - lastWeekWeight).toFixed(1));
-  const weeklyChangeText = weeklyChange < 0 
-    ? `${weeklyChange} this week` 
-    : weeklyChange > 0 
-      ? `+${weeklyChange} this week` 
+  const displayLastWeekWeight = isLbs ? kgToLbs(lastWeekWeight) : lastWeekWeight;
+  const displayWeeklyChange = parseFloat((displayCurrentWeight - displayLastWeekWeight).toFixed(1));
+  const weeklyChangeText = displayWeeklyChange < 0 
+    ? `${displayWeeklyChange} this week` 
+    : displayWeeklyChange > 0 
+      ? `+${displayWeeklyChange} this week` 
       : 'stable this week';
 
   // Dynamic progress ring percentages
   const totalGoalDelta = startWeight - goalWeight;
   const currentGoalDelta = startWeight - currentWeight;
   const goalProgressPct = Math.min(Math.max(Math.round((currentGoalDelta / totalGoalDelta) * 100), 0), 100);
-  const remainingWeight = parseFloat(Math.max(currentWeight - goalWeight, 0).toFixed(1));
+  const displayRemainingWeight = parseFloat(Math.max(displayCurrentWeight - displayGoalWeight, 0).toFixed(1));
 
   // Dynamic BMI
   const heightM = user.height / 100; // Dynamic height from profile
   const currentBmi = parseFloat((currentWeight / (heightM * heightM)).toFixed(1));
 
-  // Slice chart data based on active period
-  const chartData = period === 'today'
+  // Slice chart data based on active period, and scale to lbs if needed
+  const rawChartData = period === 'today'
     ? todayData
     : period === 'week' 
       ? dailyWeightValues.slice(-7) 
@@ -339,8 +348,10 @@ export default function WeightScreen() {
         ? dailyWeightValues.slice(-30) 
         : dailyWeightValues;
 
+  const chartData = isLbs ? rawChartData.map(kgToLbs) : rawChartData;
+
   const openLogModal = () => {
-    setLogWeightValue(currentWeight.toString());
+    setLogWeightValue(displayCurrentWeight.toFixed(1));
     setLogDateOffset('today');
     setLogError('');
     
@@ -359,19 +370,24 @@ export default function WeightScreen() {
 
   const handleAdjustWeight = (amount: number) => {
     const nextVal = parseFloat(logWeightValue) + amount;
-    if (!isNaN(nextVal) && nextVal > 30 && nextVal < 300) {
+    const minWeight = isLbs ? 66 : 30;
+    const maxWeight = isLbs ? 660 : 300;
+    if (!isNaN(nextVal) && nextVal > minWeight && nextVal < maxWeight) {
       setLogWeightValue(nextVal.toFixed(1));
     }
   };
 
   const handleSaveWeightLog = () => {
     const val = parseFloat(logWeightValue);
-    if (isNaN(val) || val <= 30 || val >= 300) {
-      setLogError('Enter weight between 30 and 300 kg');
+    const minWeight = isLbs ? 66 : 30;
+    const maxWeight = isLbs ? 660 : 300;
+    if (isNaN(val) || val <= minWeight || val >= maxWeight) {
+      setLogError(`Enter weight between ${minWeight} and ${maxWeight} ${isLbs ? 'lbs' : 'kg'}`);
       return;
     }
 
-    addWeightLog(parseFloat(val.toFixed(1)), logTimeOfDay, logDateOffset);
+    const savedWeight = isLbs ? lbsToKg(val) : val;
+    addWeightLog(parseFloat(savedWeight.toFixed(1)), logTimeOfDay, logDateOffset);
     setLogModalVisible(false);
   };
 
@@ -448,10 +464,10 @@ export default function WeightScreen() {
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Current</Text>
-              <Text style={[styles.statValue, { color: colors.lime }]}>{currentWeight}<Text style={styles.statUnit}> kg</Text></Text>
+              <Text style={[styles.statValue, { color: colors.lime }]}>{displayCurrentWeight.toFixed(1)}<Text style={styles.statUnit}>{isLbs ? ' lbs' : ' kg'}</Text></Text>
             </View>
           </View>
-
+ 
           {/* Goal Weight */}
           <View style={styles.statCard}>
             <View style={[styles.statAccentBar, { backgroundColor: colors.amber }]} />
@@ -460,10 +476,10 @@ export default function WeightScreen() {
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Goal</Text>
-              <Text style={[styles.statValue, { color: colors.amber }]}>{goalWeight}<Text style={styles.statUnit}> kg</Text></Text>
+              <Text style={[styles.statValue, { color: colors.amber }]}>{displayGoalWeight.toFixed(1)}<Text style={styles.statUnit}>{isLbs ? ' lbs' : ' kg'}</Text></Text>
             </View>
           </View>
-
+ 
           {/* Total Lost */}
           <View style={styles.statCard}>
             <View style={[styles.statAccentBar, { backgroundColor: colors.lime }]} />
@@ -472,14 +488,14 @@ export default function WeightScreen() {
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Lost</Text>
-              <Text style={[styles.statValue, { color: colors.lime }]}>{lostWeight}<Text style={styles.statUnit}> kg</Text></Text>
-              <View style={[styles.statChip, { backgroundColor: weeklyChange <= 0 ? colors.lime + '12' : colors.danger + '12', borderColor: weeklyChange <= 0 ? colors.lime + '25' : colors.danger + '25' }]}>
-                <Ionicons name={weeklyChange <= 0 ? "arrow-down" : "arrow-up"} size={8} color={weeklyChange <= 0 ? colors.lime : colors.danger} />
-                <Text style={[styles.statChipText, { color: weeklyChange <= 0 ? colors.lime : colors.danger }]}>{weeklyChangeText}</Text>
+              <Text style={[styles.statValue, { color: colors.lime }]}>{displayLostWeight.toFixed(1)}<Text style={styles.statUnit}>{isLbs ? ' lbs' : ' kg'}</Text></Text>
+              <View style={[styles.statChip, { backgroundColor: displayWeeklyChange <= 0 ? colors.lime + '12' : colors.danger + '12', borderColor: displayWeeklyChange <= 0 ? colors.lime + '25' : colors.danger + '25' }]}>
+                <Ionicons name={displayWeeklyChange <= 0 ? "arrow-down" : "arrow-up"} size={8} color={displayWeeklyChange <= 0 ? colors.lime : colors.danger} />
+                <Text style={[styles.statChipText, { color: displayWeeklyChange <= 0 ? colors.lime : colors.danger }]}>{weeklyChangeText}</Text>
               </View>
             </View>
           </View>
-
+ 
           {/* Streak */}
           <View style={styles.statCard}>
             <View style={[styles.statAccentBar, { backgroundColor: colors.amber }]} />
@@ -496,7 +512,7 @@ export default function WeightScreen() {
           </View>
         </View>
       </GlassCard>
-
+ 
       {/* Goal / Slider */}
       <GlassCard accentColor={colors.amber}>
         <SectionHeader title="Goal Progress" accentColor={colors.amber} />
@@ -505,19 +521,20 @@ export default function WeightScreen() {
             <Text style={styles.goalRingPct}>{goalProgressPct}%</Text>
           </ProgressRing>
           <View style={styles.goalInfo}>
-            <Text style={styles.goalText}>{goalWeight} kg target</Text>
-            <Text style={styles.goalSub}>{remainingWeight} kg remaining</Text>
-            <Text style={styles.goalEta}>Est. {Math.max(1, Math.round(remainingWeight / 0.7))} weeks at current pace</Text>
+            <Text style={styles.goalText}>{displayGoalWeight.toFixed(1)} {isLbs ? 'lbs' : 'kg'} target</Text>
+            <Text style={styles.goalSub}>{displayRemainingWeight.toFixed(1)} {isLbs ? 'lbs' : 'kg'} remaining</Text>
+            <Text style={styles.goalEta}>Est. {Math.max(1, Math.round(displayRemainingWeight / (isLbs ? 1.5 : 0.7)))} weeks at current pace</Text>
             <View style={styles.milestonesRow}>
               {MILESTONES.map((m) => {
                 const unlocked = currentWeight <= m;
+                const displayM = isLbs ? Math.round(m * 2.20462) : m;
                 return (
                   <View
                     key={m}
                     style={[styles.milestoneBadge, !unlocked && styles.milestoneLocked]}
                   >
                     <Text style={[styles.milestoneText, !unlocked && styles.milestoneLockedText]}>
-                      {m}kg {unlocked ? '✓' : ''}
+                      {displayM}{isLbs ? 'lbs' : 'kg'} {unlocked ? '✓' : ''}
                     </Text>
                   </View>
                 );
@@ -670,7 +687,7 @@ export default function WeightScreen() {
                     </View>
                   </View>
                   <View style={modalS.logCenter}>
-                    <Text style={modalS.logWeight}>{log.weight.toFixed(1)}<Text style={modalS.logUnit}> kg</Text></Text>
+                    <Text style={modalS.logWeight}>{(isLbs ? kgToLbs(log.weight) : log.weight).toFixed(1)}<Text style={modalS.logUnit}>{isLbs ? ' lbs' : ' kg'}</Text></Text>
                   </View>
                   <TouchableOpacity style={modalS.logDeleteBtn} onPress={handleDelete} activeOpacity={0.7}>
                     <Ionicons name="trash-outline" size={16} color={colors.danger} />
@@ -718,7 +735,7 @@ export default function WeightScreen() {
                     <Text style={styles.weightDisplayLabel}>SELECTED WEIGHT</Text>
                     <Text style={styles.weightDisplayValue}>
                       {logWeightValue}
-                      <Text style={styles.weightDisplayUnit}> kg</Text>
+                      <Text style={styles.weightDisplayUnit}>{isLbs ? ' lbs' : ' kg'}</Text>
                     </Text>
                   </View>
 
@@ -726,17 +743,17 @@ export default function WeightScreen() {
                   <View style={styles.inputGroup}>
                     <Text style={styles.adjustLabel}>Quick Adjustments</Text>
                     <View style={styles.adjustRow}>
-                      <TouchableOpacity style={styles.adjustBtn} onPress={() => handleAdjustWeight(-1.0)} activeOpacity={0.75}>
-                        <Text style={styles.adjustBtnText}>-1.0 kg</Text>
+                      <TouchableOpacity style={styles.adjustBtn} onPress={() => { handleAdjustWeight(isLbs ? -2.0 : -1.0); triggerHaptic('selection'); }} activeOpacity={0.75}>
+                        <Text style={styles.adjustBtnText}>{isLbs ? '-2.0 lbs' : '-1.0 kg'}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.adjustBtn} onPress={() => handleAdjustWeight(-0.1)} activeOpacity={0.75}>
-                        <Text style={styles.adjustBtnText}>-0.1 kg</Text>
+                      <TouchableOpacity style={styles.adjustBtn} onPress={() => { handleAdjustWeight(isLbs ? -0.5 : -0.1); triggerHaptic('selection'); }} activeOpacity={0.75}>
+                        <Text style={styles.adjustBtnText}>{isLbs ? '-0.5 lbs' : '-0.1 kg'}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.adjustBtn} onPress={() => handleAdjustWeight(0.1)} activeOpacity={0.75}>
-                        <Text style={styles.adjustBtnText}>+0.1 kg</Text>
+                      <TouchableOpacity style={styles.adjustBtn} onPress={() => { handleAdjustWeight(isLbs ? 0.5 : 0.1); triggerHaptic('selection'); }} activeOpacity={0.75}>
+                        <Text style={styles.adjustBtnText}>{isLbs ? '+0.5 lbs' : '+0.1 kg'}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.adjustBtn} onPress={() => handleAdjustWeight(1.0)} activeOpacity={0.75}>
-                        <Text style={styles.adjustBtnText}>+1.0 kg</Text>
+                      <TouchableOpacity style={styles.adjustBtn} onPress={() => { handleAdjustWeight(isLbs ? 2.0 : 1.0); triggerHaptic('selection'); }} activeOpacity={0.75}>
+                        <Text style={styles.adjustBtnText}>{isLbs ? '+2.0 lbs' : '+1.0 kg'}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>

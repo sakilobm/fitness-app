@@ -77,6 +77,10 @@ const initialUserProfile: UserProfile = {
   xp: 850,
   streak: 14,
   profilePic: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150&auto=format&fit=crop&q=80',
+  weightUnit: 'kg',
+  volumeUnit: 'ml',
+  notificationsEnabled: true,
+  hapticsEnabled: true,
 };
 
 const initialMeals: Meal[] = [
@@ -243,6 +247,10 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
         if ('stepsGoal' in dbUpdate) { dbUpdate.steps_goal = dbUpdate.stepsGoal; delete dbUpdate.stepsGoal; }
         if ('workoutGoal' in dbUpdate) { dbUpdate.workout_goal = dbUpdate.workoutGoal; delete dbUpdate.workoutGoal; }
         if ('profilePic' in dbUpdate) { dbUpdate.profile_pic = dbUpdate.profilePic; delete dbUpdate.profilePic; }
+        if ('weightUnit' in dbUpdate) { dbUpdate.weight_unit = dbUpdate.weightUnit; delete dbUpdate.weightUnit; }
+        if ('volumeUnit' in dbUpdate) { dbUpdate.volume_unit = dbUpdate.volumeUnit; delete dbUpdate.volumeUnit; }
+        if ('notificationsEnabled' in dbUpdate) { dbUpdate.notifications_enabled = dbUpdate.notificationsEnabled; delete dbUpdate.notificationsEnabled; }
+        if ('hapticsEnabled' in dbUpdate) { dbUpdate.haptics_enabled = dbUpdate.hapticsEnabled; delete dbUpdate.hapticsEnabled; }
         
         supabase.from('profiles').update(dbUpdate).eq('id', data.user.id).then();
       }
@@ -547,6 +555,10 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
           xp: profile.xp,
           streak: profile.streak,
           profilePic: profile.profile_pic,
+          weightUnit: profile.weight_unit || 'kg',
+          volumeUnit: profile.volume_unit || 'ml',
+          notificationsEnabled: profile.notifications_enabled !== undefined ? profile.notifications_enabled : true,
+          hapticsEnabled: profile.haptics_enabled !== undefined ? profile.haptics_enabled : true,
         }
       }));
     }
@@ -665,31 +677,37 @@ export function useHydrationTracker() {
  * Custom hook for Profile settings.
  */
 export function useProfileSettings() {
-  const name         = useFitnessStore((s) => s.user.name);
-  const email        = useFitnessStore((s) => s.user.email);
-  const age          = useFitnessStore((s) => s.user.age);
-  const height       = useFitnessStore((s) => s.user.height);
-  const weight       = useFitnessStore((s) => s.user.weight);
-  const goal         = useFitnessStore((s) => s.user.goal);
-  const motto        = useFitnessStore((s) => s.user.motto);
-  const profilePic   = useFitnessStore((s) => s.user.profilePic);
-  const calorieGoal  = useFitnessStore((s) => s.user.calorieGoal);
-  const waterGoal    = useFitnessStore((s) => s.user.waterGoal);
-  const stepsGoal    = useFitnessStore((s) => s.user.stepsGoal);
-  const workoutGoal  = useFitnessStore((s) => s.user.workoutGoal);
-  const level        = useFitnessStore((s) => s.user.level);
-  const xp           = useFitnessStore((s) => s.user.xp);
-  const streak       = useFitnessStore((s) => s.user.streak);
-  const setUser         = useFitnessStore((s) => s.setUser);
-  const updateUserGoal  = useFitnessStore((s) => s.updateUserGoal);
-  const updateUserMotto = useFitnessStore((s) => s.updateUserMotto);
+  const name                 = useFitnessStore((s) => s.user.name);
+  const email                = useFitnessStore((s) => s.user.email);
+  const age                  = useFitnessStore((s) => s.user.age);
+  const height               = useFitnessStore((s) => s.user.height);
+  const weight               = useFitnessStore((s) => s.user.weight);
+  const goal                 = useFitnessStore((s) => s.user.goal);
+  const motto                = useFitnessStore((s) => s.user.motto);
+  const profilePic           = useFitnessStore((s) => s.user.profilePic);
+  const calorieGoal          = useFitnessStore((s) => s.user.calorieGoal);
+  const waterGoal            = useFitnessStore((s) => s.user.waterGoal);
+  const stepsGoal            = useFitnessStore((s) => s.user.stepsGoal);
+  const workoutGoal          = useFitnessStore((s) => s.user.workoutGoal);
+  const level                = useFitnessStore((s) => s.user.level);
+  const xp                   = useFitnessStore((s) => s.user.xp);
+  const streak               = useFitnessStore((s) => s.user.streak);
+  const weightUnit           = useFitnessStore((s) => s.user.weightUnit);
+  const volumeUnit           = useFitnessStore((s) => s.user.volumeUnit);
+  const notificationsEnabled = useFitnessStore((s) => s.user.notificationsEnabled);
+  const hapticsEnabled       = useFitnessStore((s) => s.user.hapticsEnabled);
+  const setUser              = useFitnessStore((s) => s.setUser);
+  const updateUserGoal       = useFitnessStore((s) => s.updateUserGoal);
+  const updateUserMotto      = useFitnessStore((s) => s.updateUserMotto);
 
   // Reconstruct user object for screens that need the full shape (edit modal etc.)
   const user = { name, email, age, height, weight, goal, motto, profilePic,
-                 calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak };
+                 calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
+                 weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled };
 
   return { user, name, email, age, height, weight, goal, motto, profilePic,
            calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
+           weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled,
            setUser, updateUserGoal, updateUserMotto };
 }
 

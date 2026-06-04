@@ -95,6 +95,7 @@ graph TD
         WaterScreen["Hydration (water.tsx)"]
         MetabolismScreen["Metabolism (metabolism.tsx)"]
         BMIScreen["BMI Tracker (bmi.tsx)"]
+        SettingsScreen["Settings preferences (settings.tsx)"]
     end
 
     %% Bidirectional Reactivity Bindings
@@ -104,7 +105,7 @@ graph TD
     
     Login --> |"Supabase Auth"| AppContext
     Signup --> |"Supabase Auth"| AppContext
-    ProfileTab --> |"🚪 Log Out"| AppContext
+    SettingsScreen --> |"🚪 Log Out"| AppContext
 
     HomeTab <--> |"Reads via Zustand & Registry"| useDashboardEngine
     HomeTab --> |"Renders widget grid"| MetricCard
@@ -112,18 +113,21 @@ graph TD
     WeightTab <--> |"Reads/Writes WeightLog"| AppContext
     NutritionTab <--> |"Logs food portions"| AppContext
     RemindersTab <--> |"Configures reminders CRUD"| AppContext
-    ProfileTab <--> |"Updates user profile goals"| AppContext
+    ProfileTab --> |"Redirects to configuration"| SettingsScreen
+    SettingsScreen <--> |"Updates user profile & goals"| useProfileSettings
 
     %% Components association
     HomeTab --> GlassCard
     WeightTab --> GlassCard
     NutritionTab --> GlassCard
     RemindersTab --> GlassCard
+    SettingsScreen --> GlassCard
     
     HomeTab --> ScreenHeader
     WeightTab --> ScreenHeader
     NutritionTab --> ScreenHeader
     RemindersTab --> ScreenHeader
+    SettingsScreen --> ScreenHeader
     
     GlassCard --> AppIcon
     ScreenHeader --> AppIcon
@@ -148,5 +152,6 @@ graph TD
     %% Dynamic Theme bindings
     NavigationGate --> |"Initializes with"| ThemeProvider
     HomeTab --> |"useTheme()"| useTheme
-    ProfileTab --> |"useTheme() & toggles mode"| useTheme
+    ProfileTab --> |"useTheme()"| useTheme
+    SettingsScreen --> |"useTheme() & toggles mode"| useTheme
     NutritionTab --> |"useTheme()"| useTheme

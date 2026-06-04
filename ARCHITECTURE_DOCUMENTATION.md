@@ -295,3 +295,15 @@ To support a seamless, system-wide dark and light theme, the application impleme
 * **ThemeProvider (`src/theme/ThemeProvider.tsx`):** Wraps the entire application root (`app/_layout.tsx`). It reads the theme state and provides the dynamic `colors` palette context to the entire widget tree. It also drives the system `StatusBar` dynamically based on the active theme, and presents a circular scaling transition mask with spinning sun/moon feedback.
 * **Unified Hook (`useTheme`):** Component stylesheets are dynamically computed via style factories (`getStyles(colors)`) and memoized inside screens using `React.useMemo`. The hook features a fallback mechanism: if React Context is lost (e.g., inside native React Native `<Modal>` instances), it automatically falls back to reading the state directly from `useThemeStore`, ensuring 100% style consistency.
 * **Identical Theme Shapes (`src/theme/tokens.ts`):** `LightColors` and `DarkColors` share the identical `ThemeColors` type contract, enabling risk-free dynamic styling across the codebase.
+
+---
+
+## 15. Dedicated Settings Preferences, Profile Decoupling & Dynamic Unit Conversion (`app/settings.tsx`)
+
+To simplify component code and maintain a single source of truth, user profile configuration and settings preferences are fully consolidated in a dedicated settings screen, refactoring and clean-cleaning duplicated code:
+* **Decoupled Architecture:** Removed nearly 800 lines of duplicated modals, gallery pickers, forms, and settings groups from the Profile tab (`app/(tabs)/profile.tsx`). The Profile screen delegates all configuration modifications directly to the Settings screen (`app/settings.tsx`) via Expo Router navigation.
+* **Display-Level Unit Conversions:** The database (Supabase) and global state (Zustand) normalize and persist health metrics and goals in metric standard units (`kg` for weight, `ml` for water). Dynamic conversion to imperial units (`lbs`, `oz`) is calculated on-the-fly inside the presentation layer of the Settings, Weight, Water, and Profile tabs based on user unit preference flags (`user.weightUnit` and `user.volumeUnit`).
+* **Interactive Weight Toggling:** Toggling weight unit type inside `app/settings.tsx` converts the value inside the weight input box immediately to prevent data entry confusion. On saving, the value is converted back to metric `kg` if the active preference is `lbs`.
+* **Hydration Adjusters:** Daily hydration targets are displayed in ounces if `volumeUnit === 'oz'` and can be incremented or decremented in standard `8 oz` steps or modified via custom quick-pills.
+* **Cloud & Purge Operations:** Contains manual backup sync buttons (which pull from and load the latest Supabase profiles state synchronously into the UI inputs) and database purge confirmation dialogs (which wipe local MMKV store state and clear remote Supabase table rows securely).
+* **System-Wide Haptic Toggles:** Global preference toggles (`user.hapticsEnabled`) drive the native `expo-haptics` module throughout weight tracking, water tracking, and settings clicks.

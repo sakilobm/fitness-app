@@ -13,6 +13,7 @@ import { ThemeColors } from '@/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
 import { MetricCard, WidgetConfig, WidgetType } from '@/features/dashboard/components/WidgetRegistry';
 import { getBMIResult } from '@/utils/bmi';
+import { kgToLbs, mlToOz } from '@/utils/units';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -42,6 +43,9 @@ export default function HomeScreen() {
     setDashboardGrid,
     toggleWidgetVisibility,
   } = useFitnessStore();
+
+  const isLbs = user.weightUnit === 'lbs';
+  const isOz = user.volumeUnit === 'oz';
 
   // Dynamic calculations
   const totalKcal = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.kcal, 0), 0);
@@ -81,10 +85,10 @@ export default function HomeScreen() {
       icon: { lib: 'Ionicons', name: 'water' },
       color: colors.chart.water,
       data: {
-        value: totalWaterMl,
-        target: user.waterGoal,
-        segments: [{ value: totalWaterMl, color: colors.chart.water }],
-        centerLabel: `${(totalWaterMl / 1000).toFixed(1)}L`,
+        value: isOz ? mlToOz(totalWaterMl) : totalWaterMl,
+        target: isOz ? mlToOz(user.waterGoal) : user.waterGoal,
+        segments: [{ value: isOz ? mlToOz(totalWaterMl) : totalWaterMl, color: colors.chart.water }],
+        centerLabel: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)}L`,
         centerSublabel: 'Hydrated',
       },
       onPress: () => router.push('/water'),
@@ -115,9 +119,9 @@ export default function HomeScreen() {
       icon: { lib: 'MCI', name: 'scale-bathroom' },
       color: colors.lime,
       data: {
-        currentValue: currentWeight,
-        previousValue: previousWeight,
-        unit: 'kg',
+        currentValue: isLbs ? kgToLbs(currentWeight) : currentWeight,
+        previousValue: isLbs ? kgToLbs(previousWeight) : previousWeight,
+        unit: isLbs ? 'lbs' : 'kg',
         trend: weightTrend,
       },
       onPress: () => router.push('/(tabs)/weight'),
@@ -159,9 +163,9 @@ export default function HomeScreen() {
   ];
 
   const QUICK_LOGS = [
-    { lib: 'Ionicons' as const, icon: 'water',         color: colors.chart.water, label: 'Water',  value: `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water'            },
+    { lib: 'Ionicons' as const, icon: 'water',         color: colors.chart.water, label: 'Water',  value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water'            },
     { lib: 'MCI' as const,      icon: 'food-apple',    color: colors.lime,        label: 'Food',   value: `${totalKcal.toLocaleString()} kcal`,     route: '/(tabs)/nutrition' },
-    { lib: 'MCI' as const,      icon: 'scale-bathroom',color: colors.amber,       label: 'Weight', value: `${currentWeight.toFixed(1)} kg`,         route: '/(tabs)/weight'    },
+    { lib: 'MCI' as const,      icon: 'scale-bathroom',color: colors.amber,       label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`,         route: '/(tabs)/weight'    },
     { lib: 'Ionicons' as const, icon: 'footsteps',     color: '#6366F1',          label: 'Steps',  value: stepsCount.toLocaleString(),               route: '/steps'            },
   ];
 
