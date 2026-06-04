@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] - 2026-06-04T11:24:58+05:30
+
+### Fixed — Splash Screen Full-Screen / Padding Issue
+
+**Problem:** Custom splash screen showed padding on all sides (wasn't truly full-bleed) and had excess white/transparent space around the edges.
+
+**Root Cause:** The container `Animated.View` had `transform: [{ scale: scale.value }]` applied to it with an initial scale of `0.8`. This meant the container was smaller than the screen during entrance, revealing whatever was behind it. On exit, scale went to `1.5`, also causing edge clipping.
+
+**Fix:**
+- Container (`Animated.View`) now uses `StyleSheet.absoluteFill` + only `opacity` animation — it is always 100% screen size, no scale.
+- Only the **inner content** (logo icon + text block) scales/translates for entrance animation.
+- Exit is a pure fade-out of the entire overlay.
+- Added premium details: radial glow blob, pulsing ring, animated dots indicator at bottom.
+- Background color: deep forest `#0D1F12` for brand consistency.
+
+#### Rollback
+```
+git checkout HEAD~1 -- src/components/AnimatedSplashScreen.tsx
+```
+
 ## [2.3.1] - 2026-06-03T23:20:24+05:30
 
 ### Fixed — Industry-Standard React Context Theming in Setup Wizard

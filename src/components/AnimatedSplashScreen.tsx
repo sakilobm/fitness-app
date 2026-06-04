@@ -1,141 +1,227 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, View, Dimensions, StatusBar } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withDelay,
   withSpring,
+  withRepeat,
+  withSequence,
   runOnJS,
   Easing,
-  withSequence,
 } from 'react-native-reanimated';
 import { Colors, Typography } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as SplashScreen from 'expo-splash-screen';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface Props {
   isAppReady: boolean;
+  preview?: boolean;          // When true: skips native splash hide, auto-exits after 3.5s
+  onPreviewDismiss?: () => void;
 }
 
-export default function AnimatedSplashScreen({ isAppReady }: Props) {
+export default function AnimatedSplashScreen({ isAppReady, preview = false, onPreviewDismiss }: Props) {
   const [isAnimationComplete, setIsAnimationComplete] = useState(false);
 
-  // Animation values
-  const opacity = useSharedValue(1);
-  const scale = useSharedValue(0.8);
-  const iconRotate = useSharedValue(0);
+  // ── Container (overlay) — only opacity, NO scale so it stays full-bleed ──
+  const overlayOpacity = useSharedValue(1);
+
+  // ── Inner content animations ──────────────────────────────────────────────
+  const logoScale = useSharedValue(0.72);
+  const logoOpacity = useSharedValue(0);
   const textOpacity = useSharedValue(0);
-  const textTranslateY = useSharedValue(20);
+  const textY = useSharedValue(24);
+
+  // ── Subtle pulse on the icon ring ─────────────────────────────────────────
+  const ringScale = useSharedValue(1);
 
   useEffect(() => {
-    // Phase 1: Entrance animation (while app is loading)
-    scale.value = withSpring(1, { damping: 12, stiffness: 100 });
-    textOpacity.value = withDelay(400, withTiming(1, { duration: 600 }));
-    textTranslateY.value = withDelay(400, withSpring(0, { damping: 12 }));
-    
-    // Continuous rotation for the icon
-    iconRotate.value = withTiming(360, { duration: 2000, easing: Easing.linear });
+    // Only hide the native expo splash when NOT in preview mode
+    if (!preview) {
+      SplashScreen.hideAsync().catch(() => { });
+    }
 
-    // Hide the native splash screen smoothly so our custom one is visible
-    setTimeout(() => {
-      SplashScreen.hideAsync().catch(() => {});
-    }, 100);
+    // Phase 1 — Entrance
+    logoOpacity.value = withTiming(1, { duration: 280 });
+    logoScale.value = withSpring(1, { damping: 13, stiffness: 140 });
+    textOpacity.value = withDelay(320, withTiming(1, { duration: 420 }));
+    textY.value = withDelay(320, withSpring(0, { damping: 14, stiffness: 120 }));
+
+    // Idle breathing pulse on ring
+    ringScale.value = withDelay(
+      600,
+      withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+        true,
+      ),
+    );
+
+    // In preview mode: auto-exit after 3.5s
+    if (preview) {
+      const timer = setTimeout(() => triggerExit(), 3500);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
+  // Shared exit logic
+  const triggerExit = () => {
+    overlayOpacity.value = withDelay(
+      200,
+      withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) }, (finished) => {
+        if (finished) {
+          runOnJS(setIsAnimationComplete)(true);
+          if (onPreviewDismiss) runOnJS(onPreviewDismiss)();
+        }
+      }),
+    );
+  };
+
   useEffect(() => {
-    if (isAppReady) {
-      // Phase 2: Exit animation (when app finishes booting)
-      // We give it a short delay so the user can enjoy the entrance if the app loads too fast
-      opacity.value = withDelay(
-        800, 
-        withTiming(0, { duration: 600, easing: Easing.out(Easing.ease) }, (finished) => {
-          if (finished) {
-            runOnJS(setIsAnimationComplete)(true);
-          }
-        })
-      );
-      
-      scale.value = withDelay(
-        800,
-        withTiming(1.5, { duration: 600, easing: Easing.out(Easing.ease) })
-      );
-    }
+    if (!isAppReady || preview) return;
+    overlayOpacity.value = withDelay(
+      2500,
+      withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) }, (finished) => {
+        if (finished) runOnJS(setIsAnimationComplete)(true);
+      }),
+    );
   }, [isAppReady]);
 
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
+  // ── Animated styles ───────────────────────────────────────────────────────
+  const overlayStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [{ scale: logoScale.value }],
   }));
 
   const textStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
-    transform: [{ translateY: textTranslateY.value }],
+    transform: [{ translateY: textY.value }],
   }));
 
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${iconRotate.value}deg` }],
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
   }));
 
   if (isAnimationComplete) return null;
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
-      {/* Decorative Background Elements */}
-      <Animated.View style={[styles.glowRing, { width: width * 1.5, height: width * 1.5, borderRadius: width }]} />
-      
-      <Animated.View style={[styles.iconContainer, iconStyle]}>
-        <Ionicons name="flash" size={64} color={Colors.white} />
+    <Animated.View style={[StyleSheet.absoluteFill, styles.overlay, overlayStyle]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A1A10" />
+
+      {/* Background radial glow */}
+      <View style={[styles.glowBlob, { width: width * 1.6, height: width * 1.6, borderRadius: width }]} />
+
+      {/* Pulsing outer ring */}
+      <Animated.View style={[styles.outerRing, ringStyle]} />
+
+      {/* Logo icon */}
+      <Animated.View style={[styles.iconWrap, logoStyle]}>
+        <View style={styles.iconInner}>
+          <Ionicons name="flash" size={56} color="#FFFFFF" />
+        </View>
       </Animated.View>
-      
-      <Animated.Text style={[styles.title, textStyle]}>
-        FitForge
-      </Animated.Text>
-      
-      <Animated.Text style={[styles.subtitle, textStyle]}>
-        Calibrating your engine...
-      </Animated.Text>
+
+      {/* App name + tagline */}
+      <Animated.View style={[styles.textBlock, textStyle]}>
+        <Animated.Text style={styles.appName}>FitForge</Animated.Text>
+        <Animated.Text style={styles.tagline}>Forge Your Best Self</Animated.Text>
+      </Animated.View>
+
+      {/* Bottom version dot */}
+      <View style={styles.bottomDot}>
+        <View style={styles.dot} />
+        <View style={[styles.dot, styles.dotActive]} />
+        <View style={styles.dot} />
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.lime, // Deep forest teal background
+  overlay: {
+    // absoluteFill handles top/left/right/bottom = 0
+    // Using flex + backgroundColor ensures no gaps, even behind safe areas
+    backgroundColor: '#0D1F12',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 9999, // Ensure it stays on top of the app
+    zIndex: 9999,
   },
-  glowRing: {
+  glowBlob: {
     position: 'absolute',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(46,125,94,0.18)',
+    alignSelf: 'center',
+    top: '-20%',
   },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+  outerRing: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(46,125,94,0.35)',
   },
-  title: {
-    ...Typography.hero,
-    color: Colors.white,
+  iconWrap: {
+    width: 110,
+    height: 110,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.20)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    // Glow shadow
+    shadowColor: '#2E7D5E',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  iconInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textBlock: {
+    alignItems: 'center',
+  },
+  appName: {
+    fontSize: 42,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -1.5,
     marginBottom: 8,
   },
-  subtitle: {
-    ...Typography.h4,
-    color: 'rgba(255,255,255,0.8)',
-    fontWeight: '400',
+  tagline: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.55)',
+    letterSpacing: 1.2,
+  },
+  bottomDot: {
+    position: 'absolute',
+    bottom: 52,
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+  },
+  dotActive: {
+    width: 20,
+    backgroundColor: '#2E7D5E',
   },
 });

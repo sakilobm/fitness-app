@@ -23,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useProfileSettings, useThemeMode } from '@/store/fitnessStore';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
+import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -76,6 +77,7 @@ export default function ProfileScreen() {
   const [notifications, setNotifications] = useState(true);
   const [unitKg, setUnitKg] = useState(true);
   const [unitMl, setUnitMl] = useState(true);
+  const [showSplashPreview, setShowSplashPreview] = useState(false);
 
   // Profile Dashboard Editable State variables (Option A - Recommended)
   const userName = user.name;
@@ -274,6 +276,7 @@ export default function ProfileScreen() {
   };
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
@@ -495,6 +498,18 @@ export default function ProfileScreen() {
               <Ionicons name="lock-closed" size={18} color={Colors.danger} />
             </View>
             <Text style={styles.settingLabel}>Privacy & Security</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingRow}
+            activeOpacity={0.75}
+            onPress={() => setShowSplashPreview(true)}
+          >
+            <View style={[styles.settingIconWrap, { backgroundColor: 'rgba(46,125,94,0.18)' }]}>
+              <Ionicons name="flash" size={18} color="#2E7D5E" />
+            </View>
+            <Text style={styles.settingLabel}>Preview Splash Screen</Text>
             <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
           </TouchableOpacity>
 
@@ -934,7 +949,24 @@ export default function ProfileScreen() {
           </GlassCard>
         </View>
       </Modal>
+
     </ScrollView>
+
+    {/* Splash preview Modal — true portal, renders above tab bar & everything */}
+    <Modal
+      visible={showSplashPreview}
+      transparent={false}
+      animationType="none"
+      statusBarTranslucent={true}
+      onRequestClose={() => setShowSplashPreview(false)}
+    >
+      <AnimatedSplashScreen
+        isAppReady={false}
+        preview={true}
+        onPreviewDismiss={() => setShowSplashPreview(false)}
+      />
+    </Modal>
+    </View>
   );
 }
 
