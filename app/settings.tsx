@@ -130,6 +130,16 @@ export default function SettingsScreen() {
     return () => clearTimeout(timer);
   };
 
+  const [hapticTestIndex, setHapticTestIndex] = useState(0);
+
+  const handleTestHaptic = () => {
+    const patterns = ['light', 'medium', 'heavy', 'success', 'warning', 'error'] as const;
+    const type = patterns[hapticTestIndex % patterns.length];
+    triggerHaptic(type);
+    showToast(`Triggered ${type.toUpperCase()} haptic pattern ⚡`, 'info');
+    setHapticTestIndex(hapticTestIndex + 1);
+  };
+
   // Handle Weight Unit Toggling with value conversion
   const handleWeightUnitChange = (newUnit: 'kg' | 'lbs') => {
     if (newUnit === weightUnit) return;
@@ -837,6 +847,20 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            <View style={styles.divider} />
+
+            {/* Diagnostic Haptic Test */}
+            <PressableRow style={styles.row} onPress={handleTestHaptic}>
+              <View style={[styles.iconBubble, { backgroundColor: colors.lime + '15' }]}>
+                <Ionicons name="pulse" size={18} color={colors.lime} />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowTitle}>Diagnostic Haptic Test</Text>
+                <Text style={styles.rowSub}>Cycle and test mobile haptic vibrations</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            </PressableRow>
           </GlassCard>
         </Animated.View>
 

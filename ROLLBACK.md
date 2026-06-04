@@ -1,5 +1,37 @@
 # Rollback Plan
 
+If version `2.5.3` (Interactive Haptics Diagnostic Test Button) needs to be reverted due to timing issues or state conflicts, use this guide.
+
+## Rollback Procedure (Reverting to v2.5.2)
+
+1. **Revert modified settings screen files:**
+   ```powershell
+   git checkout v2.5.2 -- app/settings.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.5.2` (Card Split Background, Undefined Units & Dynamic XP Progress) needs to be reverted due to layout issues, GlassCard rendering anomalies, or progress bar value problems, use this guide.
+
+## Rollback Procedure (Reverting to v2.5.1)
+
+1. **Revert modified UI component and profile screen files:**
+   ```powershell
+   git checkout v2.5.1 -- src/components/ui/GlassCard.tsx app/(tabs)/profile.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.5.1` (Android Native Haptic Exception & Settings Toasts Migration) needs to be reverted due to layout issues, Toast banner timing problems, or haptics behavior anomalies, use this guide.
 
 ## Rollback Procedure (Reverting to v2.5.0)

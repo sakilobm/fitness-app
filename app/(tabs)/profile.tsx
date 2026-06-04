@@ -59,6 +59,14 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useProfileSettings();
 
+  // Safe fallbacks for store preferences
+  const weightUnit = user.weightUnit || 'kg';
+  const volumeUnit = user.volumeUnit || 'ml';
+
+  // Dynamic Level XP progress calculations
+  const nextLevelXp = user.level * 500;
+  const progressPct = Math.min(100, Math.max(3, (user.xp / nextLevelXp) * 100));
+
   // Compute initials dynamically
   const initials = user.name
     .split(' ')
@@ -68,8 +76,8 @@ export default function ProfileScreen() {
     .slice(0, 2);
 
   // Unit-aware strings
-  const weightValStr = user.weightUnit === 'lbs' ? `${kgToLbs(user.weight)} lbs` : `${user.weight} kg`;
-  const waterValStr = user.volumeUnit === 'oz' ? `${mlToOz(user.waterGoal)} oz` : `${(user.waterGoal / 1000).toFixed(1)}L`;
+  const weightValStr = weightUnit === 'lbs' ? `${kgToLbs(user.weight)} lbs` : `${user.weight} kg`;
+  const waterValStr = volumeUnit === 'oz' ? `${mlToOz(user.waterGoal)} oz` : `${(user.waterGoal / 1000).toFixed(1)}L`;
 
   // Compute dynamic stats list
   const userStats = [
@@ -88,10 +96,10 @@ export default function ProfileScreen() {
   ];
 
   // Goal conversions for metrics
-  const currentWeightDisp = user.weightUnit === 'lbs' ? kgToLbs(user.weight) : user.weight;
+  const currentWeightDisp = weightUnit === 'lbs' ? kgToLbs(user.weight) : user.weight;
   const targetWeightDisp = user.goal === 'Gain Muscle'
-    ? (user.weightUnit === 'lbs' ? kgToLbs(85) : 85)
-    : (user.weightUnit === 'lbs' ? kgToLbs(72) : 72);
+    ? (weightUnit === 'lbs' ? kgToLbs(85) : 85)
+    : (weightUnit === 'lbs' ? kgToLbs(72) : 72);
   const remainingWeightDisp = user.goal === 'Gain Muscle'
     ? Math.max(0, targetWeightDisp - currentWeightDisp)
     : Math.max(0, currentWeightDisp - targetWeightDisp);
@@ -142,9 +150,9 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.xpBarTrack}>
-                <View style={[styles.xpBarFill, { width: `${(user.xp / 4000) * 100}%` }]} />
+                <View style={[styles.xpBarFill, { width: `${progressPct}%` }]} />
               </View>
-              <Text style={styles.xpSub}>{4000 - user.xp} XP to Level 9</Text>
+              <Text style={styles.xpSub}>{nextLevelXp - user.xp} XP to Level {user.level + 1}</Text>
             </View>
           </View>
         </GlassCard>
@@ -228,13 +236,13 @@ export default function ProfileScreen() {
             <View style={styles.goalText}>
               <Text style={styles.goalTitle}>{user.goal}</Text>
               <Text style={styles.goalSub}>
-                Current: {currentWeightDisp} {user.weightUnit} → Target: {user.goal === 'Stay Fit' ? 'Maintain' : `${targetWeightDisp} ${user.weightUnit}`}
+                Current: {currentWeightDisp} {weightUnit} → Target: {user.goal === 'Stay Fit' ? 'Maintain' : `${targetWeightDisp} ${weightUnit}`}
               </Text>
               <Text style={styles.goalEta}>{user.goal === 'Stay Fit' ? 'Awesome! Keep up active routines' : 'Est. 9 weeks at current pace'}</Text>
               <View style={styles.goalBadge}>
                 <Ionicons name={user.goal === 'Gain Muscle' ? 'trending-up' : user.goal === 'Stay Fit' ? 'body' : 'trending-down'} size={11} color={colors.amber} />
                 <Text style={styles.goalBadgeText}>
-                  {user.goal === 'Stay Fit' ? 'Active lifestyle' : `${remainingWeightDisp.toFixed(1)} ${user.weightUnit} remaining`}
+                  {user.goal === 'Stay Fit' ? 'Active lifestyle' : `${remainingWeightDisp.toFixed(1)} ${weightUnit} remaining`}
                 </Text>
               </View>
             </View>

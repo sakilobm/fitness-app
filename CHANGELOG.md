@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.3] - 2026-06-04T18:51:00+05:30
+
+### Added — Interactive Haptics Diagnostic Test Button
+
+**Architectural Decision:** Introduced an interactive diagnostic row inside Settings to allow users to trigger and cycle through all native haptic patterns sequentially, validating native haptics linked functionality.
+
+**Changes:**
+- **Diagnostic Testing Row (`app/settings.tsx`):**
+  - Integrated `hapticTestIndex` state and `handleTestHaptic` action cycles.
+  - Added a new pressable row named **Diagnostic Haptic Test** at the bottom of the System Preferences card. Tapping it triggers haptics and notifies with custom Toasts describing the played pattern.
+
+#### Rollback
+See ROLLBACK.md section for v2.5.3.
+
+## [2.5.2] - 2026-06-04T18:42:00+05:30
+
+### Fixed — Card Split Background, Undefined Units & Dynamic XP Progress
+
+**Architectural Decision:** Removed the absolute-positioned 60px solid color box from `GlassCard` to avoid layout split line bugs. Added local safe defaults (`|| 'kg'`) to profile screen calculations to prevent showing `undefined` unit strings for upgraded/hydrated users. Swapped the hardcoded `4000 XP` profile progress bar with dynamic metrics based on user level.
+
+**Changes:**
+- **Card Styling Overhaul (`src/components/ui/GlassCard.tsx`):**
+  - Removed the `innerGlow` element and style. This fixes the visual bug where accented cards displayed with a split half-filled background color.
+- **Defensive Unit Fallbacks (`app/(tabs)/profile.tsx`):**
+  - Introduced local parameters `weightUnit` and `volumeUnit` falling back to standard `'kg'` and `'ml'` respectively to resolve hydrated store property gaps.
+- **Dynamic XP Calculations (`app/(tabs)/profile.tsx`):**
+  - Configured next level XP threshold dynamically: `nextLevelXp = user.level * 500`.
+  - Replaced the hardcoded static labels and bars with dynamic remaining values and percentage-based widths.
+
+#### Rollback
+See ROLLBACK.md section for v2.5.2.
+
 ## [2.5.1] - 2026-06-04T18:25:00+05:30
 
 ### Fixed — Android Native Haptic Exception & Settings Toasts Migration

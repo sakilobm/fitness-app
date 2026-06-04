@@ -27,10 +27,6 @@ export default function GlassCard({ children, style, accentColor, noPadding }: G
       ]}
     >
       {accentColor && <View style={[styles.accent, { backgroundColor: accentColor }]} />}
-      {/* Subtle inner glow at top */}
-      {accentColor && (
-        <View style={[styles.innerGlow, { backgroundColor: accentColor + '06' }]} />
-      )}
       {children}
     </View>
   );
@@ -54,11 +50,5 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     right: 0,
     height: 3,
   },
-  innerGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-  },
 });
+

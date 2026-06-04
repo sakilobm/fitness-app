@@ -1,6 +1,58 @@
 # Cursor Test & Validation Log
 
+## [2026-06-04T18:51:00+05:30] - Interactive Haptic Diagnostic Button
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Interactive Haptic Test Button (`app/settings.tsx`):**
+  - Added a "Diagnostic Haptic Test" row button under preferences. Verified it correctly triggers haptic calls sequentially on tap (`light` -> `medium` -> `heavy` -> `success` -> `warning` -> `error`) and notifies with corresponding info Toast messages.
+
+## [2026-06-04T18:42:00+05:30] - GlassCard Split Background, Undefined Units & Dynamic XP Progress Fix
+
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Card Background split (`src/components/ui/GlassCard.tsx`):**
+  - Removed the solid 60px height `innerGlow` block from accented cards. Checked that cards display uniform background shading.
+- **Undefined Units display (`app/(tabs)/profile.tsx`):**
+  - Added robust local fallbacks (`|| 'kg'`) to handle missing cached state entries, resolving the target display rendering.
+- **Dynamic XP leveling (`app/(tabs)/profile.tsx`):**
+  - Replaced the hardcoded `4000 XP` target with a dynamic `user.level * 500` threshold, and configured progress bar text labels dynamically.
+
 ## [2026-06-04T18:25:00+05:30] - Native Haptic Exception Fix & Settings Toast Notifications
+
 
 ### Automated Checks
 - **Command:** `npx tsc --noEmit; node testing/test_health_calculations.js`
