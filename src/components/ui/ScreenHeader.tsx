@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Radius } from '@/constants/theme';
+import { Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -35,7 +36,7 @@ function HeaderIcon({ icon, color, size }: { icon: IconDef; color: string; size:
 export default function ScreenHeader({
   title,
   subtitle,
-  accentColor = Colors.lime,
+  accentColor,
   icon,
   showBack = false,
   onBack,
@@ -43,13 +44,16 @@ export default function ScreenHeader({
   onRightPress,
   rightElement,
 }: ScreenHeaderProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+  const activeAccent = accentColor || colors.lime;
 
   const RightSlot = () => {
     if (rightElement) return <>{rightElement}</>;
     if (rightIcon) {
       return (
         <TouchableOpacity style={styles.iconBtn} onPress={onRightPress} activeOpacity={0.75}>
-          <Ionicons name={rightIcon} size={19} color={Colors.text.primary} />
+          <Ionicons name={rightIcon} size={19} color={colors.text.primary} />
         </TouchableOpacity>
       );
     }
@@ -63,21 +67,21 @@ export default function ScreenHeader({
         {/* Row with back button, title, and right slot */}
         <View style={styles.detailRow}>
           <TouchableOpacity
-            style={[styles.backBtn, { borderColor: accentColor + '30' }]}
+            style={[styles.backBtn, { borderColor: activeAccent + '30' }]}
             onPress={onBack}
             activeOpacity={0.75}
           >
-            <Ionicons name="chevron-back" size={20} color={accentColor} />
+            <Ionicons name="chevron-back" size={20} color={activeAccent} />
           </TouchableOpacity>
 
           <View style={styles.detailTitleBlock}>
             {icon && (
-              <View style={[styles.detailIconBubble, { backgroundColor: accentColor + '15' }]}>
-                <HeaderIcon icon={icon} color={accentColor} size={18} />
+              <View style={[styles.detailIconBubble, { backgroundColor: activeAccent + '15' }]}>
+                <HeaderIcon icon={icon} color={activeAccent} size={18} />
               </View>
             )}
             <View style={styles.detailTitleText}>
-              {subtitle && <Text style={[styles.detailSubtitle, { color: accentColor }]}>{subtitle}</Text>}
+              {subtitle && <Text style={[styles.detailSubtitle, { color: activeAccent }]}>{subtitle}</Text>}
               <Text style={styles.detailTitle} numberOfLines={1}>{title}</Text>
             </View>
           </View>
@@ -88,8 +92,8 @@ export default function ScreenHeader({
         </View>
 
         {/* Decorative accent bar */}
-        <View style={[styles.accentBar, { backgroundColor: accentColor + '18' }]}>
-          <View style={[styles.accentBarFill, { backgroundColor: accentColor, width: '35%' }]} />
+        <View style={[styles.accentBar, { backgroundColor: activeAccent + '18' }]}>
+          <View style={[styles.accentBarFill, { backgroundColor: activeAccent, width: '35%' }]} />
         </View>
       </View>
     );
@@ -101,14 +105,14 @@ export default function ScreenHeader({
       <View style={styles.tabRow}>
         {/* Icon bubble */}
         {icon && (
-          <View style={[styles.tabIconBubble, { backgroundColor: accentColor + '15', borderColor: accentColor + '30' }]}>
-            <HeaderIcon icon={icon} color={accentColor} size={22} />
+          <View style={[styles.tabIconBubble, { backgroundColor: activeAccent + '15', borderColor: activeAccent + '30' }]}>
+            <HeaderIcon icon={icon} color={activeAccent} size={22} />
           </View>
         )}
 
         {/* Title block */}
         <View style={styles.tabTitleBlock}>
-          {subtitle && <Text style={[styles.tabSubtitle, { color: accentColor }]}>{subtitle}</Text>}
+          {subtitle && <Text style={[styles.tabSubtitle, { color: activeAccent }]}>{subtitle}</Text>}
           <Text style={styles.tabTitle}>{title}</Text>
         </View>
 
@@ -117,14 +121,14 @@ export default function ScreenHeader({
       </View>
 
       {/* Decorative accent bar */}
-      <View style={[styles.accentBar, { backgroundColor: accentColor + '12' }]}>
-        <View style={[styles.accentBarFill, { backgroundColor: accentColor, width: '25%' }]} />
+      <View style={[styles.accentBar, { backgroundColor: activeAccent + '12' }]}>
+        <View style={[styles.accentBarFill, { backgroundColor: activeAccent, width: '25%' }]} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   // ── Detail (horizontal, back-button variant) ──────────────────────────────
   detailContainer: {
     gap: 10,
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -174,7 +178,7 @@ const styles = StyleSheet.create({
   detailTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
     letterSpacing: -0.5,
   },
 
@@ -183,9 +187,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1C1C1E',
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
   tabTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
     letterSpacing: -0.8,
   },
 

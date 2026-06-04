@@ -20,7 +20,8 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
 import { useProfileSettings, useBmiTracker } from '@/store/fitnessStore';
 import ProgressRing from '@/components/ui/ProgressRing';
-import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
+import { Typography, Radius, Spacing, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 const { width: W } = Dimensions.get('window');
 const CHART_W = W - 64;
@@ -39,6 +40,7 @@ function SparkLine({
   statuses?: boolean[]; 
   onPointPress?: (idx: number) => void;
 }) {
+  const { colors } = useTheme();
   if (!data || data.length === 0) return null;
   const min = Math.min(...data) - 0.5;
   const max = Math.max(...data) + 0.5;
@@ -63,12 +65,12 @@ function SparkLine({
     <Svg width={CHART_W} height={CHART_H + 30}>
       <Defs>
         <SvgLinearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={Colors.lime} stopOpacity="0.25" />
-          <Stop offset="1" stopColor={Colors.lime} stopOpacity="0" />
+          <Stop offset="0" stopColor={colors.lime} stopOpacity="0.25" />
+          <Stop offset="1" stopColor={colors.lime} stopOpacity="0" />
         </SvgLinearGradient>
       </Defs>
       {areaD ? <Path d={areaD} fill="url(#lineGrad)" /> : null}
-      <Path d={pathD} stroke={Colors.lime} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d={pathD} stroke={colors.lime} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
       
       {/* Render points */}
       {pts.map((pt, idx) => {
@@ -82,8 +84,8 @@ function SparkLine({
               cx={pt.x}
               cy={pt.y}
               r={4}
-              fill={Colors.card}
-              stroke={Colors.lime}
+              fill={colors.card}
+              stroke={colors.lime}
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />
@@ -92,8 +94,8 @@ function SparkLine({
 
         return (
           <React.Fragment key={idx}>
-            <Circle cx={pt.x} cy={pt.y} r={6} fill={Colors.lime} opacity={0.25} />
-            <Circle cx={pt.x} cy={pt.y} r={4} fill={Colors.lime} />
+            <Circle cx={pt.x} cy={pt.y} r={6} fill={colors.lime} opacity={0.25} />
+            <Circle cx={pt.x} cy={pt.y} r={4} fill={colors.lime} />
             {/* Tap handlers for fullscreen interactive chart */}
             {onPointPress && (
               <Circle
@@ -110,7 +112,7 @@ function SparkLine({
                 x={pt.x} 
                 y={pt.y - 12} 
                 textAnchor="middle" 
-                fill={Colors.lime} 
+                fill={colors.lime} 
                 fontSize={11} 
                 fontWeight="700"
               >
@@ -128,7 +130,7 @@ function SparkLine({
           x={pt.x}
           y={CHART_H + 18}
           textAnchor="middle"
-          fill={Colors.text.primary}
+          fill={colors.text.primary}
           fontSize={10}
           fontWeight="600"
         >
@@ -143,6 +145,7 @@ const CALENDAR_WEEKS = 8;
 const today = new Date();
 
 function CalHeatmap() {
+  const { colors, isDark } = useTheme();
   const days: { date: Date; status: 'logged' | 'missed' | 'goal' | 'future' }[] = [];
   for (let i = CALENDAR_WEEKS * 7 - 1; i >= 0; i--) {
     const d = new Date(today);
@@ -156,10 +159,10 @@ function CalHeatmap() {
   }
 
   const statusColor: Record<string, string> = {
-    logged: Colors.lime + '88',
-    missed: Colors.danger + '55',
-    goal: Colors.lime,
-    future: 'rgba(0,0,0,0.06)',
+    logged: colors.lime + '88',
+    missed: colors.danger + '55',
+    goal: colors.lime,
+    future: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
   };
 
   return (
@@ -184,14 +187,17 @@ const cal = StyleSheet.create({
   day: { height: 14, borderRadius: 3 },
 });
 
-const BMI_CATEGORIES = [
-  { label: 'Under', max: 18.5, color: Colors.chart.water },
-  { label: 'Normal', max: 24.9, color: Colors.lime },
-  { label: 'Over', max: 29.9, color: Colors.amber },
-  { label: 'Obese', max: 40, color: Colors.danger },
-];
+
 
 function BMIBar({ bmi }: { bmi: number }) {
+  const { colors } = useTheme();
+  const bmiS = React.useMemo(() => getBmiS(colors), [colors]);
+  const BMI_CATEGORIES = [
+    { label: 'Under', max: 18.5, color: colors.chart.water },
+    { label: 'Normal', max: 24.9, color: colors.lime },
+    { label: 'Over', max: 29.9, color: colors.amber },
+    { label: 'Obese', max: 40, color: colors.danger },
+  ];
   const pct = Math.min((bmi - 15) / (40 - 15), 1);
   const category = BMI_CATEGORIES.find((c) => bmi <= c.max) ?? BMI_CATEGORIES[3];
   return (
@@ -217,13 +223,13 @@ function BMIBar({ bmi }: { bmi: number }) {
   );
 }
 
-const bmiS = StyleSheet.create({
+const getBmiS = (colors: ThemeColors) => StyleSheet.create({
   row: { height: 12, borderRadius: 6, flexDirection: 'row', overflow: 'visible', marginBottom: 6, position: 'relative' },
   segment: { flex: 1 },
   pointer: { position: 'absolute', top: -4, marginLeft: -8 },
-  pointerDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 3, borderColor: Colors.card },
+  pointerDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 3, borderColor: colors.card },
   labels: { flexDirection: 'row', justifyContent: 'space-between' },
-  catLabel: { ...Typography.micro, color: Colors.muted, flex: 1, textAlign: 'center' },
+  catLabel: { ...Typography.micro, color: colors.muted, flex: 1, textAlign: 'center' },
   resultBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -246,6 +252,10 @@ const bmiS = StyleSheet.create({
 const MILESTONES = [90, 85, 80, 75];
 
 export default function WeightScreen() {
+  const { colors, isDark: isDarkMode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+  const bmiS = React.useMemo(() => getBmiS(colors), [colors]);
+  const modalS = React.useMemo(() => getModalS(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [period, setPeriod] = useState<Period>('week');
 
@@ -375,7 +385,7 @@ export default function WeightScreen() {
         title="Weight Tracking"
         subtitle="BODY METRICS"
         icon={{ lib: 'MCI', name: 'scale-bathroom' }}
-        accentColor={Colors.amber}
+        accentColor={colors.amber}
         rightIcon="add-outline"
         onRightPress={openLogModal}
       />
@@ -399,14 +409,14 @@ export default function WeightScreen() {
         activeOpacity={0.9} 
         style={styles.graphClickable}
       >
-        <GlassCard accentColor={Colors.lime}>
+        <GlassCard accentColor={colors.lime}>
           <View style={styles.graphHeaderRow}>
             <View style={styles.graphHeaderLeft}>
               <Text style={styles.graphTitle}>Weight Trend</Text>
               <Text style={styles.graphSubtitle}>Tap to inspect logs & view analysis</Text>
             </View>
             <View style={styles.graphZoomIconBubble}>
-              <Ionicons name="expand-outline" size={14} color={Colors.lime} />
+              <Ionicons name="expand-outline" size={14} color={colors.lime} />
             </View>
           </View>
           <SparkLine data={chartData} period={period} statuses={period === 'today' ? todayStatus : undefined} />
@@ -414,73 +424,73 @@ export default function WeightScreen() {
       </TouchableOpacity>
 
       {/* Log Weight CTA card */}
-      <GlassCard accentColor={Colors.lime}>
+      <GlassCard accentColor={colors.lime}>
         <View style={styles.ctaRow}>
           <View style={styles.ctaText}>
             <Text style={styles.ctaTitle}>Track Your Body Weight</Text>
             <Text style={styles.ctaSub}>Log today's entry to keep goals and achievements aligned</Text>
           </View>
           <TouchableOpacity style={styles.ctaBtn} onPress={openLogModal} activeOpacity={0.8}>
-            <Ionicons name="add" size={14} color={Colors.white} />
+            <Ionicons name="add" size={14} color={colors.white} />
             <Text style={styles.ctaBtnText}>Log Weight</Text>
           </TouchableOpacity>
         </View>
       </GlassCard>
 
       {/* Stats panel */}
-      <GlassCard accentColor={Colors.lime}>
+      <GlassCard accentColor={colors.lime}>
         <View style={styles.statsGrid}>
           {/* Current Weight */}
           <View style={styles.statCard}>
-            <View style={[styles.statAccentBar, { backgroundColor: Colors.lime }]} />
-            <View style={[styles.statIconBubble, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '30' }]}>
-              <MaterialCommunityIcons name="scale-bathroom" size={18} color={Colors.lime} />
+            <View style={[styles.statAccentBar, { backgroundColor: colors.lime }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '30' }]}>
+              <MaterialCommunityIcons name="scale-bathroom" size={18} color={colors.lime} />
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Current</Text>
-              <Text style={[styles.statValue, { color: Colors.lime }]}>{currentWeight}<Text style={styles.statUnit}> kg</Text></Text>
+              <Text style={[styles.statValue, { color: colors.lime }]}>{currentWeight}<Text style={styles.statUnit}> kg</Text></Text>
             </View>
           </View>
 
           {/* Goal Weight */}
           <View style={styles.statCard}>
-            <View style={[styles.statAccentBar, { backgroundColor: Colors.amber }]} />
-            <View style={[styles.statIconBubble, { backgroundColor: Colors.amber + '15', borderColor: Colors.amber + '30' }]}>
-              <Ionicons name="flag" size={16} color={Colors.amber} />
+            <View style={[styles.statAccentBar, { backgroundColor: colors.amber }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: colors.amber + '15', borderColor: colors.amber + '30' }]}>
+              <Ionicons name="flag" size={16} color={colors.amber} />
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Goal</Text>
-              <Text style={[styles.statValue, { color: Colors.amber }]}>{goalWeight}<Text style={styles.statUnit}> kg</Text></Text>
+              <Text style={[styles.statValue, { color: colors.amber }]}>{goalWeight}<Text style={styles.statUnit}> kg</Text></Text>
             </View>
           </View>
 
           {/* Total Lost */}
           <View style={styles.statCard}>
-            <View style={[styles.statAccentBar, { backgroundColor: Colors.lime }]} />
-            <View style={[styles.statIconBubble, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '30' }]}>
-              <Ionicons name="trending-down" size={18} color={Colors.lime} />
+            <View style={[styles.statAccentBar, { backgroundColor: colors.lime }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '30' }]}>
+              <Ionicons name="trending-down" size={18} color={colors.lime} />
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Lost</Text>
-              <Text style={[styles.statValue, { color: Colors.lime }]}>{lostWeight}<Text style={styles.statUnit}> kg</Text></Text>
-              <View style={[styles.statChip, { backgroundColor: weeklyChange <= 0 ? Colors.lime + '12' : Colors.danger + '12', borderColor: weeklyChange <= 0 ? Colors.lime + '25' : Colors.danger + '25' }]}>
-                <Ionicons name={weeklyChange <= 0 ? "arrow-down" : "arrow-up"} size={8} color={weeklyChange <= 0 ? Colors.lime : Colors.danger} />
-                <Text style={[styles.statChipText, { color: weeklyChange <= 0 ? Colors.lime : Colors.danger }]}>{weeklyChangeText}</Text>
+              <Text style={[styles.statValue, { color: colors.lime }]}>{lostWeight}<Text style={styles.statUnit}> kg</Text></Text>
+              <View style={[styles.statChip, { backgroundColor: weeklyChange <= 0 ? colors.lime + '12' : colors.danger + '12', borderColor: weeklyChange <= 0 ? colors.lime + '25' : colors.danger + '25' }]}>
+                <Ionicons name={weeklyChange <= 0 ? "arrow-down" : "arrow-up"} size={8} color={weeklyChange <= 0 ? colors.lime : colors.danger} />
+                <Text style={[styles.statChipText, { color: weeklyChange <= 0 ? colors.lime : colors.danger }]}>{weeklyChangeText}</Text>
               </View>
             </View>
           </View>
 
           {/* Streak */}
           <View style={styles.statCard}>
-            <View style={[styles.statAccentBar, { backgroundColor: Colors.amber }]} />
-            <View style={[styles.statIconBubble, { backgroundColor: Colors.amber + '15', borderColor: Colors.amber + '30' }]}>
-              <Ionicons name="flame" size={18} color={Colors.amber} />
+            <View style={[styles.statAccentBar, { backgroundColor: colors.amber }]} />
+            <View style={[styles.statIconBubble, { backgroundColor: colors.amber + '15', borderColor: colors.amber + '30' }]}>
+              <Ionicons name="flame" size={18} color={colors.amber} />
             </View>
             <View style={styles.statContent}>
               <Text style={styles.statLabel}>Streak</Text>
-              <Text style={[styles.statValue, { color: Colors.amber }]}>{streak}<Text style={styles.statUnit}> days</Text></Text>
-              <View style={[styles.statChip, { backgroundColor: Colors.amber + '12', borderColor: Colors.amber + '25' }]}>
-                <Text style={[styles.statChipText, { color: Colors.amber }]}>🔥 Personal best!</Text>
+              <Text style={[styles.statValue, { color: colors.amber }]}>{streak}<Text style={styles.statUnit}> days</Text></Text>
+              <View style={[styles.statChip, { backgroundColor: colors.amber + '12', borderColor: colors.amber + '25' }]}>
+                <Text style={[styles.statChipText, { color: colors.amber }]}>🔥 Personal best!</Text>
               </View>
             </View>
           </View>
@@ -488,10 +498,10 @@ export default function WeightScreen() {
       </GlassCard>
 
       {/* Goal / Slider */}
-      <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Goal Progress" accentColor={Colors.amber} />
+      <GlassCard accentColor={colors.amber}>
+        <SectionHeader title="Goal Progress" accentColor={colors.amber} />
         <View style={styles.goalRow}>
-          <ProgressRing size={90} strokeWidth={8} progress={goalProgressPct / 100} color={Colors.amber}>
+          <ProgressRing size={90} strokeWidth={8} progress={goalProgressPct / 100} color={colors.amber}>
             <Text style={styles.goalRingPct}>{goalProgressPct}%</Text>
           </ProgressRing>
           <View style={styles.goalInfo}>
@@ -519,10 +529,10 @@ export default function WeightScreen() {
 
       {/* Heatmap */}
       <GlassCard>
-        <SectionHeader title="Log Calendar" accentColor={Colors.lime} />
+        <SectionHeader title="Log Calendar" accentColor={colors.lime} />
         <CalHeatmap />
         <View style={styles.heatmapLegend}>
-          {[{ label: 'Logged', color: Colors.lime + '88' }, { label: 'Goal hit', color: Colors.lime }, { label: 'Missed', color: Colors.danger + '55' }].map((l) => (
+          {[{ label: 'Logged', color: colors.lime + '88' }, { label: 'Goal hit', color: colors.lime }, { label: 'Missed', color: colors.danger + '55' }].map((l) => (
             <View key={l.label} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: l.color }]} />
               <Text style={styles.legendText}>{l.label}</Text>
@@ -532,21 +542,21 @@ export default function WeightScreen() {
       </GlassCard>
 
       {/* BMI */}
-      <GlassCard accentColor={Colors.lime}>
-        <SectionHeader title="BMI Indicator" accentColor={Colors.lime} />
+      <GlassCard accentColor={colors.lime}>
+        <SectionHeader title="BMI Indicator" accentColor={colors.lime} />
         <BMIBar bmi={currentBmi} />
       </GlassCard>
 
       {/* Photo reminder */}
       <TouchableOpacity style={styles.photoCard} activeOpacity={0.8}>
         <View style={styles.photoIconWrap}>
-          <Ionicons name="camera" size={22} color={Colors.lime} />
+          <Ionicons name="camera" size={22} color={colors.lime} />
         </View>
         <View style={styles.photoText}>
           <Text style={styles.photoTitle}>Progress Photo</Text>
           <Text style={styles.photoSub}>Add this week's progress photo</Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={Colors.lime} />
+        <Ionicons name="chevron-forward" size={18} color={colors.lime} />
       </TouchableOpacity>
 
       {/* Fullscreen Interactive Weight Analysis Modal */}
@@ -564,13 +574,13 @@ export default function WeightScreen() {
               <Text style={modalS.headerTitle}>Weight Analysis</Text>
             </View>
             <TouchableOpacity style={modalS.closeBtn} onPress={() => { setFullscreenModalVisible(false); setSelectedPointIndex(null); }} activeOpacity={0.8}>
-              <Ionicons name="close" size={20} color={Colors.text.primary} />
+              <Ionicons name="close" size={20} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
 
           {/* Modal Chart Card */}
           <View style={modalS.chartContainer}>
-            <GlassCard accentColor={Colors.lime} style={modalS.chartGlass}>
+            <GlassCard accentColor={colors.lime} style={modalS.chartGlass}>
               <View style={modalS.chartTitleRow}>
                 <Text style={modalS.chartTitle}>Interactive Trend</Text>
                 <Text style={modalS.chartSub}>Select a point to view stats</Text>
@@ -587,8 +597,8 @@ export default function WeightScreen() {
           {/* Selected Point Details Panel */}
           {selectedPointIndex !== null ? (
             <View style={modalS.infoCard}>
-              <View style={[modalS.infoIconBubble, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '35' }]}>
-                <Ionicons name="sparkles" size={18} color={Colors.lime} />
+              <View style={[modalS.infoIconBubble, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '35' }]}>
+                <Ionicons name="sparkles" size={18} color={colors.lime} />
               </View>
               <View style={modalS.infoTexts}>
                 <Text style={modalS.infoLabel}>SELECTED WEIGH-IN</Text>
@@ -598,12 +608,12 @@ export default function WeightScreen() {
                 </Text>
               </View>
               <TouchableOpacity style={modalS.infoClose} onPress={() => setSelectedPointIndex(null)} activeOpacity={0.7}>
-                <Ionicons name="close-circle-outline" size={18} color={Colors.muted} />
+                <Ionicons name="close-circle-outline" size={18} color={colors.muted} />
               </TouchableOpacity>
             </View>
           ) : (
             <View style={modalS.tapHint}>
-              <Ionicons name="finger-print-outline" size={16} color={Colors.lime} style={modalS.tapHintIcon} />
+              <Ionicons name="finger-print-outline" size={16} color={colors.lime} style={modalS.tapHintIcon} />
               <Text style={modalS.tapHintText}>Tap dots on the graph to display weight breakdowns</Text>
             </View>
           )}
@@ -624,7 +634,7 @@ export default function WeightScreen() {
           {/* Log History Title */}
           <View style={modalS.historyHeader}>
             <View style={modalS.historyHeaderLeft}>
-              <Ionicons name="list-outline" size={18} color={Colors.lime} />
+              <Ionicons name="list-outline" size={18} color={colors.lime} />
               <Text style={modalS.historyTitle}>Weight History logs</Text>
             </View>
             <View style={modalS.historyBadge}>
@@ -662,7 +672,7 @@ export default function WeightScreen() {
                     <Text style={modalS.logWeight}>{log.weight.toFixed(1)}<Text style={modalS.logUnit}> kg</Text></Text>
                   </View>
                   <TouchableOpacity style={modalS.logDeleteBtn} onPress={handleDelete} activeOpacity={0.7}>
-                    <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                    <Ionicons name="trash-outline" size={16} color={colors.danger} />
                   </TouchableOpacity>
                 </View>
               );
@@ -687,8 +697,8 @@ export default function WeightScreen() {
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <View style={styles.modalHeaderTitleBlock}>
-                  <View style={[styles.modalHeaderIconWrap, { backgroundColor: Colors.amber + '15' }]}>
-                    <Ionicons name="scale" size={18} color={Colors.amber} />
+                  <View style={[styles.modalHeaderIconWrap, { backgroundColor: colors.amber + '15' }]}>
+                    <Ionicons name="scale" size={18} color={colors.amber} />
                   </View>
                   <View>
                     <Text style={styles.modalHeaderSub}>TRACK METRICS</Text>
@@ -696,7 +706,7 @@ export default function WeightScreen() {
                   </View>
                 </View>
                 <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setLogModalVisible(false)}>
-                  <Ionicons name="close" size={20} color={Colors.text.primary} />
+                  <Ionicons name="close" size={20} color={colors.text.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -734,7 +744,7 @@ export default function WeightScreen() {
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Or Enter Precise Weight</Text>
                     <View style={[styles.inputFieldWrap, !!logError && styles.inputFieldError]}>
-                      <Ionicons name="create-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                      <Ionicons name="create-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                       <TextInput
                         style={styles.textInput}
                         value={logWeightValue}
@@ -744,7 +754,7 @@ export default function WeightScreen() {
                         }}
                         keyboardType="numeric"
                         placeholder="78.4"
-                        placeholderTextColor={Colors.muted}
+                        placeholderTextColor={colors.muted}
                         maxLength={5}
                       />
                     </View>
@@ -764,12 +774,12 @@ export default function WeightScreen() {
                             style={[
                               styles.timePill,
                               isActive && styles.timePillActive,
-                              isActive && { borderColor: time === 'morning' ? Colors.lime : time === 'afternoon' ? Colors.amber : '#6366F1' }
+                              isActive && { borderColor: time === 'morning' ? colors.lime : time === 'afternoon' ? colors.amber : '#6366F1' }
                             ]}
                             onPress={() => setLogTimeOfDay(time)}
                             activeOpacity={0.8}
                           >
-                            <Text style={[styles.timePillText, isActive && styles.timePillTextActive, isActive && { color: time === 'morning' ? Colors.lime : time === 'afternoon' ? Colors.amber : '#6366F1' }]}>
+                            <Text style={[styles.timePillText, isActive && styles.timePillTextActive, isActive && { color: time === 'morning' ? colors.lime : time === 'afternoon' ? colors.amber : '#6366F1' }]}>
                               {emojiMap[time]}
                             </Text>
                           </TouchableOpacity>
@@ -807,7 +817,7 @@ export default function WeightScreen() {
                   <Text style={styles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSaveWeightLog} activeOpacity={0.8}>
-                  <Ionicons name="checkmark-circle" size={16} color={Colors.white} />
+                  <Ionicons name="checkmark-circle" size={16} color={colors.white} />
                   <Text style={styles.saveBtnText}>Log Weight</Text>
                 </TouchableOpacity>
               </View>
@@ -819,8 +829,8 @@ export default function WeightScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
   periodRow: { flexDirection: 'row', gap: 8 },
 
@@ -832,10 +842,10 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     padding: 12,
     flexDirection: 'column',
     gap: 8,
@@ -863,14 +873,14 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...Typography.caption,
-    color: Colors.muted,
+    color: colors.muted,
   },
   statValue: {
     ...Typography.h3,
   },
   statUnit: {
     ...Typography.body,
-    color: Colors.muted,
+    color: colors.muted,
   },
   statChip: {
     flexDirection: 'row',
@@ -888,30 +898,30 @@ const styles = StyleSheet.create({
   },
 
   goalRow: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-  goalRingPct: { ...Typography.bodyBold, color: Colors.amber },
+  goalRingPct: { ...Typography.bodyBold, color: colors.amber },
   goalInfo: { flex: 1, gap: 4 },
-  goalText: { ...Typography.h4, color: Colors.text.primary },
-  goalSub: { ...Typography.caption, color: Colors.muted },
-  goalEta: { ...Typography.micro, color: Colors.muted, marginTop: 2 },
+  goalText: { ...Typography.h4, color: colors.text.primary },
+  goalSub: { ...Typography.caption, color: colors.muted },
+  goalEta: { ...Typography.micro, color: colors.muted, marginTop: 2 },
   milestonesRow: { flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap' },
   milestoneBadge: {
-    backgroundColor: Colors.lime + '22', borderRadius: Radius.pill,
+    backgroundColor: colors.lime + '22', borderRadius: Radius.pill,
     paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 1, borderColor: Colors.lime + '55',
+    borderWidth: 1, borderColor: colors.lime + '55',
   },
-  milestoneLocked: { backgroundColor: 'rgba(0,0,0,0.04)', borderColor: Colors.cardBorder },
-  milestoneText: { ...Typography.micro, color: Colors.lime },
-  milestoneLockedText: { color: Colors.muted },
+  milestoneLocked: { backgroundColor: 'rgba(0,0,0,0.04)', borderColor: colors.cardBorder },
+  milestoneText: { ...Typography.micro, color: colors.lime },
+  milestoneLockedText: { color: colors.muted },
 
   heatmapLegend: { flexDirection: 'row', gap: 16, marginTop: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 2 },
-  legendText: { ...Typography.caption, color: Colors.muted },
+  legendText: { ...Typography.caption, color: colors.muted },
 
   photoCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: Colors.card, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.lime + '33',
+    backgroundColor: colors.card, borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: colors.lime + '33',
     padding: 16,
     shadowColor: '#1C1C1E',
     shadowOffset: { width: 0, height: 1 },
@@ -923,15 +933,15 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: Colors.lime + '15',
+    backgroundColor: colors.lime + '15',
     borderWidth: 1,
-    borderColor: Colors.lime + '30',
+    borderColor: colors.lime + '30',
     alignItems: 'center',
     justifyContent: 'center',
   },
   photoText: { flex: 1 },
-  photoTitle: { ...Typography.bodyBold, color: Colors.text.primary },
-  photoSub: { ...Typography.caption, color: Colors.muted },
+  photoTitle: { ...Typography.bodyBold, color: colors.text.primary },
+  photoSub: { ...Typography.caption, color: colors.muted },
 
   // Log Weight CTA Card
   ctaRow: {
@@ -946,22 +956,22 @@ const styles = StyleSheet.create({
   },
   ctaTitle: {
     ...Typography.bodyBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   ctaSub: {
     ...Typography.caption,
-    color: Colors.muted,
+    color: colors.muted,
   },
   ctaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: Colors.lime,
+    backgroundColor: colors.lime,
     borderRadius: Radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    shadowColor: Colors.lime,
+    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -969,7 +979,7 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: {
     ...Typography.captionBold,
-    color: Colors.white,
+    color: colors.white,
   },
 
   // Modal styles
@@ -984,7 +994,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.ivory,
+    backgroundColor: colors.ivory,
     borderTopLeftRadius: Radius.lg,
     borderTopRightRadius: Radius.lg,
     paddingTop: 20,
@@ -996,7 +1006,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 0,
-    borderColor: Colors.lime + '20',
+    borderColor: colors.lime + '20',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1020,21 +1030,21 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: Colors.amber,
+    color: colors.amber,
   },
   modalHeaderTitle: {
     ...Typography.h3,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   modalCloseBtn: {
     width: 32,
     height: 32,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   modalScroll: {
     maxHeight: 340,
@@ -1047,30 +1057,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     gap: 4,
   },
   weightDisplayLabel: {
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: Colors.muted,
+    color: colors.muted,
   },
   weightDisplayValue: {
     fontSize: 36,
     fontWeight: '800',
-    color: Colors.lime,
+    color: colors.lime,
   },
   weightDisplayUnit: {
     ...Typography.h3,
-    color: Colors.muted,
+    color: colors.muted,
   },
   adjustLabel: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   adjustRow: {
     flexDirection: 'row',
@@ -1082,35 +1092,35 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   adjustBtnText: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   inputGroup: {
     gap: 6,
   },
   inputLabel: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   inputFieldWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     paddingHorizontal: 12,
     height: 46,
   },
   inputFieldError: {
-    borderColor: Colors.danger,
-    backgroundColor: Colors.danger + '05',
+    borderColor: colors.danger,
+    backgroundColor: colors.danger + '05',
   },
   inputIcon: {
     marginRight: 8,
@@ -1118,13 +1128,13 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     ...Typography.body,
-    color: Colors.text.primary,
+    color: colors.text.primary,
     padding: 0,
   },
   errorText: {
     fontSize: 9,
     fontWeight: '600',
-    color: Colors.danger,
+    color: colors.danger,
     marginTop: 2,
   },
   datePillRow: {
@@ -1136,21 +1146,21 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   datePillActive: {
-    borderColor: Colors.amber,
-    backgroundColor: Colors.amber + '12',
+    borderColor: colors.amber,
+    backgroundColor: colors.amber + '12',
   },
   datePillText: {
     ...Typography.captionBold,
-    color: Colors.muted,
+    color: colors.muted,
   },
   datePillTextActive: {
-    color: Colors.amber,
+    color: colors.amber,
   },
   modalFooter: {
     flexDirection: 'row',
@@ -1158,32 +1168,32 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: colors.cardBorder,
   },
   cancelBtn: {
     flex: 1,
     height: 48,
     borderRadius: Radius.md,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   cancelBtnText: {
     ...Typography.bodyBold,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
   saveBtn: {
     flex: 2,
     height: 48,
     borderRadius: Radius.md,
-    backgroundColor: Colors.lime,
+    backgroundColor: colors.lime,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: Colors.lime,
+    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -1191,7 +1201,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     ...Typography.bodyBold,
-    color: Colors.white,
+    color: colors.white,
   },
   graphClickable: {
     width: '100%',
@@ -1207,21 +1217,21 @@ const styles = StyleSheet.create({
   },
   graphTitle: {
     ...Typography.bodyBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   graphSubtitle: {
     ...Typography.micro,
-    color: Colors.muted,
+    color: colors.muted,
   },
   graphZoomIconBubble: {
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: Colors.lime + '15',
+    backgroundColor: colors.lime + '15',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.lime + '30',
+    borderColor: colors.lime + '30',
   },
   timePillRow: {
     flexDirection: 'row',
@@ -1232,27 +1242,27 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   timePillActive: {
-    backgroundColor: Colors.overlay,
+    backgroundColor: colors.overlay,
   },
   timePillText: {
     ...Typography.captionBold,
-    color: Colors.muted,
+    color: colors.muted,
   },
   timePillTextActive: {
     fontWeight: '800',
   },
 });
 
-const modalS = StyleSheet.create({
+const getModalS = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     paddingHorizontal: 20,
     paddingBottom: 24,
   },
@@ -1267,21 +1277,21 @@ const modalS = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: Colors.lime,
+    color: colors.lime,
   },
   headerTitle: {
     ...Typography.h3,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   closeBtn: {
     width: 36,
     height: 36,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   chartContainer: {
     width: '100%',
@@ -1295,19 +1305,19 @@ const modalS = StyleSheet.create({
   },
   chartTitle: {
     ...Typography.bodyBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   chartSub: {
     ...Typography.micro,
-    color: Colors.muted,
+    color: colors.muted,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     padding: 12,
     marginBottom: 16,
     gap: 12,
@@ -1326,12 +1336,12 @@ const modalS = StyleSheet.create({
   },
   infoLabel: {
     ...Typography.micro,
-    color: Colors.muted,
+    color: colors.muted,
     fontWeight: '700',
   },
   infoTitle: {
     ...Typography.bodyBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   infoClose: {
     padding: 4,
@@ -1343,8 +1353,8 @@ const modalS = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: Colors.lime + '08',
-    borderColor: Colors.lime + '20',
+    backgroundColor: colors.lime + '08',
+    borderColor: colors.lime + '20',
     borderWidth: 1,
     borderRadius: Radius.pill,
     marginBottom: 16,
@@ -1355,7 +1365,7 @@ const modalS = StyleSheet.create({
   },
   tapHintText: {
     ...Typography.micro,
-    color: Colors.lime,
+    color: colors.lime,
     fontWeight: '600',
   },
   periodRow: {
@@ -1377,18 +1387,18 @@ const modalS = StyleSheet.create({
   },
   historyTitle: {
     ...Typography.bodyBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   historyBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: colors.cardBorder,
     borderRadius: Radius.pill,
   },
   historyCount: {
     fontSize: 10,
     fontWeight: '700',
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
   historyScroll: {
     flex: 1,
@@ -1401,10 +1411,10 @@ const modalS = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
@@ -1418,11 +1428,11 @@ const modalS = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   logEmoji: {
     fontSize: 14,
@@ -1430,11 +1440,11 @@ const modalS = StyleSheet.create({
   logTimeTag: {
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   logDate: {
     fontSize: 9,
-    color: Colors.muted,
+    color: colors.muted,
     fontWeight: '500',
   },
   logCenter: {
@@ -1444,11 +1454,11 @@ const modalS = StyleSheet.create({
   logWeight: {
     fontSize: 15,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   logUnit: {
     fontSize: 11,
-    color: Colors.muted,
+    color: colors.muted,
     fontWeight: '500',
   },
   logDeleteBtn: {
@@ -1457,6 +1467,6 @@ const modalS = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.danger + '08',
+    backgroundColor: colors.danger + '08',
   },
 });

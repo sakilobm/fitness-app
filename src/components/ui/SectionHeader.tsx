@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors, Typography, Radius } from '@/constants/theme';
+import { Typography, Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -11,6 +12,9 @@ interface SectionHeaderProps {
 }
 
 export default function SectionHeader({ title, action, onAction, accentColor }: SectionHeaderProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
   return (
     <View style={styles.row}>
       <View style={styles.titleBlock}>
@@ -28,7 +32,7 @@ export default function SectionHeader({ title, action, onAction, accentColor }: 
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -46,14 +50,14 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 2,
   },
-  title: { ...Typography.h4, color: Colors.text.primary },
+  title: { ...Typography.h4, color: colors.text.primary },
   actionBtn: {
-    backgroundColor: Colors.lime + '12',
+    backgroundColor: colors.lime + '12',
     borderRadius: Radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: Colors.lime + '25',
+    borderColor: colors.lime + '25',
   },
-  action: { ...Typography.captionBold, color: Colors.lime, letterSpacing: 0.4 },
+  action: { ...Typography.captionBold, color: colors.lime, letterSpacing: 0.4 },
 });

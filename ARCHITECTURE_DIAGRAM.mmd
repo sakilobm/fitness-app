@@ -2,11 +2,24 @@ graph TD
     %% Global Store Layer
     subgraph StoreLayer ["State Management & Cache Layer"]
         useFitnessStore["Zustand Store (fitnessStore.ts)"]
+        useThemeStore["Theme Store (themeStore.ts)"]
         AppContext["AppContext Adapter (AppContext.tsx)"]
         StorageUtils["Storage Cache (storage.ts)"]
         
         useFitnessStore --> |"State Hydration & Persistence"| StorageUtils
+        useThemeStore --> |"Theme Persistence"| StorageUtils
         AppContext --> |"Delegates state & actions"| useFitnessStore
+    end
+
+    %% Global Theme System
+    subgraph ThemeLayer ["Global Theme System (src/theme)"]
+        ThemeProvider["ThemeProvider (ThemeProvider.tsx)"]
+        useTheme["useTheme() Hook"]
+        ThemeTokens["Theme Tokens (tokens.ts)"]
+        
+        ThemeProvider --> |"Watches isDarkMode"| useThemeStore
+        ThemeProvider --> |"Provides Context"| useTheme
+        useTheme --> |"Applies"| ThemeTokens
     end
 
     %% Selector Domain Hooks
@@ -131,3 +144,9 @@ graph TD
     
     HomeTab --> BMIScreen
     HomeTab --> StepsScreen
+
+    %% Dynamic Theme bindings
+    NavigationGate --> |"Initializes with"| ThemeProvider
+    HomeTab --> |"useTheme()"| useTheme
+    ProfileTab --> |"useTheme() & toggles mode"| useTheme
+    NutritionTab --> |"useTheme()"| useTheme

@@ -7,7 +7,8 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Radius, Typography } from '@/constants/theme';
+import { Colors, Radius, Typography, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -28,7 +29,8 @@ const TAB_LABELS: Record<TabName, string> = {
 };
 
 function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean; size?: number }) {
-  const color = focused ? Colors.lime : Colors.muted;
+  const { colors } = useTheme();
+  const color = focused ? colors.lime : colors.muted;
   switch (name) {
     case 'index':
       return <Ionicons name={(focused ? 'home' : 'home-outline') as IoniconName} size={size} color={color} />;
@@ -46,6 +48,8 @@ function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean
 function TabButton({
   name, focused, onPress, tabWidth,
 }: { name: TabName; focused: boolean; onPress: () => void; tabWidth: number }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const iconScale = useSharedValue(focused ? 1.1 : 1);
   const pressScale = useSharedValue(1);
 
@@ -86,6 +90,8 @@ type TabBarProps = {
 };
 
 export default function CustomTabBar({ state, navigation }: TabBarProps) {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const barWidth = W - 32;
   const tabWidth = barWidth / state.routes.length;
@@ -133,7 +139,7 @@ export default function CustomTabBar({ state, navigation }: TabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   wrapper: {
     position: 'absolute',
     left: 16,
@@ -145,7 +151,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6, left: 10, right: 10, bottom: -6,
     borderRadius: Radius.xl,
-    shadowColor: Colors.lime,
+    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 18,
@@ -153,14 +159,14 @@ const styles = StyleSheet.create({
 
   glass: {
     height: BAR_H,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    backgroundColor: colors.card + 'F2',
     borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+    borderColor: colors.cardBorder,
     overflow: 'hidden',
     // Android depth
     elevation: 16,
-    shadowColor: '#1C1C1E',
+    shadowColor: colors.text.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
@@ -182,9 +188,9 @@ const styles = StyleSheet.create({
     width: PILL_W,
     height: PILL_H,
     borderRadius: 18,
-    backgroundColor: 'rgba(46,125,94,0.10)',
+    backgroundColor: colors.overlay,
     borderWidth: 1,
-    borderColor: 'rgba(46,125,94,0.22)',
+    borderColor: colors.lime + '35',
   },
 
   row: {
@@ -208,13 +214,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 9,
     fontWeight: '600',
-    color: Colors.muted,
+    color: colors.muted,
     letterSpacing: 0.4,
     textAlign: 'center',
     marginTop: 3,
   },
 
   labelActive: {
-    color: Colors.lime,
+    color: colors.lime,
   },
 });

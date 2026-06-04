@@ -1,6 +1,27 @@
 # Rollback Plan
 
-If version `2.1.0` (Premium Onboarding Animations, InteractiveCard scaling & Multi-Phase Loading Overhaul) needs to be reverted due to layout transitions performance issues or Reanimated library crashes, use this guide to revert.
+If version `2.4.0` (Global Dynamic Persistence Theme System with Hook-based useTheme) needs to be reverted due to rendering issues or style compilation failures, use this guide.
+
+## Rollback Procedure (Reverting to static theme colors v2.3.2)
+
+1. **Revert modified layout and screen files:**
+   ```powershell
+   git checkout v2.3.2 -- app/_layout.tsx app/(auth)/setup.tsx app/(tabs)/profile.tsx app/(tabs)/index.tsx app/(tabs)/nutrition.tsx src/constants/theme.ts src/store/fitnessStore.ts
+   ```
+
+2. **Clean up new theme files:**
+   ```powershell
+   Remove-Item -Recurse -Force src/theme
+   ```
+
+3. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.3.2` (Splash Screen Full-Screen / Padding Issue Fix) needs to be reverted due to layout transitions performance issues or Reanimated library crashes, use this guide to revert.
 
 ## Rollback Procedure (Reverting to static single-color setup wizard v2.0.0)
 

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
-import { Colors, Radius, Typography } from '@/constants/theme';
+import { Radius, Typography, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 interface MacroBarProps {
   label: string;
@@ -12,6 +13,8 @@ interface MacroBarProps {
 }
 
 export default function MacroBar({ label, current, goal, color, unit = 'g' }: MacroBarProps) {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const progress = Math.min(current / goal, 1);
   const animWidth = useSharedValue(0);
 
@@ -39,15 +42,15 @@ export default function MacroBar({ label, current, goal, color, unit = 'g' }: Ma
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: { marginBottom: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  label: { ...Typography.caption, color: Colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 },
-  value: { ...Typography.captionBold, color: Colors.text.primary },
-  goal: { color: Colors.muted },
+  label: { ...Typography.caption, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 },
+  value: { ...Typography.captionBold, color: colors.text.primary },
+  goal: { color: colors.muted },
   track: {
     height: 6,
-    backgroundColor: 'rgba(0,0,0,0.07)',   // light-theme track
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)',
     borderRadius: Radius.pill,
     overflow: 'hidden',
   },

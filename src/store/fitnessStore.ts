@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog } from '../types';
-import { Colors } from '../constants/theme';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
 import { zustandMMKVStorage, mmkvSaveLog, mmkvDeleteLog, mmkvHydrateLogs } from '../utils/mmkvStorage';
@@ -145,56 +144,56 @@ const initialReminders: ReminderItem[] = [
     icon: { lib: 'Ionicons', name: 'water' },
     title: 'Drink Water',
     time: '08:00', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-    frequency: 'Daily', enabled: true, accentColor: Colors.chart.water,
+    frequency: 'Daily', enabled: true, accentColor: '#3B82F6', // Colors.chart.water
   },
   {
     id: 'r2', category: 'Water',
     icon: { lib: 'Ionicons', name: 'water-outline' },
     title: 'Afternoon Hydration',
     time: '15:00', days: ['M', 'T', 'W', 'T', 'F'],
-    frequency: 'Weekdays', enabled: true, accentColor: Colors.chart.water,
+    frequency: 'Weekdays', enabled: true, accentColor: '#3B82F6', // Colors.chart.water
   },
   {
     id: 'r3', category: 'Meals',
     icon: { lib: 'Ionicons', name: 'restaurant' },
     title: 'Log Breakfast',
     time: '07:30', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-    frequency: 'Daily', enabled: true, accentColor: Colors.amber,
+    frequency: 'Daily', enabled: true, accentColor: '#F59E0B', // Colors.amber
   },
   {
     id: 'r4', category: 'Meals',
     icon: { lib: 'Ionicons', name: 'restaurant-outline' },
     title: 'Log Dinner',
     time: '19:00', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-    frequency: 'Daily', enabled: false, accentColor: Colors.amber,
+    frequency: 'Daily', enabled: false, accentColor: '#F59E0B', // Colors.amber
   },
   {
     id: 'r5', category: 'Weigh-in',
     icon: { lib: 'MCI', name: 'scale-bathroom' },
     title: 'Morning Weigh-in',
     time: '07:00', days: ['M', 'W', 'F'],
-    frequency: '3×/week', enabled: true, accentColor: Colors.lime,
+    frequency: '3×/week', enabled: true, accentColor: '#2E7D5E', // Colors.lime
   },
   {
     id: 'r6', category: 'Body Photo',
     icon: { lib: 'Ionicons', name: 'camera' },
     title: 'Progress Photo',
     time: '08:00', days: ['M'],
-    frequency: 'Weekly', enabled: true, accentColor: Colors.lime,
+    frequency: 'Weekly', enabled: true, accentColor: '#2E7D5E', // Colors.lime
   },
   {
     id: 'r7', category: 'Workout',
     icon: { lib: 'MCI', name: 'dumbbell' },
     title: 'Strength Training',
     time: '18:00', days: ['M', 'W', 'F'],
-    frequency: '3×/week', enabled: true, accentColor: Colors.lime,
+    frequency: '3×/week', enabled: true, accentColor: '#2E7D5E', // Colors.lime
   },
   {
     id: 'r8', category: 'Supplements',
     icon: { lib: 'MCI', name: 'pill' },
     title: 'Take Vitamins',
     time: '08:30', days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-    frequency: 'Daily', enabled: false, accentColor: Colors.chart.fibre,
+    frequency: 'Daily', enabled: false, accentColor: '#0EA5E9', // Colors.chart.fibre
   },
 ];
 
@@ -588,6 +587,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     activeMinutes: state.activeMinutes,
     stepHistory:   state.stepHistory,
     dashboardGrid: state.dashboardGrid,
+    isDarkMode:    state.isDarkMode,
   }),
 }));
 

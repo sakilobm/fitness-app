@@ -285,3 +285,13 @@ To enable custom user layouts, we implement a type-safe **Dashboard Grid Registr
   - `numeric_delta`: Highlights trend trajectories and differences (weight trends).
   - `compact_chip`: Small status indicators (workout focus duration).
 * **TypeScript Generics:** Enforces strict mapping constraints matching each visualization layout's target data props.
+
+---
+
+## 14. Global Persistence Theme System (`src/theme/`)
+
+To support a seamless, system-wide dark and light theme, the application implements a centralized React Context theme provider integrated with the Zustand store and persisted using MMKV:
+* **Zustand & MMKV Integration:** The active theme mode (`isDarkMode: boolean`) is decoupled into a dedicated, lightweight `useThemeStore` (`src/store/themeStore.ts`) and persisted using MMKV. This separates theme state from heavy user logs, eliminating JS thread serialization lag during theme switches.
+* **ThemeProvider (`src/theme/ThemeProvider.tsx`):** Wraps the entire application root (`app/_layout.tsx`). It reads the theme state and provides the dynamic `colors` palette context to the entire widget tree. It also drives the system `StatusBar` dynamically based on the active theme, and presents a circular scaling transition mask with spinning sun/moon feedback.
+* **Unified Hook (`useTheme`):** Component stylesheets are dynamically computed via style factories (`getStyles(colors)`) and memoized inside screens using `React.useMemo`. The hook features a fallback mechanism: if React Context is lost (e.g., inside native React Native `<Modal>` instances), it automatically falls back to reading the state directly from `useThemeStore`, ensuring 100% style consistency.
+* **Identical Theme Shapes (`src/theme/tokens.ts`):** `LightColors` and `DarkColors` share the identical `ThemeColors` type contract, enabling risk-free dynamic styling across the codebase.

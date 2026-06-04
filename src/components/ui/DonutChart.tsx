@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Circle, G, Defs, Pattern as SvgPattern } from 'react-native-svg';
 import { useSharedValue, withTiming, Easing } from 'react-native-reanimated';
+import { useTheme } from '@/constants/theme';
 
 interface Segment {
   value: number;
@@ -26,11 +27,13 @@ export default function DonutChart({
   strokeWidth = 14,
   children,
   gapSize = 0,
-  trackColor = 'rgba(0,0,0,0.08)',
+  trackColor,
   rounded = false,
   innerFill,
   showInnerDots = false,
 }: DonutChartProps) {
+  const { colors, isDark } = useTheme();
+  
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const total = segments.reduce((s, seg) => s + seg.value, 0);
@@ -61,6 +64,11 @@ export default function DonutChart({
   // SVG transform: rotate -90° around centre so 0° = 12 o'clock
   const rotate = `rotate(-90, ${cx}, ${cy})`;
 
+  const activeTrack = trackColor || (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)');
+  const activeInner = innerFill === '#F0EDE8' || innerFill === '#F0EDE8'
+    ? (isDark ? colors.ivory : '#F0EDE8')
+    : (innerFill || (isDark ? colors.ivory : 'transparent'));
+
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
@@ -72,15 +80,15 @@ export default function DonutChart({
               width="8" height="8"
               patternUnits="userSpaceOnUse"
             >
-              <Circle cx="4" cy="4" r="1" fill="rgba(0,0,0,0.09)" />
+              <Circle cx="4" cy="4" r="1" fill={isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)'} />
             </SvgPattern>
           )}
         </Defs>
 
         <G transform={rotate}>
           {/* ① Inner circle base fill */}
-          {innerFill && (
-            <Circle cx={cx} cy={cy} r={innerR} fill={innerFill} />
+          {activeInner !== 'transparent' && (
+            <Circle cx={cx} cy={cy} r={innerR} fill={activeInner} />
           )}
           {/* ② Dot-grid texture overlay */}
           {showInnerDots && (
@@ -89,7 +97,7 @@ export default function DonutChart({
           {/* ③ Track ring */}
           <Circle
             cx={cx} cy={cy} r={radius}
-            stroke={trackColor}
+            stroke={activeTrack}
             strokeWidth={strokeWidth}
             fill="none"
           />

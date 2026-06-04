@@ -17,7 +17,8 @@ import MacroBar from '@/components/ui/MacroBar';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import ProgressRing from '@/components/ui/ProgressRing';
-import { Colors, Typography, Radius } from '@/constants/theme';
+import { Typography, Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
 import { FoodItem, Meal } from '@/types';
 
@@ -66,7 +67,8 @@ const initialMeals: Meal[] = [
 ];
 
 function NutritionScore({ score }: { score: 'A' | 'B' | 'C' }) {
-  const colors: Record<string, string> = { A: Colors.lime, B: Colors.amber, C: Colors.danger };
+  const { colors: tc } = useTheme();
+  const colors: Record<string, string> = { A: tc.lime, B: tc.amber, C: tc.danger };
   const pcts: Record<string, number> = { A: 0.92, B: 0.72, C: 0.52 };
   const labels: Record<string, string> = { A: 'Excellent', B: 'Good', C: 'Needs Work' };
   return (
@@ -94,6 +96,8 @@ const scoreS = StyleSheet.create({
 });
 
 export default function NutritionScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const insets = useSafeAreaInsets();
   
   const {
@@ -261,7 +265,7 @@ export default function NutritionScreen() {
           title="Nutrition"
           subtitle="FOOD & MACROS"
           icon={{ lib: 'MCI', name: 'food-apple' }}
-          accentColor={Colors.chart.calories}
+          accentColor={colors.chart.calories}
         />
 
         {/* Dynamic Water Chip (Quick add +250ml) */}
@@ -271,7 +275,7 @@ export default function NutritionScreen() {
           onPress={() => addWaterLog(250)}
         >
           <View style={styles.waterChipIconWrap}>
-            <Ionicons name="water" size={16} color={Colors.chart.water} />
+            <Ionicons name="water" size={16} color={colors.chart.water} />
           </View>
           <View style={styles.waterChipContent}>
             <Text style={styles.waterChipText}>Water: {waterLogged.toFixed(2)} / {waterGoal} L today</Text>
@@ -280,30 +284,30 @@ export default function NutritionScreen() {
             </View>
           </View>
           <View style={styles.waterChipAddBtn}>
-            <Ionicons name="add-circle" size={20} color={Colors.chart.water} />
+            <Ionicons name="add-circle" size={20} color={colors.chart.water} />
             <Text style={styles.waterChipAddTxt}>+250ml</Text>
           </View>
         </TouchableOpacity>
 
         {/* Macro summary (Dynamic calculations) */}
-        <GlassCard accentColor={Colors.lime}>
+        <GlassCard accentColor={colors.lime}>
           <View style={styles.summaryTop}>
             <View style={styles.summaryLeft}>
               <Text style={styles.kcalNum}>{totalKcal}</Text>
               <Text style={styles.kcalLabel}>/ {goalKcal} kcal</Text>
-              <View style={[styles.remainBadge, { backgroundColor: totalKcal <= goalKcal ? Colors.lime + '15' : Colors.danger + '15', borderColor: totalKcal <= goalKcal ? Colors.lime + '30' : Colors.danger + '30' }]}>
-                <Ionicons name="flame" size={11} color={totalKcal <= goalKcal ? Colors.lime : Colors.danger} />
-                <Text style={[styles.kcalRemain, { color: totalKcal <= goalKcal ? Colors.lime : Colors.danger }]}>
+              <View style={[styles.remainBadge, { backgroundColor: totalKcal <= goalKcal ? colors.lime + '15' : colors.danger + '15', borderColor: totalKcal <= goalKcal ? colors.lime + '30' : colors.danger + '30' }]}>
+                <Ionicons name="flame" size={11} color={totalKcal <= goalKcal ? colors.lime : colors.danger} />
+                <Text style={[styles.kcalRemain, { color: totalKcal <= goalKcal ? colors.lime : colors.danger }]}>
                   {totalKcal <= goalKcal ? `${goalKcal - totalKcal} remaining` : `${totalKcal - goalKcal} exceeded`}
                 </Text>
               </View>
             </View>
             <NutritionScore score={activeScore} />
           </View>
-          <MacroBar label="Calories" current={totalKcal} goal={goalKcal} color={Colors.chart.calories} unit=" kcal" />
-          <MacroBar label="Protein" current={totalProtein} goal={150} color={Colors.chart.protein} />
-          <MacroBar label="Carbs" current={totalCarbs} goal={250} color={Colors.chart.carbs} />
-          <MacroBar label="Fibre" current={totalFibre} goal={30} color={Colors.chart.fibre} />
+          <MacroBar label="Calories" current={totalKcal} goal={goalKcal} color={colors.chart.calories} unit=" kcal" />
+          <MacroBar label="Protein" current={totalProtein} goal={150} color={colors.chart.protein} />
+          <MacroBar label="Carbs" current={totalCarbs} goal={250} color={colors.chart.carbs} />
+          <MacroBar label="Fibre" current={totalFibre} goal={30} color={colors.chart.fibre} />
         </GlassCard>
 
         {/* Meals Dynamic Mapping */}
@@ -323,7 +327,7 @@ export default function NutritionScreen() {
                 <Ionicons
                   name={meal.expanded ? 'chevron-up' : 'chevron-down'}
                   size={16}
-                  color={meal.expanded ? Colors.lime : Colors.muted}
+                  color={meal.expanded ? colors.lime : colors.muted}
                 />
               </View>
             </TouchableOpacity>
@@ -337,25 +341,25 @@ export default function NutritionScreen() {
                       <Text style={styles.foodGrams}>{item.grams}g</Text>
                     </View>
                     <View style={styles.foodChips}>
-                      <View style={[styles.chip, { backgroundColor: Colors.chart.calories + '18' }]}>
-                        <Text style={[styles.chipText, { color: Colors.chart.calories }]}>{item.kcal} kcal</Text>
+                      <View style={[styles.chip, { backgroundColor: colors.chart.calories + '18' }]}>
+                        <Text style={[styles.chipText, { color: colors.chart.calories }]}>{item.kcal} kcal</Text>
                       </View>
-                      <View style={[styles.chip, { backgroundColor: Colors.chart.protein + '18' }]}>
-                        <Text style={[styles.chipText, { color: Colors.chart.protein }]}>{item.protein}P</Text>
+                      <View style={[styles.chip, { backgroundColor: colors.chart.protein + '18' }]}>
+                        <Text style={[styles.chipText, { color: colors.chart.protein }]}>{item.protein}P</Text>
                       </View>
-                      <View style={[styles.chip, { backgroundColor: Colors.chart.carbs + '18' }]}>
-                        <Text style={[styles.chipText, { color: Colors.chart.carbs }]}>{item.carbs}C</Text>
+                      <View style={[styles.chip, { backgroundColor: colors.chart.carbs + '18' }]}>
+                        <Text style={[styles.chipText, { color: colors.chart.carbs }]}>{item.carbs}C</Text>
                       </View>
                     </View>
                     <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteFood(meal.id, i)} activeOpacity={0.75}>
-                      <Ionicons name="close-circle" size={18} color={Colors.danger + 'bb'} />
+                      <Ionicons name="close-circle" size={18} color={colors.danger + 'bb'} />
                     </TouchableOpacity>
                   </View>
                 ))}
 
                 {/* Photo log card */}
                 <TouchableOpacity style={styles.photoRow} activeOpacity={0.75}>
-                  <Ionicons name="camera-outline" size={16} color={Colors.muted} />
+                  <Ionicons name="camera-outline" size={16} color={colors.muted} />
                   <Text style={styles.photoText}>Log plate photo</Text>
                 </TouchableOpacity>
 
@@ -365,7 +369,7 @@ export default function NutritionScreen() {
                   onPress={() => openLogModal(meal.id)}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="add" size={14} color={Colors.lime} />
+                  <Ionicons name="add" size={14} color={colors.lime} />
                   <Text style={styles.addFoodBtnText}>Add Food</Text>
                 </TouchableOpacity>
               </View>
@@ -380,7 +384,7 @@ export default function NutritionScreen() {
         onPress={() => openLogModal()}
         activeOpacity={0.85}
       >
-        <Ionicons name="add" size={18} color={Colors.bg} />
+        <Ionicons name="add" size={18} color={colors.bg} />
         <Text style={styles.fabText}>Log Food</Text>
       </TouchableOpacity>
 
@@ -398,7 +402,7 @@ export default function NutritionScreen() {
               <View style={styles.modalHeaderRow}>
                 <Text style={styles.modalTitle}>Log Food</Text>
                 <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowModal(false)}>
-                  <Ionicons name="close" size={20} color={Colors.text.primary} />
+                  <Ionicons name="close" size={20} color={colors.text.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -428,7 +432,7 @@ export default function NutritionScreen() {
                   }}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="search-outline" size={13} color={activeFormTab === 'library' ? Colors.lime : Colors.muted} />
+                  <Ionicons name="search-outline" size={13} color={activeFormTab === 'library' ? colors.lime : colors.muted} />
                   <Text style={[styles.modalTabText, activeFormTab === 'library' && styles.modalTabTextActive]}>Search Library</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -436,7 +440,7 @@ export default function NutritionScreen() {
                   onPress={() => setActiveFormTab('custom')}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="create-outline" size={13} color={activeFormTab === 'custom' ? Colors.lime : Colors.muted} />
+                  <Ionicons name="create-outline" size={13} color={activeFormTab === 'custom' ? colors.lime : colors.muted} />
                   <Text style={[styles.modalTabText, activeFormTab === 'custom' && styles.modalTabTextActive]}>Custom Food</Text>
                 </TouchableOpacity>
               </View>
@@ -449,7 +453,7 @@ export default function NutritionScreen() {
                       <View style={styles.selectedConfigCard}>
                         <View style={styles.configHeader}>
                           <TouchableOpacity onPress={() => setSelectedFood(null)} style={styles.backToSearch}>
-                            <Ionicons name="arrow-back" size={16} color={Colors.lime} />
+                            <Ionicons name="arrow-back" size={16} color={colors.lime} />
                             <Text style={styles.backToSearchText}>Search Again</Text>
                           </TouchableOpacity>
                         </View>
@@ -484,22 +488,22 @@ export default function NutritionScreen() {
                               <Text style={styles.liveMacroLbl}>kcal</Text>
                             </View>
                             <View style={styles.liveMacroCell}>
-                              <Text style={[styles.liveMacroVal, { color: Colors.chart.protein }]}>{getScaledVal(selectedFood.protein, parseFloat(portionGrams) || 0, selectedFood.grams)}g</Text>
+                              <Text style={[styles.liveMacroVal, { color: colors.chart.protein }]}>{getScaledVal(selectedFood.protein, parseFloat(portionGrams) || 0, selectedFood.grams)}g</Text>
                               <Text style={styles.liveMacroLbl}>Protein</Text>
                             </View>
                             <View style={styles.liveMacroCell}>
-                              <Text style={[styles.liveMacroVal, { color: Colors.chart.carbs }]}>{getScaledVal(selectedFood.carbs, parseFloat(portionGrams) || 0, selectedFood.grams)}g</Text>
+                              <Text style={[styles.liveMacroVal, { color: colors.chart.carbs }]}>{getScaledVal(selectedFood.carbs, parseFloat(portionGrams) || 0, selectedFood.grams)}g</Text>
                               <Text style={styles.liveMacroLbl}>Carbs</Text>
                             </View>
                             <View style={styles.liveMacroCell}>
-                              <Text style={[styles.liveMacroVal, { color: Colors.danger }]}>{getScaledVal(selectedFood.fat, parseFloat(portionGrams) || 0, selectedFood.grams)}g</Text>
+                              <Text style={[styles.liveMacroVal, { color: colors.danger }]}>{getScaledVal(selectedFood.fat, parseFloat(portionGrams) || 0, selectedFood.grams)}g</Text>
                               <Text style={styles.liveMacroLbl}>Fat</Text>
                             </View>
                           </View>
                         </View>
 
                         <TouchableOpacity style={styles.modalAddLogBtn} onPress={handleSaveLibraryFood} activeOpacity={0.8}>
-                          <Ionicons name="checkmark" size={16} color={Colors.white} />
+                          <Ionicons name="checkmark" size={16} color={colors.white} />
                           <Text style={styles.modalAddLogBtnTxt}>Add to {activeMealId}</Text>
                         </TouchableOpacity>
                       </View>
@@ -507,17 +511,17 @@ export default function NutritionScreen() {
                       <View style={styles.searchFlow}>
                         {/* Search Input bar */}
                         <View style={styles.modalSearchWrap}>
-                          <Ionicons name="search" size={18} color={Colors.muted} />
+                          <Ionicons name="search" size={18} color={colors.muted} />
                           <TextInput
                             style={styles.modalInput}
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                             placeholder="Search breakfast/lunch items..."
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                           />
                           {!!searchQuery && (
                             <TouchableOpacity onPress={() => setSearchQuery('')}>
-                              <Ionicons name="close-circle" size={18} color={Colors.muted} />
+                              <Ionicons name="close-circle" size={18} color={colors.muted} />
                             </TouchableOpacity>
                           )}
                         </View>
@@ -541,13 +545,13 @@ export default function NutritionScreen() {
                                 </View>
                                 <View style={styles.searchResultRight}>
                                   <Text style={styles.searchResultKcal}>{food.kcal} kcal</Text>
-                                  <Ionicons name="chevron-forward" size={14} color={Colors.lime} />
+                                  <Ionicons name="chevron-forward" size={14} color={colors.lime} />
                                 </View>
                               </TouchableOpacity>
                             ))
                           ) : (
                             <View style={styles.noSearchData}>
-                              <Ionicons name="alert-circle-outline" size={28} color={Colors.muted} />
+                              <Ionicons name="alert-circle-outline" size={28} color={colors.muted} />
                               <Text style={styles.noSearchText}>No matching foods found</Text>
                               <TouchableOpacity style={styles.jumpToCustomBtn} onPress={() => setActiveFormTab('custom')}>
                                 <Text style={styles.jumpToCustomText}>Create Custom Entry</Text>
@@ -574,7 +578,7 @@ export default function NutritionScreen() {
                             if (customError) setCustomError('');
                           }}
                           placeholder="e.g. Avocado Toast"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                         />
                       </View>
                     </View>
@@ -589,7 +593,7 @@ export default function NutritionScreen() {
                             onChangeText={setCustomKcal}
                             keyboardType="numeric"
                             placeholder="280"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                           />
                         </View>
                       </View>
@@ -603,7 +607,7 @@ export default function NutritionScreen() {
                             onChangeText={setCustomGrams}
                             keyboardType="numeric"
                             placeholder="150"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                           />
                           <Text style={styles.inputFieldUnit}>g</Text>
                         </View>
@@ -620,7 +624,7 @@ export default function NutritionScreen() {
                             onChangeText={setCustomProtein}
                             keyboardType="numeric"
                             placeholder="12"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                           />
                         </View>
                       </View>
@@ -634,7 +638,7 @@ export default function NutritionScreen() {
                             onChangeText={setCustomCarbs}
                             keyboardType="numeric"
                             placeholder="32"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                           />
                         </View>
                       </View>
@@ -648,14 +652,14 @@ export default function NutritionScreen() {
                             onChangeText={setCustomFat}
                             keyboardType="numeric"
                             placeholder="8"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                           />
                         </View>
                       </View>
                     </View>
 
                     <TouchableOpacity style={styles.modalAddLogBtn} onPress={handleSaveCustomFood} activeOpacity={0.8}>
-                      <Ionicons name="checkmark" size={16} color={Colors.white} />
+                      <Ionicons name="checkmark" size={16} color={colors.white} />
                       <Text style={styles.modalAddLogBtnTxt}>Add Custom to {activeMealId}</Text>
                     </TouchableOpacity>
                   </View>
@@ -678,50 +682,50 @@ export default function NutritionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
 
   waterChip: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.chart.water + '10',
+    backgroundColor: colors.chart.water + '10',
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.chart.water + '30',
+    borderWidth: 1, borderColor: colors.chart.water + '30',
     padding: 12,
   },
   waterChipIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: Colors.chart.water + '18',
+    backgroundColor: colors.chart.water + '18',
     alignItems: 'center',
     justifyContent: 'center',
   },
   waterChipContent: { flex: 1, gap: 4 },
-  waterChipText: { ...Typography.captionBold, color: Colors.text.primary },
-  waterBar: { height: 4, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: 2 },
-  waterFill: { height: '100%', backgroundColor: Colors.chart.water, borderRadius: 2 },
+  waterChipText: { ...Typography.captionBold, color: colors.text.primary },
+  waterBar: { height: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', borderRadius: 2 },
+  waterFill: { height: '100%', backgroundColor: colors.chart.water, borderRadius: 2 },
   waterChipAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.chart.water + '15',
+    backgroundColor: colors.chart.water + '15',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.chart.water + '25',
+    borderColor: colors.chart.water + '25',
   },
   waterChipAddTxt: {
     fontSize: 9,
     fontWeight: '700',
-    color: Colors.chart.water,
+    color: colors.chart.water,
   },
 
   summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   summaryLeft: { gap: 2 },
-  kcalNum: { ...Typography.h1, color: Colors.text.primary },
-  kcalLabel: { ...Typography.caption, color: Colors.muted },
+  kcalNum: { ...Typography.h1, color: colors.text.primary },
+  kcalLabel: { ...Typography.caption, color: colors.muted },
   remainBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -740,29 +744,29 @@ const styles = StyleSheet.create({
   },
   mealIcon: { fontSize: 24 },
   mealHeaderText: { flex: 1 },
-  mealLabel: { ...Typography.h4, color: Colors.text.primary },
-  mealKcal: { ...Typography.caption, color: Colors.muted },
+  mealLabel: { ...Typography.h4, color: colors.text.primary },
+  mealKcal: { ...Typography.caption, color: colors.muted },
   mealChevronWrap: {
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   mealChevronWrapActive: {
-    backgroundColor: Colors.lime + '15',
+    backgroundColor: colors.lime + '15',
   },
 
   mealBody: { paddingHorizontal: 16, paddingBottom: 12, gap: 2 },
   foodItem: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: Colors.cardBorder,
+    borderTopWidth: 1, borderTopColor: colors.cardBorder,
   },
   foodLeft: { flex: 1 },
-  foodName: { ...Typography.bodyBold, color: Colors.text.primary },
-  foodGrams: { ...Typography.caption, color: Colors.muted },
+  foodName: { ...Typography.bodyBold, color: colors.text.primary },
+  foodGrams: { ...Typography.caption, color: colors.muted },
   foodChips: { flexDirection: 'row', gap: 4 },
   chip: { borderRadius: Radius.pill, paddingHorizontal: 7, paddingVertical: 3 },
   chipText: { ...Typography.micro },
@@ -770,84 +774,84 @@ const styles = StyleSheet.create({
 
   photoRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 10, borderTopWidth: 1, borderTopColor: Colors.cardBorder,
+    paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.cardBorder,
   },
-  photoText: { ...Typography.caption, color: Colors.muted },
+  photoText: { ...Typography.caption, color: colors.muted },
 
   addFoodBtn: {
     marginTop: 8, alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.lime + '18',
+    backgroundColor: colors.lime + '18',
     borderRadius: Radius.pill,
     paddingHorizontal: 14, paddingVertical: 8,
-    borderWidth: 1, borderColor: Colors.lime + '40',
+    borderWidth: 1, borderColor: colors.lime + '40',
   },
-  addFoodBtnText: { ...Typography.captionBold, color: Colors.lime },
+  addFoodBtnText: { ...Typography.captionBold, color: colors.lime },
 
   fab: {
     position: 'absolute', right: 20,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.lime,
+    backgroundColor: colors.lime,
     borderRadius: Radius.pill,
     paddingHorizontal: 22, paddingVertical: 14,
-    shadowColor: Colors.lime, shadowOffset: { width: 0, height: 4 },
+    shadowColor: colors.lime, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
   },
-  fabText: { ...Typography.bodyBold, color: Colors.bg },
+  fabText: { ...Typography.bodyBold, color: colors.bg },
 
   // Modal styles
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(28, 28, 30, 0.60)' },
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.70)' },
   modalKeyboard: { flex: 1, justifyContent: 'flex-end', width: '100%' },
   modalSheet: {
-    backgroundColor: Colors.ivory, borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
+    backgroundColor: colors.ivory, borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
     paddingTop: 20, paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     minHeight: 520, maxHeight: '92%',
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 0,
-    borderColor: Colors.lime + '20',
+    borderColor: colors.lime + '20',
   },
   modalHandle: {
     alignSelf: 'center', width: 40, height: 4,
-    backgroundColor: Colors.muted + '44', borderRadius: 2, marginBottom: 12,
+    backgroundColor: colors.muted + '44', borderRadius: 2, marginBottom: 12,
   },
   modalHeaderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
   },
-  modalTitle: { ...Typography.h3, color: Colors.text.primary },
+  modalTitle: { ...Typography.h3, color: colors.text.primary },
   modalCloseBtn: {
-    width: 32, height: 32, borderRadius: Radius.pill, backgroundColor: Colors.bg,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.cardBorder,
+    width: 32, height: 32, borderRadius: Radius.pill, backgroundColor: colors.bg,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.cardBorder,
   },
   mealTargetSelector: {
     flexDirection: 'row', gap: 6, marginBottom: 16,
   },
   mealTargetBtn: {
-    flex: 1, height: 36, borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center',
+    flex: 1, height: 36, borderRadius: Radius.pill, borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center',
   },
   mealTargetBtnActive: {
-    borderColor: Colors.lime, backgroundColor: Colors.lime + '12',
+    borderColor: colors.lime, backgroundColor: colors.lime + '12',
   },
-  mealTargetTxt: { ...Typography.micro, color: Colors.muted },
-  mealTargetTxtActive: { color: Colors.lime },
+  mealTargetTxt: { ...Typography.micro, color: colors.muted },
+  mealTargetTxtActive: { color: colors.lime },
 
   modalQuickAdd: {
-    flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: Radius.pill,
-    padding: 3, marginBottom: 16, borderWidth: 1, borderColor: Colors.cardBorder,
+    flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: Radius.pill,
+    padding: 3, marginBottom: 16, borderWidth: 1, borderColor: colors.cardBorder,
   },
   modalTab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: 8, borderRadius: Radius.pill,
   },
   modalTabActive: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
   },
-  modalTabText: { ...Typography.captionBold, color: Colors.muted },
-  modalTabTextActive: { color: Colors.lime },
+  modalTabText: { ...Typography.captionBold, color: colors.muted },
+  modalTabTextActive: { color: colors.lime },
 
   modalScroll: { maxHeight: 330 },
   modalScrollContent: { paddingBottom: 16 },
@@ -858,70 +862,70 @@ const styles = StyleSheet.create({
   },
   modalSearchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
+    backgroundColor: colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,
     paddingHorizontal: 12, height: 46, marginBottom: 12,
   },
-  modalInput: { flex: 1, color: Colors.text.primary, ...Typography.body, padding: 0 },
+  modalInput: { flex: 1, color: colors.text.primary, ...Typography.body, padding: 0 },
   searchResultsContainer: { gap: 10 },
   searchResultRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: Colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
+    backgroundColor: colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,
     padding: 12,
   },
   searchResultLeft: { gap: 2 },
-  searchResultName: { ...Typography.bodyBold, color: Colors.text.primary },
-  searchResultBase: { ...Typography.micro, color: Colors.muted },
+  searchResultName: { ...Typography.bodyBold, color: colors.text.primary },
+  searchResultBase: { ...Typography.micro, color: colors.muted },
   searchResultRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  searchResultKcal: { ...Typography.captionBold, color: Colors.chart.calories },
+  searchResultKcal: { ...Typography.captionBold, color: colors.chart.calories },
   noSearchData: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32, gap: 8 },
-  noSearchText: { ...Typography.caption, color: Colors.muted },
+  noSearchText: { ...Typography.caption, color: colors.muted },
   jumpToCustomBtn: {
     marginTop: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.pill,
-    borderWidth: 1, borderColor: Colors.lime, backgroundColor: Colors.lime + '10',
+    borderWidth: 1, borderColor: colors.lime, backgroundColor: colors.lime + '10',
   },
-  jumpToCustomText: { ...Typography.captionBold, color: Colors.lime },
+  jumpToCustomText: { ...Typography.captionBold, color: colors.lime },
 
   // Portions Configurator Card
   selectedConfigCard: {
-    backgroundColor: Colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
+    backgroundColor: colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,
     padding: 16, gap: 16,
   },
-  configHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.cardBorder, paddingBottom: 8 },
+  configHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.cardBorder, paddingBottom: 8 },
   backToSearch: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  backToSearchText: { ...Typography.captionBold, color: Colors.lime },
+  backToSearchText: { ...Typography.captionBold, color: colors.lime },
   configFoodTitleRow: { gap: 2 },
-  configFoodName: { ...Typography.h4, color: Colors.text.primary },
-  configBaseScale: { ...Typography.caption, color: Colors.muted },
+  configFoodName: { ...Typography.h4, color: colors.text.primary },
+  configBaseScale: { ...Typography.caption, color: colors.muted },
   liveScaledMacros: {
-    padding: 12, backgroundColor: Colors.bg + '66', borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder, gap: 8,
+    padding: 12, backgroundColor: colors.bg + '66', borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder, gap: 8,
   },
-  macroDisplayLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 0.8, color: Colors.muted },
+  macroDisplayLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 0.8, color: colors.muted },
   liveMacroRow: { flexDirection: 'row', justifyContent: 'space-between' },
   liveMacroCell: { alignItems: 'center', gap: 2, flex: 1 },
-  liveMacroVal: { ...Typography.bodyBold, color: Colors.text.primary },
-  liveMacroLbl: { ...Typography.micro, color: Colors.muted },
+  liveMacroVal: { ...Typography.bodyBold, color: colors.text.primary },
+  liveMacroLbl: { ...Typography.micro, color: colors.muted },
   modalAddLogBtn: {
-    height: 46, borderRadius: Radius.md, backgroundColor: Colors.lime,
+    height: 46, borderRadius: Radius.md, backgroundColor: colors.lime,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
-  modalAddLogBtnTxt: { ...Typography.bodyBold, color: Colors.white },
+  modalAddLogBtnTxt: { ...Typography.bodyBold, color: colors.white },
 
   // Custom Form
   formSection: { gap: 14, paddingBottom: 16 },
   inputGroup: { gap: 6 },
   inputRow: { flexDirection: 'row', gap: 12 },
-  inputLabel: { ...Typography.captionBold, color: Colors.text.primary },
+  inputLabel: { ...Typography.captionBold, color: colors.text.primary },
   inputFieldWrap: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card,
+    borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,
     paddingHorizontal: 12, height: 46,
   },
-  inputFieldError: { borderColor: Colors.danger, backgroundColor: Colors.danger + '05' },
-  textInput: { flex: 1, ...Typography.body, color: Colors.text.primary, padding: 0 },
-  inputFieldUnit: { ...Typography.caption, color: Colors.muted, marginLeft: 4 },
-  customFormError: { ...Typography.captionBold, color: Colors.danger, textAlign: 'center', marginBottom: 4 },
+  inputFieldError: { borderColor: colors.danger, backgroundColor: colors.danger + '05' },
+  textInput: { flex: 1, ...Typography.body, color: colors.text.primary, padding: 0 },
+  inputFieldUnit: { ...Typography.caption, color: colors.muted, marginLeft: 4 },
+  customFormError: { ...Typography.captionBold, color: colors.danger, textAlign: 'center', marginBottom: 4 },
 
-  modalFooterClose: { paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.cardBorder },
-  cancelSheetBtn: { height: 44, borderRadius: Radius.md, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' },
-  cancelSheetBtnText: { ...Typography.bodyBold, color: Colors.text.secondary },
+  modalFooterClose: { paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.cardBorder },
+  cancelSheetBtn: { height: 44, borderRadius: Radius.md, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  cancelSheetBtnText: { ...Typography.bodyBold, color: colors.text.secondary },
 });

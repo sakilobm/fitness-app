@@ -2,7 +2,8 @@ import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import AppIcon from '@/components/ui/AppIcon';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 export interface TimelineItem {
   time: string;
@@ -14,6 +15,8 @@ export interface TimelineItem {
 }
 
 const TimelineRow = React.memo(function TimelineRow({ item }: { item: TimelineItem }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const isNegative = item.kcal < 0;
   return (
     <View style={styles.row}>
@@ -25,7 +28,7 @@ const TimelineRow = React.memo(function TimelineRow({ item }: { item: TimelineIt
         <Text style={styles.rowTime}>{item.time}</Text>
       </View>
       {item.kcal !== 0 && (
-        <Text style={[styles.rowKcal, { color: isNegative ? Colors.lime : Colors.amber }]}>
+        <Text style={[styles.rowKcal, { color: isNegative ? colors.lime : colors.amber }]}>
           {isNegative ? '' : '+'}{item.kcal} kcal
         </Text>
       )}
@@ -39,6 +42,9 @@ interface Props {
 }
 
 export function TimelineFeed({ items, scrollEnabled = false }: Props) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
   const renderItem = useCallback(
     ({ item }: { item: TimelineItem }) => <TimelineRow item={item} />,
     []
@@ -58,17 +64,19 @@ export function TimelineFeed({ items, scrollEnabled = false }: Props) {
   }
 
   return (
-    <FlashList
-      data={items}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      scrollEnabled={scrollEnabled}
-      showsVerticalScrollIndicator={false}
-    />
+    <View style={{ flex: 1, minHeight: 200 }}>
+      <FlashList
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        scrollEnabled={scrollEnabled}
+        showsVerticalScrollIndicator={false}
+      />
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -88,11 +96,11 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   rowTime: {
     ...Typography.micro,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
   rowKcal: {
     ...Typography.captionBold,
@@ -103,6 +111,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     ...Typography.caption,
-    color: Colors.muted,
+    color: colors.muted,
   },
 });

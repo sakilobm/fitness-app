@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Radius, Typography, Shadows } from '@/constants/theme';
+import { Radius, Typography, Shadows, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 interface StatBadgeProps {
   label: string;
@@ -10,28 +11,32 @@ interface StatBadgeProps {
   compact?: boolean;
 }
 
-export default function StatBadge({ label, value, color = Colors.lime, style, compact }: StatBadgeProps) {
+export default function StatBadge({ label, value, color, style, compact }: StatBadgeProps) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+  const activeColor = color || colors.lime;
+
   return (
     <View style={[styles.container, compact && styles.compact, Shadows.card, style]}>
       {/* Accent top bar */}
-      <View style={[styles.topBar, { backgroundColor: color }]} />
+      <View style={[styles.topBar, { backgroundColor: activeColor }]} />
       {/* Icon dot */}
-      <View style={[styles.colorDot, { backgroundColor: color + '25', borderColor: color + '40' }]}>
-        <View style={[styles.colorDotInner, { backgroundColor: color }]} />
+      <View style={[styles.colorDot, { backgroundColor: activeColor + '25', borderColor: activeColor + '40' }]}>
+        <View style={[styles.colorDotInner, { backgroundColor: activeColor }]} />
       </View>
-      <Text style={[styles.value, { color }]}>{value}</Text>
+      <Text style={[styles.value, { color: activeColor }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     padding: 12,
     paddingTop: 14,
     flex: 1,
@@ -65,7 +70,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.caption,
-    color: Colors.muted,
+    color: colors.muted,
     textAlign: 'center',
   },
 });

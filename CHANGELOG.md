@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2026-06-04T12:55:00+05:30
+
+### Added — Global Persistence Theme System
+
+**Architectural Decision:** Implemented a scalable, dynamic Light/Dark theme system driven by React Context, integrated with Zustand state, and persisted via MMKV to eliminate static or unreadable input styling and achieve smooth, industry-standard theme transitions.
+
+**Changes:**
+- **Dynamic Context Provider (`src/theme/ThemeProvider.tsx`):** Wraps the app root and manages system Status Bar dynamically (`light` vs `dark`) based on the active theme colors.
+- **Hook-based Consumption (`useTheme`):** Standardized a hook to read the dynamic palette (`colors`) and control theme state dynamically from any component.
+- **Zustand MMKV Persistence:** Configured `isDarkMode` inside the Zustand storage partialization list to persist the user's theme selection across app relaunches.
+- **Setup Wizard Theme Migration:** Migrated the setup wizard input screens (`app/(auth)/setup.tsx`) to resolve its local palette dynamically from the global provider, fixing contrast issues on input text fields in the Biology and Metrics steps.
+- **Home, Nutrition, and Profile Migrations:** Converted static styles using `Colors` to memoized dynamic styles using React `useMemo` on the Home screen, Nutrition log, and Profile options screens.
+- **Circular Dependency Resolution (`src/store/fitnessStore.ts`):** Removed static `Colors` imports from the Zustand store initialization by hardcoding initial reminder color values as standard hex strings, preventing initialization loops in the Metro bundler.
+
+#### Rollback
+See ROLLBACK.md section for v2.4.0.
+
 ## [2.3.2] - 2026-06-04T11:24:58+05:30
 
 ### Fixed — Splash Screen Full-Screen / Padding Issue

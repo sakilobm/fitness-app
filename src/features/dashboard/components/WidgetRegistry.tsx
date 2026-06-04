@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import DonutChart from '@/components/ui/DonutChart';
 import GlassCard from '@/components/ui/GlassCard';
 import AppIcon from '@/components/ui/AppIcon';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 
 export type WidgetType = 'radial_chart' | 'linear_progress' | 'numeric_delta' | 'compact_chip';
 
@@ -63,6 +64,9 @@ export interface WidgetConfig<T extends WidgetType> {
 export const RadialChartWidget = React.memo(function RadialChartWidget(
   { data, color: _color }: { data: RadialChartData; color: string }
 ) {
+  const { colors, isDark } = useTheme();
+  const widgetStyles = React.useMemo(() => getWidgetStyles(colors, isDark), [colors, isDark]);
+
   const percentage = useMemo(
     () => Math.min(Math.round((data.value / data.target) * 100), 100),
     [data.value, data.target]
@@ -74,8 +78,8 @@ export const RadialChartWidget = React.memo(function RadialChartWidget(
         strokeWidth={10}
         gapSize={6}
         rounded
-        trackColor="rgba(0,0,0,0.06)"
-        innerFill="#F0EDE8"
+        trackColor={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+        innerFill={isDark ? colors.ivory : '#F0EDE8'}
         showInnerDots
         segments={data.segments}
       >
@@ -94,6 +98,9 @@ export const RadialChartWidget = React.memo(function RadialChartWidget(
 export const LinearProgressWidget = React.memo(function LinearProgressWidget(
   { data, color: _color }: { data: LinearProgressData; color: string }
 ) {
+  const { colors, isDark } = useTheme();
+  const widgetStyles = React.useMemo(() => getWidgetStyles(colors, isDark), [colors, isDark]);
+
   const progress = useMemo(
     () => Math.min(data.value / data.target, 1),
     [data.value, data.target]
@@ -122,6 +129,9 @@ export const LinearProgressWidget = React.memo(function LinearProgressWidget(
 export const NumericDeltaWidget = React.memo(function NumericDeltaWidget(
   { data, color }: { data: NumericDeltaData; color: string }
 ) {
+  const { colors, isDark } = useTheme();
+  const widgetStyles = React.useMemo(() => getWidgetStyles(colors, isDark), [colors, isDark]);
+
   const { isPositive, deltaText, trendIcon } = useMemo(() => {
     const d = data.currentValue - data.previousValue;
     const pos = d > 0;
@@ -140,8 +150,8 @@ export const NumericDeltaWidget = React.memo(function NumericDeltaWidget(
         {data.currentValue.toFixed(1)} <Text style={widgetStyles.deltaUnit}>{data.unit}</Text>
       </Text>
       <View style={widgetStyles.deltaRow}>
-        <AppIcon lib="Ionicons" name={trendIcon} size={14} color={isPositive ? Colors.lime : Colors.danger} />
-        <Text style={[widgetStyles.deltaText, { color: isPositive ? Colors.lime : Colors.danger }]}>
+        <AppIcon lib="Ionicons" name={trendIcon} size={14} color={isPositive ? colors.lime : colors.danger} />
+        <Text style={[widgetStyles.deltaText, { color: isPositive ? colors.lime : colors.danger }]}>
           {deltaText} {data.unit} ({data.trend})
         </Text>
       </View>
@@ -153,6 +163,9 @@ export const NumericDeltaWidget = React.memo(function NumericDeltaWidget(
 export const CompactChipWidget = React.memo(function CompactChipWidget(
   { data, color: _color }: { data: CompactChipData; color: string }
 ) {
+  const { colors, isDark } = useTheme();
+  const widgetStyles = React.useMemo(() => getWidgetStyles(colors, isDark), [colors, isDark]);
+
   return (
     <View style={widgetStyles.chipContainer}>
       <Text style={widgetStyles.chipValue}>{data.value}</Text>
@@ -174,9 +187,11 @@ const REGISTRY: Record<WidgetType, React.FC<{ data: any; color: string }>> = {
   compact_chip: CompactChipWidget,
 };
 
-
 function MetricCardInner<T extends WidgetType>({ config }: { config: WidgetConfig<T> }) {
+  const { colors, isDark } = useTheme();
+  const widgetStyles = React.useMemo(() => getWidgetStyles(colors, isDark), [colors, isDark]);
   const WidgetComponent = REGISTRY[config.type] as React.FC<any>;
+  
   if (!WidgetComponent) return null;
 
   return (
@@ -192,7 +207,7 @@ function MetricCardInner<T extends WidgetType>({ config }: { config: WidgetConfi
           </View>
           <Text style={widgetStyles.cardTitle}>{config.title}</Text>
           {config.onPress && (
-            <AppIcon lib="Ionicons" name="chevron-forward-outline" size={14} color={Colors.muted} />
+            <AppIcon lib="Ionicons" name="chevron-forward-outline" size={14} color={colors.muted} />
           )}
         </View>
         <View style={widgetStyles.cardBody}>
@@ -209,7 +224,7 @@ export const MetricCard = React.memo(MetricCardInner, (prev, next) =>
   prev.config.color === next.config.color
 ) as typeof MetricCardInner;
 
-const widgetStyles = StyleSheet.create({
+const getWidgetStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   cardWrapper: {
     flex: 1,
     minWidth: 150,
@@ -219,8 +234,8 @@ const widgetStyles = StyleSheet.create({
     padding: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -239,7 +254,7 @@ const widgetStyles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
   cardBody: {
     flex: 1,
@@ -254,11 +269,11 @@ const widgetStyles = StyleSheet.create({
   radialPercent: {
     fontSize: 18,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   radialSub: {
     fontSize: 9,
-    color: Colors.muted,
+    color: colors.muted,
     fontWeight: '600',
   },
   radialTexts: {
@@ -268,11 +283,11 @@ const widgetStyles = StyleSheet.create({
   radialBigVal: {
     fontSize: 14,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   radialGoal: {
     fontSize: 11,
-    color: Colors.muted,
+    color: colors.muted,
     fontWeight: '500',
   },
   // Linear styles
@@ -288,22 +303,22 @@ const widgetStyles = StyleSheet.create({
   linearValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   linearUnit: {
     fontSize: 11,
     fontWeight: '500',
-    color: Colors.muted,
+    color: colors.muted,
   },
   linearGoal: {
     fontSize: 11,
-    color: Colors.muted,
+    color: colors.muted,
     fontWeight: '500',
   },
   linearBarBg: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
     overflow: 'hidden',
   },
   linearBarFill: {
@@ -318,11 +333,12 @@ const widgetStyles = StyleSheet.create({
   deltaBigValue: {
     fontSize: 22,
     fontWeight: '800',
+    color: colors.text.primary,
   },
   deltaUnit: {
     fontSize: 12,
     fontWeight: '500',
-    color: Colors.muted,
+    color: colors.muted,
   },
   deltaRow: {
     flexDirection: 'row',
@@ -343,7 +359,7 @@ const widgetStyles = StyleSheet.create({
   chipValue: {
     fontSize: 16,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   chipStatusBox: {
     paddingHorizontal: 8,

@@ -1,7 +1,6 @@
 import { Stack, useSegments, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { Colors, ThemeProvider, useTheme } from '@/constants/theme';
 import { useAuth, AuthProvider } from '@/providers/AuthProvider';
 import { useEffect, useState } from 'react';
 import { useFitnessStore } from '@/store/fitnessStore';
@@ -17,6 +16,7 @@ function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
+  const { colors } = useTheme();
 
   useEffect(() => {
     setIsReady(true);
@@ -55,7 +55,7 @@ function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: Colors.bg },
+        contentStyle: { backgroundColor: colors.bg },
         animation: 'slide_from_right',
       }}
     >
@@ -74,12 +74,12 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        {/* Light theme → dark status bar icons */}
-        <StatusBar style="dark" />
-        <NavigationGate setIsAppReady={setIsAppReady} />
-        <AnimatedSplashScreen isAppReady={isAppReady} />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <NavigationGate setIsAppReady={setIsAppReady} />
+          <AnimatedSplashScreen isAppReady={isAppReady} />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

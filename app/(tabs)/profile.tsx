@@ -18,9 +18,10 @@ import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { Colors, Typography, Radius } from '@/constants/theme';
+import { Colors, Typography, Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 import * as ImagePicker from 'expo-image-picker';
-import { useProfileSettings, useThemeMode } from '@/store/fitnessStore';
+import { useProfileSettings } from '@/store/fitnessStore';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
@@ -50,16 +51,7 @@ interface Badge {
   color: string;
 }
 
-const BADGES: Badge[] = [
-  { id: 'b1', icon: { lib: 'Ionicons', name: 'flame' }, label: '7-Day Streak', unlocked: true, color: Colors.amber },
-  { id: 'b2', icon: { lib: 'Ionicons', name: 'water' }, label: 'Hydration Pro', unlocked: true, color: Colors.chart.water },
-  { id: 'b3', icon: { lib: 'MCI', name: 'scale-bathroom' }, label: '5kg Lost', unlocked: true, color: Colors.lime },
-  { id: 'b4', icon: { lib: 'MCI', name: 'dumbbell' }, label: 'Iron Will', unlocked: true, color: Colors.lime },
-  { id: 'b5', icon: { lib: 'MCI', name: 'food-apple' }, label: 'Macro Master', unlocked: false, color: Colors.chart.carbs },
-  { id: 'b6', icon: { lib: 'Ionicons', name: 'camera' }, label: 'Photo Journey', unlocked: false, color: Colors.lime },
-  { id: 'b7', icon: { lib: 'MCI', name: 'run' }, label: 'Step Crusher', unlocked: false, color: '#6366F1' },
-  { id: 'b8', icon: { lib: 'MCI', name: 'pill' }, label: 'Supplement King', unlocked: false, color: Colors.chart.fibre },
-];
+
 
 const AVATAR_PRESETS = [
   { id: 'av1', label: 'Strength', url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150&auto=format&fit=crop&q=80' },
@@ -96,6 +88,20 @@ function PressableRow({ onPress, children, style }: { onPress?: () => void; chil
 }
 
 export default function ProfileScreen() {
+  const { colors, isDark: isDarkMode, setIsDarkMode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDarkMode), [colors, isDarkMode]);
+  const sS = React.useMemo(() => getSS(colors, isDarkMode), [colors, isDarkMode]);
+
+  const BADGES = React.useMemo<Badge[]>(() => [
+    { id: 'b1', icon: { lib: 'Ionicons', name: 'flame' }, label: '7-Day Streak', unlocked: true, color: colors.amber },
+    { id: 'b2', icon: { lib: 'Ionicons', name: 'water' }, label: 'Hydration Pro', unlocked: true, color: colors.chart.water },
+    { id: 'b3', icon: { lib: 'MCI', name: 'scale-bathroom' }, label: '5kg Lost', unlocked: true, color: colors.lime },
+    { id: 'b4', icon: { lib: 'MCI', name: 'dumbbell' }, label: 'Iron Will', unlocked: true, color: colors.lime },
+    { id: 'b5', icon: { lib: 'MCI', name: 'food-apple' }, label: 'Macro Master', unlocked: false, color: colors.chart.carbs },
+    { id: 'b6', icon: { lib: 'Ionicons', name: 'camera' }, label: 'Photo Journey', unlocked: false, color: colors.lime },
+    { id: 'b7', icon: { lib: 'MCI', name: 'run' }, label: 'Step Crusher', unlocked: false, color: '#6366F1' },
+    { id: 'b8', icon: { lib: 'MCI', name: 'pill' }, label: 'Supplement King', unlocked: false, color: colors.chart.fibre },
+  ], [colors]);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, setUser } = useProfileSettings();
@@ -103,7 +109,7 @@ export default function ProfileScreen() {
     await supabase.auth.signOut();
   };
 
-  const { isDarkMode, setIsDarkMode } = useThemeMode();
+  
   const [notifications, setNotifications] = useState(true);
   const [unitKg, setUnitKg] = useState(true);
   const [unitMl, setUnitMl] = useState(true);
@@ -200,17 +206,17 @@ export default function ProfileScreen() {
   // Compute dynamic stats list
   const userStats = [
     { label: 'Age', value: `${userAge}`, icon: 'calendar-outline' as IoniconName, color: '#6366F1' },
-    { label: 'Height', value: `${userHeight} cm`, icon: 'resize-outline' as IoniconName, color: Colors.lime },
-    { label: 'Weight', value: `${userWeight} kg`, icon: 'barbell-outline' as IoniconName, color: Colors.amber },
-    { label: 'Goal', value: userGoal, icon: (userGoal === 'Gain Muscle' ? 'trending-up-outline' : userGoal === 'Stay Fit' ? 'body-outline' : 'trending-down-outline') as IoniconName, color: Colors.chart.calories },
+    { label: 'Height', value: `${userHeight} cm`, icon: 'resize-outline' as IoniconName, color: colors.lime },
+    { label: 'Weight', value: `${userWeight} kg`, icon: 'barbell-outline' as IoniconName, color: colors.amber },
+    { label: 'Goal', value: userGoal, icon: (userGoal === 'Gain Muscle' ? 'trending-up-outline' : userGoal === 'Stay Fit' ? 'body-outline' : 'trending-down-outline') as IoniconName, color: colors.chart.calories },
   ];
 
   // Compute dynamic weekly summary based on goals
   const weekSummary: { icon: IconDef; label: string; value: string; color: string }[] = [
-    { icon: { lib: 'MCI' as const, name: 'dumbbell' as const }, label: 'Workouts', value: `${workoutGoal}`, color: Colors.lime },
-    { icon: { lib: 'Ionicons' as const, name: 'trophy' as const }, label: 'Goals Hit', value: '18/21', color: Colors.amber },
-    { icon: { lib: 'Ionicons' as const, name: 'flame' as const }, label: 'Streak', value: '14d', color: Colors.amber },
-    { icon: { lib: 'Ionicons' as const, name: 'water' as const }, label: 'Avg Water', value: `${(parseFloat(waterGoal) / 1000).toFixed(1)}L`, color: Colors.chart.water },
+    { icon: { lib: 'MCI' as const, name: 'dumbbell' as const }, label: 'Workouts', value: `${workoutGoal}`, color: colors.lime },
+    { icon: { lib: 'Ionicons' as const, name: 'trophy' as const }, label: 'Goals Hit', value: '18/21', color: colors.amber },
+    { icon: { lib: 'Ionicons' as const, name: 'flame' as const }, label: 'Streak', value: '14d', color: colors.amber },
+    { icon: { lib: 'Ionicons' as const, name: 'water' as const }, label: 'Avg Water', value: `${(parseFloat(waterGoal) / 1000).toFixed(1)}L`, color: colors.chart.water },
   ];
 
   // Open modal with current settings loaded into form state
@@ -306,7 +312,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
@@ -316,13 +322,13 @@ export default function ProfileScreen() {
         title="Profile"
         subtitle="MY ACCOUNT"
         icon={{ lib: 'Ionicons', name: 'person' }}
-        accentColor={Colors.lime}
+        accentColor={colors.lime}
         rightIcon="create-outline"
         onRightPress={openEditModal}
       />
 
       {/* Profile header card */}
-      <GlassCard accentColor={Colors.lime}>
+      <GlassCard accentColor={colors.lime}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             {user.profilePic ? (
@@ -341,11 +347,11 @@ export default function ProfileScreen() {
 
             <View style={styles.profileHeaderActions}>
               <View style={styles.levelBadge}>
-                <Ionicons name="flash" size={11} color={Colors.lime} />
+                <Ionicons name="flash" size={11} color={colors.lime} />
                 <Text style={styles.levelText}>Level 8 · 2,840 XP</Text>
               </View>
               <TouchableOpacity style={styles.editBtn} onPress={openEditModal} activeOpacity={0.75}>
-                <Ionicons name="create" size={11} color={Colors.lime} />
+                <Ionicons name="create" size={11} color={colors.lime} />
                 <Text style={styles.editBtnText}>Edit Profile</Text>
               </TouchableOpacity>
             </View>
@@ -375,8 +381,8 @@ export default function ProfileScreen() {
       </GlassCard>
 
       {/* Dynamic Weekly Summary card */}
-      <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="This Week" accentColor={Colors.amber} />
+      <GlassCard accentColor={colors.amber}>
+        <SectionHeader title="This Week" accentColor={colors.amber} />
         <View style={styles.weekRow}>
           {weekSummary.map((w) => (
             <View key={w.label} style={styles.weekItem}>
@@ -395,7 +401,7 @@ export default function ProfileScreen() {
         <SectionHeader
           title="Achievements"
           action={`${BADGES.filter((b) => b.unlocked).length}/${BADGES.length}`}
-          accentColor={Colors.amber}
+          accentColor={colors.amber}
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgeScroll}>
           <View style={styles.badgeRow}>
@@ -415,7 +421,7 @@ export default function ProfileScreen() {
                   <AppIcon
                     icon={badge.icon}
                     size={24}
-                    color={badge.unlocked ? badge.color : Colors.muted}
+                    color={badge.unlocked ? badge.color : colors.muted}
                   />
                 </View>
                 <Text style={[styles.badgeLabel, !badge.unlocked && styles.badgeLabelLocked]}>
@@ -428,10 +434,10 @@ export default function ProfileScreen() {
       </GlassCard>
 
       {/* Dynamic Goal progress */}
-      <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Goal Progress" accentColor={Colors.amber} />
+      <GlassCard accentColor={colors.amber}>
+        <SectionHeader title="Goal Progress" accentColor={colors.amber} />
         <View style={styles.goalRow}>
-          <ProgressRing size={100} strokeWidth={10} progress={0.46} color={Colors.amber}>
+          <ProgressRing size={100} strokeWidth={10} progress={0.46} color={colors.amber}>
             <Text style={styles.goalPct}>46%</Text>
           </ProgressRing>
           <View style={styles.goalText}>
@@ -439,7 +445,7 @@ export default function ProfileScreen() {
             <Text style={styles.goalSub}>Current: {userWeight} kg → Target: {userGoal === 'Gain Muscle' ? '85.0 kg' : userGoal === 'Stay Fit' ? 'Maintain' : '72.0 kg'}</Text>
             <Text style={styles.goalEta}>{userGoal === 'Stay Fit' ? 'Awesome! Keep up active routines' : 'Est. 9 weeks at current pace'}</Text>
             <View style={styles.goalBadge}>
-              <Ionicons name={userGoal === 'Gain Muscle' ? 'trending-up' : userGoal === 'Stay Fit' ? 'body' : 'trending-down'} size={11} color={Colors.amber} />
+              <Ionicons name={userGoal === 'Gain Muscle' ? 'trending-up' : userGoal === 'Stay Fit' ? 'body' : 'trending-down'} size={11} color={colors.amber} />
               <Text style={styles.goalBadgeText}>
                 {userGoal === 'Gain Muscle' ? '6.6 kg remaining' : userGoal === 'Stay Fit' ? 'Active lifestyle' : '6.4 kg remaining'}
               </Text>
@@ -453,20 +459,20 @@ export default function ProfileScreen() {
       {/* Group 1 — Actions */}
       <Animated.View entering={FadeInUp.delay(100).springify().damping(18)}>
         <View style={sS.groupLabel}>
-          <View style={[sS.groupDot, { backgroundColor: Colors.lime }]} />
+          <View style={[sS.groupDot, { backgroundColor: colors.lime }]} />
           <Text style={sS.groupLabelText}>Actions</Text>
         </View>
         <View style={sS.card}>
           <PressableRow style={sS.row} onPress={() => router.push('/(auth)/setup')}>
-            <View style={[sS.iconBubble, { backgroundColor: Colors.bubble.green }]}>
-              <Ionicons name="sparkles" size={18} color={Colors.lime} />
+            <View style={[sS.iconBubble, { backgroundColor: colors.bubble.green }]}>
+              <Ionicons name="sparkles" size={18} color={colors.lime} />
             </View>
             <View style={sS.rowContent}>
-              <Text style={[sS.rowTitle, { color: Colors.lime }]}>Recalibrate Fitness Engine</Text>
+              <Text style={[sS.rowTitle, { color: colors.lime }]}>Recalibrate Fitness Engine</Text>
               <Text style={sS.rowSub}>Re-run setup wizard</Text>
             </View>
             <View style={sS.chevronWrap}>
-              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </View>
           </PressableRow>
 
@@ -481,7 +487,7 @@ export default function ProfileScreen() {
               <Text style={sS.rowSub}>Watch the startup animation</Text>
             </View>
             <View style={sS.chevronWrap}>
-              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </View>
           </PressableRow>
         </View>
@@ -506,8 +512,8 @@ export default function ProfileScreen() {
             <Switch
               value={isDarkMode}
               onValueChange={setIsDarkMode}
-              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '99' }}
-              thumbColor={isDarkMode ? Colors.lime : '#ccc'}
+              trackColor={{ false: 'rgba(0,0,0,0.10)', true: colors.lime + '99' }}
+              thumbColor={isDarkMode ? colors.lime : '#ccc'}
             />
           </View>
 
@@ -515,8 +521,8 @@ export default function ProfileScreen() {
 
           {/* Notifications toggle */}
           <View style={sS.row}>
-            <View style={[sS.iconBubble, { backgroundColor: Colors.lime + '18' }]}>
-              <Ionicons name="notifications" size={18} color={Colors.lime} />
+            <View style={[sS.iconBubble, { backgroundColor: colors.lime + '18' }]}>
+              <Ionicons name="notifications" size={18} color={colors.lime} />
             </View>
             <View style={sS.rowContent}>
               <Text style={sS.rowTitle}>Push Notifications</Text>
@@ -525,8 +531,8 @@ export default function ProfileScreen() {
             <Switch
               value={notifications}
               onValueChange={setNotifications}
-              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '99' }}
-              thumbColor={notifications ? Colors.lime : '#ccc'}
+              trackColor={{ false: 'rgba(0,0,0,0.10)', true: colors.lime + '99' }}
+              thumbColor={notifications ? colors.lime : '#ccc'}
             />
           </View>
 
@@ -534,8 +540,8 @@ export default function ProfileScreen() {
 
           {/* Weight unit pill */}
           <View style={sS.row}>
-            <View style={[sS.iconBubble, { backgroundColor: Colors.amber + '18' }]}>
-              <MaterialCommunityIcons name="scale-bathroom" size={18} color={Colors.amber} />
+            <View style={[sS.iconBubble, { backgroundColor: colors.amber + '18' }]}>
+              <MaterialCommunityIcons name="scale-bathroom" size={18} color={colors.amber} />
             </View>
             <View style={sS.rowContent}>
               <Text style={sS.rowTitle}>Weight Unit</Text>
@@ -560,8 +566,8 @@ export default function ProfileScreen() {
 
           {/* Volume unit pill */}
           <View style={sS.row}>
-            <View style={[sS.iconBubble, { backgroundColor: Colors.chart.water + '18' }]}>
-              <Ionicons name="water" size={18} color={Colors.chart.water} />
+            <View style={[sS.iconBubble, { backgroundColor: colors.chart.water + '18' }]}>
+              <Ionicons name="water" size={18} color={colors.chart.water} />
             </View>
             <View style={sS.rowContent}>
               <Text style={sS.rowTitle}>Volume Unit</Text>
@@ -587,35 +593,35 @@ export default function ProfileScreen() {
       {/* Group 3 — Privacy & Data */}
       <Animated.View entering={FadeInUp.delay(260).springify().damping(18)}>
         <View style={sS.groupLabel}>
-          <View style={[sS.groupDot, { backgroundColor: Colors.danger }]} />
+          <View style={[sS.groupDot, { backgroundColor: colors.danger }]} />
           <Text style={sS.groupLabelText}>Privacy & Data</Text>
         </View>
         <View style={sS.card}>
           <PressableRow style={sS.row}>
-            <View style={[sS.iconBubble, { backgroundColor: Colors.chart.fibre + '18' }]}>
-              <Ionicons name="download-outline" size={18} color={Colors.chart.fibre} />
+            <View style={[sS.iconBubble, { backgroundColor: colors.chart.fibre + '18' }]}>
+              <Ionicons name="download-outline" size={18} color={colors.chart.fibre} />
             </View>
             <View style={sS.rowContent}>
               <Text style={sS.rowTitle}>Export My Data</Text>
               <Text style={sS.rowSub}>Download a copy of your data</Text>
             </View>
             <View style={sS.chevronWrap}>
-              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </View>
           </PressableRow>
 
           <View style={sS.divider} />
 
           <PressableRow style={sS.row}>
-            <View style={[sS.iconBubble, { backgroundColor: Colors.danger + '15' }]}>
-              <Ionicons name="lock-closed" size={18} color={Colors.danger} />
+            <View style={[sS.iconBubble, { backgroundColor: colors.danger + '15' }]}>
+              <Ionicons name="lock-closed" size={18} color={colors.danger} />
             </View>
             <View style={sS.rowContent}>
               <Text style={sS.rowTitle}>Privacy & Security</Text>
               <Text style={sS.rowSub}>Manage your account security</Text>
             </View>
             <View style={sS.chevronWrap}>
-              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </View>
           </PressableRow>
         </View>
@@ -624,11 +630,11 @@ export default function ProfileScreen() {
       {/* Logout — standalone danger card */}
       <Animated.View entering={FadeInUp.delay(340).springify().damping(18)}>
         <PressableRow style={sS.logoutCard} onPress={logoutUser}>
-          <View style={[sS.iconBubble, { backgroundColor: Colors.danger + '20' }]}>
-            <Ionicons name="log-out" size={18} color={Colors.danger} />
+          <View style={[sS.iconBubble, { backgroundColor: colors.danger + '20' }]}>
+            <Ionicons name="log-out" size={18} color={colors.danger} />
           </View>
           <Text style={sS.logoutLabel}>Log Out</Text>
-          <Ionicons name="chevron-forward" size={16} color={Colors.danger + 'AA'} />
+          <Ionicons name="chevron-forward" size={16} color={colors.danger + 'AA'} />
         </PressableRow>
       </Animated.View>
 
@@ -656,8 +662,8 @@ export default function ProfileScreen() {
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <View style={styles.modalHeaderTitleBlock}>
-                  <View style={[styles.modalHeaderIconWrap, { backgroundColor: Colors.lime + '15' }]}>
-                    <Ionicons name="person" size={18} color={Colors.lime} />
+                  <View style={[styles.modalHeaderIconWrap, { backgroundColor: colors.lime + '15' }]}>
+                    <Ionicons name="person" size={18} color={colors.lime} />
                   </View>
                   <View>
                     <Text style={styles.modalHeaderSub}>ACCOUNT SETTINGS</Text>
@@ -665,7 +671,7 @@ export default function ProfileScreen() {
                   </View>
                 </View>
                 <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setEditModalVisible(false)}>
-                  <Ionicons name="close" size={20} color={Colors.text.primary} />
+                  <Ionicons name="close" size={20} color={colors.text.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -675,14 +681,14 @@ export default function ProfileScreen() {
                   style={[styles.tabBtn, activeFormTab === 'basic' && styles.tabBtnActive]}
                   onPress={() => setActiveFormTab('basic')}
                 >
-                  <Ionicons name="options-outline" size={14} color={activeFormTab === 'basic' ? Colors.lime : Colors.muted} />
+                  <Ionicons name="options-outline" size={14} color={activeFormTab === 'basic' ? colors.lime : colors.muted} />
                   <Text style={[styles.tabBtnText, activeFormTab === 'basic' && styles.tabBtnTextActive]}>Basic Metrics</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.tabBtn, activeFormTab === 'advanced' && styles.tabBtnActive]}
                   onPress={() => setActiveFormTab('advanced')}
                 >
-                  <Ionicons name="flash-outline" size={14} color={activeFormTab === 'advanced' ? Colors.lime : Colors.muted} />
+                  <Ionicons name="flash-outline" size={14} color={activeFormTab === 'advanced' ? colors.lime : colors.muted} />
                   <Text style={[styles.tabBtnText, activeFormTab === 'advanced' && styles.tabBtnTextActive]}>Advanced Goals</Text>
                 </TouchableOpacity>
               </View>
@@ -700,10 +706,10 @@ export default function ProfileScreen() {
                         {formProfilePic ? (
                           <Image source={{ uri: formProfilePic }} style={styles.avatarFormImage} />
                         ) : (
-                          <Ionicons name="person" size={38} color={Colors.lime} />
+                          <Ionicons name="person" size={38} color={colors.lime} />
                         )}
                         <View style={styles.avatarCameraBadge}>
-                          <Ionicons name="camera" size={12} color={Colors.white} />
+                          <Ionicons name="camera" size={12} color={colors.white} />
                         </View>
                       </TouchableOpacity>
                     </View>
@@ -742,19 +748,19 @@ export default function ProfileScreen() {
                     <View style={[styles.inputGroup, styles.customUrlWrapper]}>
                       <Text style={styles.inputLabel}>Or paste custom Photo URL</Text>
                       <View style={styles.inputFieldWrap}>
-                        <Ionicons name="link-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                         <TextInput
                           style={styles.textInput}
                           value={formProfilePic}
                           onChangeText={setFormProfilePic}
                           placeholder="Paste custom photo URL (https://...)"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                           autoCapitalize="none"
                           autoCorrect={false}
                         />
                         {formProfilePic ? (
                           <TouchableOpacity onPress={() => setFormProfilePic('')} activeOpacity={0.7}>
-                            <Ionicons name="close-circle" size={16} color={Colors.muted} />
+                            <Ionicons name="close-circle" size={16} color={colors.muted} />
                           </TouchableOpacity>
                         ) : null}
                       </View>
@@ -764,7 +770,7 @@ export default function ProfileScreen() {
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Full Name</Text>
                       <View style={[styles.inputFieldWrap, formErrors.name && styles.inputFieldError]}>
-                        <Ionicons name="person-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <Ionicons name="person-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                         <TextInput
                           style={styles.textInput}
                           value={formName}
@@ -773,7 +779,7 @@ export default function ProfileScreen() {
                             if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                           }}
                           placeholder="Alex Rivera"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                         />
                       </View>
                       {formErrors.name && <Text style={styles.errorText}>{formErrors.name}</Text>}
@@ -794,7 +800,7 @@ export default function ProfileScreen() {
                             }}
                             keyboardType="numeric"
                             placeholder="28"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                             maxLength={3}
                           />
                         </View>
@@ -814,7 +820,7 @@ export default function ProfileScreen() {
                             }}
                             keyboardType="numeric"
                             placeholder="178"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                             maxLength={3}
                           />
                         </View>
@@ -834,7 +840,7 @@ export default function ProfileScreen() {
                             }}
                             keyboardType="numeric"
                             placeholder="78.4"
-                            placeholderTextColor={Colors.muted}
+                            placeholderTextColor={colors.muted}
                             maxLength={5}
                           />
                         </View>
@@ -859,7 +865,7 @@ export default function ProfileScreen() {
                             <Ionicons
                               name={goal === 'Gain Muscle' ? 'trending-up' : goal === 'Stay Fit' ? 'body' : 'trending-down'}
                               size={14}
-                              color={formGoal === goal ? Colors.lime : Colors.muted}
+                              color={formGoal === goal ? colors.lime : colors.muted}
                             />
                             <Text style={[styles.goalChipText, formGoal === goal && styles.goalChipTextActive]}>{goal}</Text>
                           </TouchableOpacity>
@@ -871,7 +877,7 @@ export default function ProfileScreen() {
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Motivation Motto</Text>
                       <View style={[styles.inputFieldWrap, formErrors.motto && styles.inputFieldError]}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                         <TextInput
                           style={styles.textInput}
                           value={formMotto}
@@ -880,7 +886,7 @@ export default function ProfileScreen() {
                             if (formErrors.motto) setFormErrors({ ...formErrors, motto: undefined });
                           }}
                           placeholder="Strive for progress, not perfection!"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                         />
                       </View>
                       {formErrors.motto && <Text style={styles.errorText}>{formErrors.motto}</Text>}
@@ -892,7 +898,7 @@ export default function ProfileScreen() {
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Daily Calorie Target (kcal)</Text>
                       <View style={[styles.inputFieldWrap, formErrors.calorieGoal && styles.inputFieldError]}>
-                        <Ionicons name="flame-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <Ionicons name="flame-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                         <TextInput
                           style={styles.textInput}
                           value={formCalorieGoal}
@@ -902,7 +908,7 @@ export default function ProfileScreen() {
                           }}
                           keyboardType="numeric"
                           placeholder="2400"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                           maxLength={5}
                         />
                       </View>
@@ -913,7 +919,7 @@ export default function ProfileScreen() {
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Daily Water Goal (ml)</Text>
                       <View style={[styles.inputFieldWrap, formErrors.waterGoal && styles.inputFieldError]}>
-                        <Ionicons name="water-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <Ionicons name="water-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                         <TextInput
                           style={styles.textInput}
                           value={formWaterGoal}
@@ -923,7 +929,7 @@ export default function ProfileScreen() {
                           }}
                           keyboardType="numeric"
                           placeholder="2500"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                           maxLength={5}
                         />
                       </View>
@@ -934,7 +940,7 @@ export default function ProfileScreen() {
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Daily Steps Target</Text>
                       <View style={[styles.inputFieldWrap, formErrors.stepsGoal && styles.inputFieldError]}>
-                        <Ionicons name="footsteps-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                        <Ionicons name="footsteps-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                         <TextInput
                           style={styles.textInput}
                           value={formStepsGoal}
@@ -944,7 +950,7 @@ export default function ProfileScreen() {
                           }}
                           keyboardType="numeric"
                           placeholder="10000"
-                          placeholderTextColor={Colors.muted}
+                          placeholderTextColor={colors.muted}
                           maxLength={5}
                         />
                       </View>
@@ -982,7 +988,7 @@ export default function ProfileScreen() {
                   <Text style={styles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSaveProfile} activeOpacity={0.8}>
-                  <Ionicons name="checkmark-circle" size={16} color={Colors.white} />
+                  <Ionicons name="checkmark-circle" size={16} color={colors.white} />
                   <Text style={styles.saveBtnText}>Save Profile</Text>
                 </TouchableOpacity>
               </View>
@@ -1004,7 +1010,7 @@ export default function ProfileScreen() {
             activeOpacity={1}
             onPress={() => setActionSheetVisible(false)}
           />
-          <GlassCard style={styles.sheetCard} accentColor={Colors.lime}>
+          <GlassCard style={styles.sheetCard} accentColor={colors.lime}>
             {/* Header branding indicator */}
             <View style={styles.sheetDragIndicator} />
             <Text style={styles.sheetTitle}>Upload Profile Photo</Text>
@@ -1017,14 +1023,14 @@ export default function ProfileScreen() {
                 activeOpacity={0.8}
                 onPress={pickImageFromGallery}
               >
-                <View style={[styles.sheetIconWrap, { backgroundColor: Colors.lime + '12' }]}>
-                  <Ionicons name="images" size={20} color={Colors.lime} />
+                <View style={[styles.sheetIconWrap, { backgroundColor: colors.lime + '12' }]}>
+                  <Ionicons name="images" size={20} color={colors.lime} />
                 </View>
                 <View style={styles.sheetButtonLabelBlock}>
                   <Text style={styles.sheetButtonTitle}>Choose from Gallery</Text>
                   <Text style={styles.sheetButtonSub}>Select an existing image from local storage</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+                <Ionicons name="chevron-forward" size={16} color={colors.muted} />
               </TouchableOpacity>
 
               {/* Camera capture trigger */}
@@ -1033,14 +1039,14 @@ export default function ProfileScreen() {
                 activeOpacity={0.8}
                 onPress={takePhotoWithCamera}
               >
-                <View style={[styles.sheetIconWrap, { backgroundColor: Colors.amber + '12' }]}>
-                  <Ionicons name="camera" size={20} color={Colors.amber} />
+                <View style={[styles.sheetIconWrap, { backgroundColor: colors.amber + '12' }]}>
+                  <Ionicons name="camera" size={20} color={colors.amber} />
                 </View>
                 <View style={styles.sheetButtonLabelBlock}>
                   <Text style={styles.sheetButtonTitle}>Take Photo</Text>
                   <Text style={styles.sheetButtonSub}>Open camera to capture a new photo</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+                <Ionicons name="chevron-forward" size={16} color={colors.muted} />
               </TouchableOpacity>
 
               {/* Cancel direct trigger */}
@@ -1049,11 +1055,11 @@ export default function ProfileScreen() {
                 activeOpacity={0.8}
                 onPress={() => setActionSheetVisible(false)}
               >
-                <View style={[styles.sheetIconWrap, { backgroundColor: Colors.danger + '12' }]}>
-                  <Ionicons name="close" size={20} color={Colors.danger} />
+                <View style={[styles.sheetIconWrap, { backgroundColor: colors.danger + '12' }]}>
+                  <Ionicons name="close" size={20} color={colors.danger} />
                 </View>
                 <View style={styles.sheetButtonLabelBlock}>
-                  <Text style={[styles.sheetButtonTitle, { color: Colors.danger }]}>Cancel</Text>
+                  <Text style={[styles.sheetButtonTitle, { color: colors.danger }]}>Cancel</Text>
                   <Text style={styles.sheetButtonSub}>Keep current picture selection</Text>
                 </View>
               </TouchableOpacity>
@@ -1082,28 +1088,28 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
 
   profileHeader: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   avatar: {
     width: 70, height: 70, borderRadius: 35,
-    backgroundColor: Colors.lime + '18',
-    borderWidth: 2.5, borderColor: Colors.lime,
+    backgroundColor: colors.lime + '18',
+    borderWidth: 2.5, borderColor: colors.lime,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.lime,
+    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
-  avatarText: { ...Typography.h2, color: Colors.lime },
+  avatarText: { ...Typography.h2, color: colors.lime },
   avatarDot: {
     position: 'absolute', bottom: 1, right: 1,
     width: 14, height: 14, borderRadius: 7,
     backgroundColor: '#22C55E',
-    borderWidth: 2.5, borderColor: Colors.card,
+    borderWidth: 2.5, borderColor: colors.card,
   },
   avatarImage: {
     width: '100%',
@@ -1121,11 +1127,11 @@ const styles = StyleSheet.create({
     height: 86,
     borderRadius: 43,
     borderWidth: 3,
-    borderColor: Colors.lime,
-    backgroundColor: Colors.lime + '12',
+    borderColor: colors.lime,
+    backgroundColor: colors.lime + '12',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.lime,
+    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -1143,9 +1149,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.lime,
+    backgroundColor: colors.lime,
     borderWidth: 2,
-    borderColor: Colors.ivory,
+    borderColor: colors.ivory,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -1156,7 +1162,7 @@ const styles = StyleSheet.create({
   },
   presetsTitle: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
     marginBottom: 6,
     paddingHorizontal: 4,
   },
@@ -1179,12 +1185,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
     overflow: 'hidden',
   },
   presetCircleActive: {
-    borderColor: Colors.lime,
+    borderColor: colors.lime,
     borderWidth: 2.5,
   },
   presetImage: {
@@ -1194,10 +1200,10 @@ const styles = StyleSheet.create({
   presetLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: Colors.muted,
+    color: colors.muted,
   },
   presetLabelActive: {
-    color: Colors.lime,
+    color: colors.lime,
     fontWeight: '700',
   },
   customUrlWrapper: {
@@ -1205,15 +1211,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   profileInfo: { flex: 1, gap: 4 },
-  profileName: { ...Typography.h3, color: Colors.text.primary },
+  profileName: { ...Typography.h3, color: colors.text.primary },
   profileEmail: {
     ...Typography.caption,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
     marginTop: 1,
   },
   profileMotto: {
     ...Typography.caption,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
     fontStyle: 'italic',
     marginTop: -2,
   },
@@ -1227,8 +1233,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.lime + '15',
-    borderColor: Colors.lime + '30',
+    backgroundColor: colors.lime + '15',
+    borderColor: colors.lime + '30',
     borderWidth: 1,
     borderRadius: Radius.pill,
     paddingHorizontal: 8,
@@ -1236,28 +1242,28 @@ const styles = StyleSheet.create({
   },
   editBtnText: {
     ...Typography.micro,
-    color: Colors.lime,
+    color: colors.lime,
   },
   levelBadge: {
     alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.lime + '18', borderRadius: Radius.pill,
+    backgroundColor: colors.lime + '18', borderRadius: Radius.pill,
     paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.lime + '40',
+    borderWidth: 1, borderColor: colors.lime + '40',
   },
-  levelText: { ...Typography.captionBold, color: Colors.lime },
+  levelText: { ...Typography.captionBold, color: colors.lime },
   xpBarTrack: {
-    height: 5, backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: Radius.pill, overflow: 'hidden', marginTop: 4,
+    height: 5, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', borderRadius: Radius.pill, overflow: 'hidden', marginTop: 4,
   },
   xpBarFill: {
-    width: '71%', height: '100%', backgroundColor: Colors.lime, borderRadius: Radius.pill,
+    width: '71%', height: '100%', backgroundColor: colors.lime, borderRadius: Radius.pill,
   },
-  xpSub: { ...Typography.micro, color: Colors.muted },
+  xpSub: { ...Typography.micro, color: colors.muted },
 
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statCell: {
-    width: '48%', backgroundColor: Colors.bg + '88',
+    width: '48%', backgroundColor: colors.bg + '88',
     borderRadius: Radius.md, padding: 14,
-    borderWidth: 1, borderColor: Colors.cardBorder, gap: 4,
+    borderWidth: 1, borderColor: colors.cardBorder, gap: 4,
   },
   statIconWrap: {
     width: 28,
@@ -1267,8 +1273,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 2,
   },
-  statValue: { ...Typography.h4, color: Colors.text.primary },
-  statLabel: { ...Typography.caption, color: Colors.muted },
+  statValue: { ...Typography.h4, color: colors.text.primary },
+  statLabel: { ...Typography.caption, color: colors.muted },
 
   weekRow: { flexDirection: 'row', justifyContent: 'space-around' },
   weekItem: { alignItems: 'center', gap: 6 },
@@ -1278,7 +1284,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   weekVal: { ...Typography.h4 },
-  weekLabel: { ...Typography.micro, color: Colors.muted },
+  weekLabel: { ...Typography.micro, color: colors.muted },
 
   badgeScroll: { marginHorizontal: -4 },
   badgeRow: { flexDirection: 'row', gap: 14, paddingHorizontal: 4, paddingBottom: 4 },
@@ -1286,59 +1292,59 @@ const styles = StyleSheet.create({
   badgeLocked: { opacity: 0.35 },
   badgeCircle: {
     width: 54, height: 54, borderRadius: 27,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderWidth: 1.5, borderColor: Colors.cardBorder,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    borderWidth: 1.5, borderColor: colors.cardBorder,
     alignItems: 'center', justifyContent: 'center',
   },
-  badgeLabel: { ...Typography.micro, color: Colors.text.primary, textAlign: 'center' },
-  badgeLabelLocked: { color: Colors.muted },
+  badgeLabel: { ...Typography.micro, color: colors.text.primary, textAlign: 'center' },
+  badgeLabelLocked: { color: colors.muted },
 
   goalRow: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-  goalPct: { ...Typography.bodyBold, color: Colors.amber },
+  goalPct: { ...Typography.bodyBold, color: colors.amber },
   goalText: { flex: 1, gap: 4 },
-  goalTitle: { ...Typography.h4, color: Colors.text.primary },
-  goalSub: { ...Typography.caption, color: Colors.muted },
-  goalEta: { ...Typography.micro, color: Colors.muted },
+  goalTitle: { ...Typography.h4, color: colors.text.primary },
+  goalSub: { ...Typography.caption, color: colors.muted },
+  goalEta: { ...Typography.micro, color: colors.muted },
   goalBadge: {
     alignSelf: 'flex-start', marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: Colors.amber + '18', borderRadius: Radius.pill,
+    backgroundColor: colors.amber + '18', borderRadius: Radius.pill,
     paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.amber + '40',
+    borderWidth: 1, borderColor: colors.amber + '40',
   },
-  goalBadgeText: { ...Typography.captionBold, color: Colors.amber },
+  goalBadgeText: { ...Typography.captionBold, color: colors.amber },
 
   settingsList: {},
   settingRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: Colors.cardBorder,
+    borderBottomWidth: 1, borderBottomColor: colors.cardBorder,
   },
   settingIconWrap: {
     width: 36, height: 36, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
-  settingLabel: { ...Typography.body, color: Colors.text.primary, flex: 1 },
+  settingLabel: { ...Typography.body, color: colors.text.primary, flex: 1 },
   unitToggle: {
     flexDirection: 'row', gap: 2,
-    backgroundColor: Colors.bg, borderRadius: Radius.pill, padding: 3,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    backgroundColor: colors.bg, borderRadius: Radius.pill, padding: 3,
+    borderWidth: 1, borderColor: colors.cardBorder,
   },
   unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: Radius.pill },
-  unitBtnActive: { backgroundColor: Colors.lime + '28' },
-  unitBtnText: { ...Typography.captionBold, color: Colors.muted },
-  unitBtnTextActive: { color: Colors.lime },
+  unitBtnActive: { backgroundColor: colors.lime + '28' },
+  unitBtnText: { ...Typography.captionBold, color: colors.muted },
+  unitBtnTextActive: { color: colors.lime },
 
   versionBlock: { alignItems: 'center', paddingTop: 8, gap: 2 },
-  version: { ...Typography.micro, color: Colors.muted },
-  versionSub: { ...Typography.micro, color: Colors.muted, opacity: 0.6 },
+  version: { ...Typography.micro, color: colors.muted },
+  versionSub: { ...Typography.micro, color: colors.muted, opacity: 0.6 },
 
   // Edit Profile Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(28, 28, 30, 0.60)',
+    backgroundColor: 'rgba(0, 0, 0, 0.70)',
     justifyContent: 'flex-end',
   },
   modalKeyboard: {
@@ -1347,7 +1353,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.ivory,
+    backgroundColor: colors.ivory,
     borderTopLeftRadius: Radius.lg,
     borderTopRightRadius: Radius.lg,
     paddingTop: 20,
@@ -1359,7 +1365,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 0,
-    borderColor: Colors.lime + '20',
+    borderColor: colors.lime + '20',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1383,30 +1389,30 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: Colors.lime,
+    color: colors.lime,
   },
   modalHeaderTitle: {
     ...Typography.h3,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   modalCloseBtn: {
     width: 32,
     height: 32,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   tabSelector: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
     borderRadius: Radius.pill,
     padding: 3,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   tabBtn: {
     flex: 1,
@@ -1418,7 +1424,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   tabBtnActive: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -1427,10 +1433,10 @@ const styles = StyleSheet.create({
   },
   tabBtnText: {
     ...Typography.captionBold,
-    color: Colors.muted,
+    color: colors.muted,
   },
   tabBtnTextActive: {
-    color: Colors.lime,
+    color: colors.lime,
   },
   modalScroll: {
     maxHeight: 380,
@@ -1448,21 +1454,21 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   inputFieldWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     paddingHorizontal: 12,
     height: 46,
   },
   inputFieldError: {
-    borderColor: Colors.danger,
-    backgroundColor: Colors.danger + '05',
+    borderColor: colors.danger,
+    backgroundColor: colors.danger + '05',
   },
   inputIcon: {
     marginRight: 8,
@@ -1470,13 +1476,13 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     ...Typography.body,
-    color: Colors.text.primary,
+    color: colors.text.primary,
     padding: 0,
   },
   errorText: {
     fontSize: 9,
     fontWeight: '600',
-    color: Colors.danger,
+    color: colors.danger,
     marginTop: 2,
   },
   goalChipsRow: {
@@ -1492,19 +1498,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
   },
   goalChipActive: {
-    borderColor: Colors.lime,
-    backgroundColor: Colors.lime + '12',
+    borderColor: colors.lime,
+    backgroundColor: colors.lime + '12',
   },
   goalChipText: {
     ...Typography.captionBold,
-    color: Colors.muted,
+    color: colors.muted,
   },
   goalChipTextActive: {
-    color: Colors.lime,
+    color: colors.lime,
   },
   workoutPillsRow: {
     flexDirection: 'row',
@@ -1517,21 +1523,21 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   workoutPillActive: {
-    borderColor: Colors.lime,
-    backgroundColor: Colors.lime + '12',
+    borderColor: colors.lime,
+    backgroundColor: colors.lime + '12',
   },
   workoutPillText: {
     ...Typography.captionBold,
-    color: Colors.muted,
+    color: colors.muted,
   },
   workoutPillTextActive: {
-    color: Colors.lime,
+    color: colors.lime,
   },
   modalFooter: {
     flexDirection: 'row',
@@ -1539,32 +1545,32 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+    borderTopColor: colors.cardBorder,
   },
   cancelBtn: {
     flex: 1,
     height: 48,
     borderRadius: Radius.md,
-    backgroundColor: Colors.bg,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   cancelBtnText: {
     ...Typography.bodyBold,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
   saveBtn: {
     flex: 2,
     height: 48,
     borderRadius: Radius.md,
-    backgroundColor: Colors.lime,
+    backgroundColor: colors.lime,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: Colors.lime,
+    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -1572,18 +1578,18 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     ...Typography.bodyBold,
-    color: Colors.white,
+    color: colors.white,
   },
   sheetOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(28, 28, 30, 0.50)',
+    backgroundColor: 'rgba(0, 0, 0, 0.70)',
     justifyContent: 'flex-end',
   },
   sheetDismissArea: {
     flex: 1,
   },
   sheetCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderTopLeftRadius: Radius.lg,
     borderTopRightRadius: Radius.lg,
     padding: 20,
@@ -1594,19 +1600,19 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
     alignSelf: 'center',
     marginBottom: 16,
   },
   sheetTitle: {
     ...Typography.h3,
-    color: Colors.text.primary,
+    color: colors.text.primary,
     textAlign: 'center',
     marginBottom: 4,
   },
   sheetSubtitle: {
     ...Typography.caption,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: 20,
     paddingHorizontal: 8,
@@ -1617,16 +1623,16 @@ const styles = StyleSheet.create({
   sheetButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bg + '44',
+    backgroundColor: colors.bg + '44',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     borderRadius: Radius.md,
     padding: 12,
     gap: 12,
   },
   sheetCancelButton: {
-    borderColor: Colors.danger + '22',
-    backgroundColor: Colors.danger + '06',
+    borderColor: colors.danger + '22',
+    backgroundColor: colors.danger + '06',
   },
   sheetIconWrap: {
     width: 38,
@@ -1641,17 +1647,17 @@ const styles = StyleSheet.create({
   },
   sheetButtonTitle: {
     ...Typography.bodyBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
   },
   sheetButtonSub: {
     fontSize: 11,
     fontWeight: '400',
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
 });
 
 // ─── Settings section styles (sS) ────────────────────────────────────────────
-const sS = StyleSheet.create({
+const getSS = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   groupLabel: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
     paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4,
@@ -1659,12 +1665,12 @@ const sS = StyleSheet.create({
   groupDot: { width: 6, height: 6, borderRadius: 3 },
   groupLabelText: {
     fontSize: 11, fontWeight: '700', letterSpacing: 1.2,
-    color: Colors.muted, textTransform: 'uppercase',
+    color: colors.muted, textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: Colors.ivory,
+    backgroundColor: colors.ivory,
     borderRadius: 18,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    borderWidth: 1, borderColor: colors.cardBorder,
     overflow: 'hidden',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
@@ -1674,7 +1680,7 @@ const sS = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14, gap: 14,
   },
   divider: {
-    height: 1, backgroundColor: Colors.cardBorder,
+    height: 1, backgroundColor: colors.cardBorder,
     marginLeft: 68,
   },
   iconBubble: {
@@ -1683,29 +1689,29 @@ const sS = StyleSheet.create({
   },
   rowContent: { flex: 1 },
   rowTitle: {
-    fontSize: 15, fontWeight: '600', color: Colors.text.primary, marginBottom: 1,
+    fontSize: 15, fontWeight: '600', color: colors.text.primary, marginBottom: 1,
   },
-  rowSub: { fontSize: 12, color: Colors.muted },
+  rowSub: { fontSize: 12, color: colors.muted },
   chevronWrap: {
     width: 22, height: 22, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 7,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderRadius: 7,
   },
   pillToggle: {
     flexDirection: 'row', gap: 2,
-    backgroundColor: Colors.cardBorder, borderRadius: 10, padding: 3,
+    backgroundColor: colors.cardBorder, borderRadius: 10, padding: 3,
   },
   pill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8 },
-  pillActive: { backgroundColor: Colors.ivory },
-  pillText: { fontSize: 12, fontWeight: '600', color: Colors.muted },
-  pillTextActive: { color: Colors.lime },
+  pillActive: { backgroundColor: colors.ivory },
+  pillText: { fontSize: 12, fontWeight: '600', color: colors.muted },
+  pillTextActive: { color: colors.lime },
   logoutCard: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 15, gap: 14,
-    backgroundColor: Colors.danger + '0D',
-    borderRadius: 18, borderWidth: 1, borderColor: Colors.danger + '22',
+    backgroundColor: colors.danger + '0D',
+    borderRadius: 18, borderWidth: 1, borderColor: colors.danger + '22',
   },
-  logoutLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.danger },
+  logoutLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.danger },
   versionBlock: { alignItems: 'center', paddingVertical: 12, gap: 3 },
-  version: { fontSize: 12, color: Colors.muted },
-  versionSub: { fontSize: 11, color: Colors.muted, opacity: 0.55 },
+  version: { fontSize: 12, color: colors.muted },
+  versionSub: { fontSize: 11, color: colors.muted, opacity: 0.55 },
 });

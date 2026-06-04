@@ -1,5 +1,34 @@
 # Cursor Test & Validation Log
 
+## [2026-06-04T12:55:00+05:30] - Global Persistence Theme System, useTheme hook implementation, and setup wizard input color contrast resolution
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; npx tsc src/utils/healthCalculations.ts --ignoreConfig --outDir testing/dist --module commonjs --target es2020 --skipLibCheck --esModuleInterop; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    Refactored Theme Engine baseline validation...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Dynamic Theme Provider:** Built `src/theme/ThemeProvider.tsx` and `tokens.ts` implementing dynamic `colors` for Light and Dark modes.
+- **Circular Dependency Fix:** Replaced static `Colors` defaults in the Zustand store with static hex values to break the Metro import cycle, resolving the startup crash.
+- **Root Wrapping:** Wrapped the entire application in `ThemeProvider` inside `app/_layout.tsx` and dynamically styled the Stack container background.
+- **Zustand Persistence:** Added `isDarkMode` to the Zustand MMKV storage partialize state key to persist theme selections across app relaunches.
+- **Profile Migration:** Overhauled `app/(tabs)/profile.tsx` to read colors dynamically and memoize `styles` and `sS` using `React.useMemo()`.
+- **Home/Nutrition/Setup Migration:** Migrated Home, Nutrition, and Setup Wizard screens to dynamically consume theme tokens from the provider.
+- **Setup Inputs Fix:** Solved input text contrast issue in light theme by binding MetricInputs dynamically to colors.text.primary.
+
 ## [2026-06-03T19:50:00+05:30] - Onboarding setup wizard animation, interactive scaling cards, and multi-phase loading calibration validation
 
 ### Automated Checks

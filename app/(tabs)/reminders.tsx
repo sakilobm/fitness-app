@@ -8,7 +8,8 @@ import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { AppIcon, AppIconDef } from '@/components/ui';
-import { Colors, Typography, Radius } from '@/constants/theme';
+import { Typography, Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
 import { ReminderItem, IconDef, IoniconName, MCIName } from '@/types';
 
@@ -19,30 +20,11 @@ const DAY_MAP: Record<string, string> = {
 
 const CATEGORIES = ['All', 'Water', 'Meals', 'Weigh-in', 'Body Photo', 'Workout', 'Supplements'];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  All: Colors.lime,
-  Water: Colors.chart.water,
-  Meals: Colors.amber,
-  'Weigh-in': Colors.lime,
-  'Body Photo': Colors.lime,
-  Workout: Colors.lime,
-  Supplements: Colors.chart.fibre,
-};
 
-const ACCENT_COLORS = [
-  Colors.chart.water,
-  Colors.amber,
-  Colors.lime,
-  Colors.chart.fibre,
-  '#A78BFA', // Purple
-  '#EC4899', // Pink
-];
 
-const SMART_SUGGESTIONS = [
-  { category: 'Water', title: 'Late Afternoon Hydration', time: '16:30', frequency: 'Daily', text: 'You usually forget water after 4 PM', color: Colors.chart.water },
-  { category: 'Weigh-in', title: 'Weekend Weigh-in check', time: '08:00', frequency: 'Weekends', text: 'Weigh-in consistency drops on weekends', color: Colors.amber },
-  { category: 'Meals', title: 'Log Lunch Tracker', time: '13:00', frequency: 'Weekdays', text: 'Lunch log is often skipped on Tuesdays', color: Colors.chart.calories },
-];
+
+
+
 
 const getCategoryIcon = (cat: string, titleStr?: string): IconDef => {
   const t = (titleStr || '').toLowerCase();
@@ -65,6 +47,8 @@ const getCategoryIcon = (cat: string, titleStr?: string): IconDef => {
 };
 
 function DayPills({ days, selected, onToggle }: { days: string[]; selected: string[]; onToggle?: (day: string) => void }) {
+  const { colors, isDark } = useTheme();
+  const dayS = React.useMemo(() => getDayS(colors, isDark), [colors, isDark]);
   return (
     <View style={{ flexDirection: 'row', gap: 4 }}>
       {days.map((d, i) => {
@@ -85,19 +69,47 @@ function DayPills({ days, selected, onToggle }: { days: string[]; selected: stri
   );
 }
 
-const dayS = StyleSheet.create({
+const getDayS = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   pill: {
     width: 26, height: 26, borderRadius: 13,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    borderWidth: 1, borderColor: colors.cardBorder,
   },
-  pillActive: { backgroundColor: Colors.lime + '33', borderColor: Colors.lime },
-  text: { ...Typography.micro, color: Colors.muted },
-  textActive: { color: Colors.lime },
+  pillActive: { backgroundColor: colors.lime + '33', borderColor: colors.lime },
+  text: { ...Typography.micro, color: colors.muted },
+  textActive: { color: colors.lime },
 });
 
 export default function RemindersScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+  const remS = React.useMemo(() => getRemS(colors), [colors]);
+
+  const categoryColors: Record<string, string> = React.useMemo(() => ({
+    All: colors.lime,
+    Water: colors.chart.water,
+    Meals: colors.amber,
+    'Weigh-in': colors.lime,
+    'Body Photo': colors.lime,
+    Workout: colors.lime,
+    Supplements: colors.chart.fibre,
+  }), [colors]);
+
+  const accentColors = React.useMemo(() => [
+    colors.chart.water,
+    colors.amber,
+    colors.lime,
+    colors.chart.fibre,
+    '#A78BFA', // Purple
+    '#EC4899', // Pink
+  ], [colors]);
+
+  const smartSuggestions = React.useMemo(() => [
+    { category: 'Water', title: 'Late Afternoon Hydration', time: '16:30', frequency: 'Daily', text: 'You usually forget water after 4 PM', color: colors.chart.water },
+    { category: 'Weigh-in', title: 'Weekend Weigh-in check', time: '08:00', frequency: 'Weekends', text: 'Weigh-in consistency drops on weekends', color: colors.amber },
+    { category: 'Meals', title: 'Log Lunch Tracker', time: '13:00', frequency: 'Weekdays', text: 'Lunch log is often skipped on Tuesdays', color: colors.chart.calories },
+  ], [colors]);
   const insets = useSafeAreaInsets();
   
   // Expose global state provider
@@ -130,7 +142,7 @@ export default function RemindersScreen() {
   const [formAmPm, setFormAmPm] = useState<'AM' | 'PM'>('AM');
   const [formFrequency, setFormFrequency] = useState<'Daily' | 'Weekdays' | 'Weekends' | 'Custom'>('Daily');
   const [formDays, setFormDays] = useState<string[]>(ALL_DAYS);
-  const [formAccent, setFormAccent] = useState(Colors.chart.water);
+  const [formAccent, setFormAccent] = useState(colors.chart.water);
   const [formError, setFormError] = useState('');
 
   // Handle active frequency day updates
@@ -147,7 +159,7 @@ export default function RemindersScreen() {
   // Handle category accent defaults
   useEffect(() => {
     if (!isEditing) {
-      setFormAccent(CATEGORY_COLORS[formCategory] || Colors.lime);
+      setFormAccent(categoryColors[formCategory] || colors.lime);
     }
   }, [formCategory, isEditing]);
 
@@ -169,7 +181,7 @@ export default function RemindersScreen() {
     setFormAmPm('AM');
     setFormFrequency('Daily');
     setFormDays(ALL_DAYS);
-    setFormAccent(Colors.chart.water);
+    setFormAccent(colors.chart.water);
     setFormError('');
     setShowConfig(true);
   };
@@ -198,7 +210,7 @@ export default function RemindersScreen() {
     setShowConfig(true);
   };
 
-  const handleApplySuggestion = (s: typeof SMART_SUGGESTIONS[0]) => {
+  const handleApplySuggestion = (s: typeof smartSuggestions[0]) => {
     setIsEditing(false);
     setEditId(null);
     setFormTitle(s.title);
@@ -309,13 +321,13 @@ export default function RemindersScreen() {
       {/* Dynamic Simulated Notification Toast Banner */}
       {toastMessage && (
         <View style={[styles.toastContainer, { top: insets.top + 10 }]}>
-          <GlassCard noPadding style={StyleSheet.flatten([styles.toastCard, { borderColor: toastType === 'success' ? Colors.lime + '40' : toastType === 'alert' ? Colors.danger + '40' : Colors.chart.water + '40' }])}>
-            <View style={[styles.toastAccentBar, { backgroundColor: toastType === 'success' ? Colors.lime : toastType === 'alert' ? Colors.danger : Colors.chart.water }]} />
+          <GlassCard noPadding style={StyleSheet.flatten([styles.toastCard, { borderColor: toastType === 'success' ? colors.lime + '40' : toastType === 'alert' ? colors.danger + '40' : colors.chart.water + '40' }])}>
+            <View style={[styles.toastAccentBar, { backgroundColor: toastType === 'success' ? colors.lime : toastType === 'alert' ? colors.danger : colors.chart.water }]} />
             <View style={styles.toastBody}>
               <Ionicons
                 name={toastType === 'success' ? 'checkmark-circle' : toastType === 'alert' ? 'trash-outline' : 'notifications'}
                 size={18}
-                color={toastType === 'success' ? Colors.lime : toastType === 'alert' ? Colors.danger : Colors.chart.water}
+                color={toastType === 'success' ? colors.lime : toastType === 'alert' ? colors.danger : colors.chart.water}
               />
               <Text numberOfLines={2} style={styles.toastText}>{toastMessage}</Text>
             </View>
@@ -340,7 +352,7 @@ export default function RemindersScreen() {
           <View style={styles.catRow}>
             {CATEGORIES.map((c) => {
               const isActive = category === c;
-              const color = CATEGORY_COLORS[c] || Colors.lime;
+              const color = categoryColors[c] || colors.lime;
               return (
                 <TouchableOpacity
                   key={c}
@@ -361,7 +373,7 @@ export default function RemindersScreen() {
         <View style={styles.reminderList}>
           {filtered.length === 0 ? (
             <GlassCard style={styles.emptyCard}>
-              <Ionicons name="notifications-off-outline" size={32} color={Colors.muted} />
+              <Ionicons name="notifications-off-outline" size={32} color={colors.muted} />
               <Text style={styles.emptyTitle}>No reminders in this category</Text>
               <Text style={styles.emptySub}>Tap "Add Reminder" below to create one!</Text>
             </GlassCard>
@@ -376,7 +388,7 @@ export default function RemindersScreen() {
                       <AppIconDef icon={r.icon} color={r.accentColor} size={20} />
                     </View>
                     <View style={remS.info}>
-                      <Text style={[remS.title, !r.enabled && { color: Colors.muted }]}>{r.title}</Text>
+                      <Text style={[remS.title, !r.enabled && { color: colors.muted }]}>{r.title}</Text>
                       <View style={remS.metaRow}>
                         <View style={[remS.timeBadge, { backgroundColor: r.accentColor + '12' }]}>
                           <Ionicons name="time-outline" size={10} color={r.accentColor} />
@@ -392,7 +404,7 @@ export default function RemindersScreen() {
                         showToast(`${r.enabled ? 'Disabled' : 'Enabled'} reminder "${r.title}"`, 'info');
                       }}
                       trackColor={{ false: 'rgba(0,0,0,0.10)', true: r.accentColor + '88' }}
-                      thumbColor={r.enabled ? r.accentColor : Colors.muted}
+                      thumbColor={r.enabled ? r.accentColor : colors.muted}
                     />
                   </TouchableOpacity>
 
@@ -415,27 +427,27 @@ export default function RemindersScreen() {
                         <View style={remS.btnGroup}>
                           <TouchableOpacity
                             onPress={() => handleSimulateTrigger(r)}
-                            style={[remS.actionIconBtn, { backgroundColor: Colors.chart.water + '15', borderColor: Colors.chart.water + '30' }]}
+                            style={[remS.actionIconBtn, { backgroundColor: colors.chart.water + '15', borderColor: colors.chart.water + '30' }]}
                             activeOpacity={0.7}
                           >
-                            <Ionicons name="play" size={12} color={Colors.chart.water} />
-                            <Text style={[remS.actionIconText, { color: Colors.chart.water }]}>Test</Text>
+                            <Ionicons name="play" size={12} color={colors.chart.water} />
+                            <Text style={[remS.actionIconText, { color: colors.chart.water }]}>Test</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             onPress={() => handleOpenEdit(r)}
-                            style={[remS.actionIconBtn, { backgroundColor: Colors.lime + '15', borderColor: Colors.lime + '30' }]}
+                            style={[remS.actionIconBtn, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '30' }]}
                             activeOpacity={0.7}
                           >
-                            <Ionicons name="pencil" size={12} color={Colors.lime} />
-                            <Text style={[remS.actionIconText, { color: Colors.lime }]}>Edit</Text>
+                            <Ionicons name="pencil" size={12} color={colors.lime} />
+                            <Text style={[remS.actionIconText, { color: colors.lime }]}>Edit</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             onPress={() => handleDelete(r.id, r.title)}
-                            style={[remS.actionIconBtn, { backgroundColor: Colors.danger + '15', borderColor: Colors.danger + '30' }]}
+                            style={[remS.actionIconBtn, { backgroundColor: colors.danger + '15', borderColor: colors.danger + '30' }]}
                             activeOpacity={0.7}
                           >
-                            <Ionicons name="trash-outline" size={12} color={Colors.danger} />
-                            <Text style={[remS.actionIconText, { color: Colors.danger }]}>Delete</Text>
+                            <Ionicons name="trash-outline" size={12} color={colors.danger} />
+                            <Text style={[remS.actionIconText, { color: colors.danger }]}>Delete</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -449,7 +461,7 @@ export default function RemindersScreen() {
 
         <SectionHeader title="Smart Suggestions" accentColor="#6366F1" />
         <View style={styles.suggestionsCol}>
-          {SMART_SUGGESTIONS.map((s, i) => (
+          {smartSuggestions.map((s, i) => (
             <TouchableOpacity key={i} style={[styles.suggChip, { borderColor: s.color + '25' }]} activeOpacity={0.8} onPress={() => handleApplySuggestion(s)}>
               <View style={[styles.suggIconWrap, { backgroundColor: s.color + '15' }]}>
                 <AppIconDef icon={getCategoryIcon(s.category, s.title)} color={s.color} size={18} />
@@ -473,7 +485,7 @@ export default function RemindersScreen() {
         onPress={handleOpenAdd}
         activeOpacity={0.85}
       >
-        <Ionicons name="add" size={18} color={Colors.bg} />
+        <Ionicons name="add" size={18} color={colors.bg} />
         <Text style={styles.fabText}>Add Reminder</Text>
       </TouchableOpacity>
 
@@ -495,7 +507,7 @@ export default function RemindersScreen() {
                   }}
                   style={styles.modalDeleteHeader}
                 >
-                  <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
                 </TouchableOpacity>
               )}
             </View>
@@ -507,7 +519,7 @@ export default function RemindersScreen() {
               <Text style={styles.fieldLabel}>Category</Text>
               <View style={styles.modalCategoryGrid}>
                 {CATEGORIES.slice(1).map((c) => {
-                  const color = CATEGORY_COLORS[c] || Colors.lime;
+                  const color = categoryColors[c] || colors.lime;
                   const isSel = formCategory === c;
                   return (
                     <TouchableOpacity
@@ -530,7 +542,7 @@ export default function RemindersScreen() {
               <TextInput
                 style={styles.titleInput}
                 placeholder="e.g. Drink 250ml Water"
-                placeholderTextColor={Colors.muted}
+                placeholderTextColor={colors.muted}
                 value={formTitle}
                 onChangeText={(t) => {
                   setFormTitle(t);
@@ -638,7 +650,7 @@ export default function RemindersScreen() {
               {/* Color accent Picker */}
               <Text style={styles.fieldLabel}>Indicator Theme Color</Text>
               <View style={styles.accentColorsRow}>
-                {ACCENT_COLORS.map((col) => {
+                {accentColors.map((col) => {
                   const isSel = formAccent === col;
                   return (
                     <TouchableOpacity
@@ -674,7 +686,7 @@ export default function RemindersScreen() {
   );
 }
 
-const remS = StyleSheet.create({
+const getRemS = (colors: ThemeColors) => StyleSheet.create({
   accentBar: { height: 2.5 },
   main: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
   iconWrap: {
@@ -683,7 +695,7 @@ const remS = StyleSheet.create({
     borderWidth: 1,
   },
   info: { flex: 1, gap: 4 },
-  title: { ...Typography.bodyBold, color: Colors.text.primary },
+  title: { ...Typography.bodyBold, color: colors.text.primary },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timeBadge: {
     flexDirection: 'row',
@@ -694,15 +706,15 @@ const remS = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   timeTxt: { ...Typography.micro },
-  subtitle: { ...Typography.caption, color: Colors.muted },
+  subtitle: { ...Typography.caption, color: colors.muted },
   expanded: {
     paddingHorizontal: 14, paddingBottom: 14,
-    borderTopWidth: 1, borderTopColor: Colors.cardBorder, gap: 12,
+    borderTopWidth: 1, borderTopColor: colors.cardBorder, gap: 12,
     paddingTop: 12,
   },
   expandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  expandLabel: { ...Typography.caption, color: Colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 },
-  expandValue: { ...Typography.captionBold, color: Colors.text.primary },
+  expandLabel: { ...Typography.caption, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 },
+  expandValue: { ...Typography.captionBold, color: colors.text.primary },
   btnGroup: { flexDirection: 'row', gap: 6 },
   actionIconBtn: {
     flexDirection: 'row',
@@ -716,8 +728,8 @@ const remS = StyleSheet.create({
   actionIconText: { ...Typography.captionBold },
 });
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
 
   catScroll: { marginHorizontal: -16 },
@@ -725,10 +737,10 @@ const styles = StyleSheet.create({
   catPill: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.card,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    backgroundColor: colors.card,
+    borderWidth: 1, borderColor: colors.cardBorder,
   },
-  catText: { ...Typography.captionBold, color: Colors.muted },
+  catText: { ...Typography.captionBold, color: colors.muted },
 
   reminderList: { gap: 8 },
   card: { marginBottom: 0, overflow: 'hidden' },
@@ -739,16 +751,16 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     gap: 8,
     borderStyle: 'dashed',
-    borderColor: Colors.muted + '40',
+    borderColor: colors.muted + '40',
   },
-  emptyTitle: { ...Typography.bodyBold, color: Colors.text.primary, marginTop: 4 },
-  emptySub: { ...Typography.caption, color: Colors.muted, textAlign: 'center' },
+  emptyTitle: { ...Typography.bodyBold, color: colors.text.primary, marginTop: 4 },
+  emptySub: { ...Typography.caption, color: colors.muted, textAlign: 'center' },
 
   suggestionsCol: { gap: 8 },
   suggChip: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, padding: 14,
+    backgroundColor: colors.card, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: colors.cardBorder, padding: 14,
     shadowColor: '#1C1C1E',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -760,8 +772,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   suggTexts: { flex: 1, gap: 2 },
-  suggText: { ...Typography.captionBold, color: Colors.text.primary },
-  suggSubText: { ...Typography.micro, color: Colors.muted },
+  suggText: { ...Typography.captionBold, color: colors.text.primary },
+  suggSubText: { ...Typography.micro, color: colors.muted },
   suggAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -782,7 +794,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
   },
-  fabText: { ...Typography.bodyBold, color: Colors.bg },
+  fabText: { ...Typography.bodyBold, color: colors.bg },
 
   // Toast Styles
   toastContainer: {
@@ -809,25 +821,25 @@ const styles = StyleSheet.create({
   },
   toastText: {
     ...Typography.captionBold,
-    color: Colors.text.primary,
+    color: colors.text.primary,
     flex: 1,
   },
 
   // Modal Styles
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
   modalSheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: Platform.OS === 'ios' ? 44 : 24,
     gap: 14,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    borderWidth: 1, borderColor: colors.cardBorder,
     maxHeight: '94%',
   },
   modalHandle: {
     alignSelf: 'center', width: 40, height: 4,
-    backgroundColor: Colors.muted + '55', borderRadius: 2,
+    backgroundColor: colors.muted + '55', borderRadius: 2,
     marginBottom: 4,
   },
   modalHeaderRow: {
@@ -835,16 +847,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  modalTitle: { ...Typography.h3, color: Colors.text.primary },
+  modalTitle: { ...Typography.h3, color: colors.text.primary },
   modalDeleteHeader: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Colors.danger + '12',
+    backgroundColor: colors.danger + '12',
     alignItems: 'center', justifyContent: 'center',
   },
   formErrorText: {
     ...Typography.captionBold,
-    color: Colors.danger,
-    backgroundColor: Colors.danger + '10',
+    color: colors.danger,
+    backgroundColor: colors.danger + '10',
     padding: 8,
     borderRadius: Radius.md,
   },
@@ -855,7 +867,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     ...Typography.caption,
     fontWeight: '800',
-    color: Colors.text.primary,
+    color: colors.text.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 6,
@@ -863,34 +875,34 @@ const styles = StyleSheet.create({
   fieldSubLabel: {
     ...Typography.micro,
     fontWeight: '700',
-    color: Colors.muted,
+    color: colors.muted,
     textTransform: 'uppercase',
     marginBottom: 6,
   },
   modalCategoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   modalCatBtn: {
-    backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: Radius.md,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderRadius: Radius.md,
     borderWidth: 1,
     paddingHorizontal: 12, paddingVertical: 8,
   },
   modalCatBtnText: { ...Typography.captionBold },
   titleInput: {
     ...Typography.body,
-    color: Colors.text.primary,
-    backgroundColor: 'rgba(0,0,0,0.03)',
+    color: colors.text.primary,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
 
   // Custom picker time selector
   timeSelectorCard: {
-    backgroundColor: 'rgba(0,0,0,0.03)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     padding: 12,
     gap: 12,
   },
@@ -906,22 +918,22 @@ const styles = StyleSheet.create({
   },
   timeColumnLabel: {
     ...Typography.micro,
-    color: Colors.muted,
+    color: colors.muted,
   },
   timeValueInput: {
     ...Typography.h2,
-    color: Colors.text.primary,
-    backgroundColor: Colors.card,
+    color: colors.text.primary,
+    backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     width: 64,
     height: 52,
     textAlign: 'center',
   },
   timeSeparator: {
     ...Typography.h2,
-    color: Colors.muted,
+    color: colors.muted,
     paddingBottom: 4,
   },
   timeAmPmWrapper: {
@@ -933,9 +945,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Radius.md,
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     alignItems: 'center',
   },
   ampmBtnActive: {
@@ -944,10 +956,10 @@ const styles = StyleSheet.create({
   ampmText: {
     ...Typography.micro,
     fontWeight: '700',
-    color: Colors.muted,
+    color: colors.muted,
   },
   ampmTextActive: {
-    color: Colors.bg,
+    color: colors.bg,
   },
   adjustRow: {
     flexDirection: 'row',
@@ -957,15 +969,15 @@ const styles = StyleSheet.create({
   adjustBtn: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     paddingVertical: 6,
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   adjustText: {
     ...Typography.micro,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
     fontWeight: '600',
   },
 
@@ -979,16 +991,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: Radius.pill,
-    backgroundColor: 'rgba(0,0,0,0.03)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   freqText: {
     ...Typography.captionBold,
-    color: Colors.muted,
+    color: colors.muted,
   },
   daysSection: {
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
     borderRadius: Radius.md,
     padding: 10,
     marginTop: 4,
@@ -1010,7 +1022,7 @@ const styles = StyleSheet.create({
   },
   colorCircleSelected: {
     borderWidth: 3,
-    borderColor: Colors.bg,
+    borderColor: colors.bg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
@@ -1029,12 +1041,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
     alignItems: 'center',
   },
   modalCancelText: {
     ...Typography.bodyBold,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
   },
   modalSaveBtn: {
     flex: 2,
@@ -1044,6 +1056,6 @@ const styles = StyleSheet.create({
   },
   modalSaveText: {
     ...Typography.bodyBold,
-    color: Colors.bg,
+    color: colors.bg,
   },
 });

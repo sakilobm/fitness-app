@@ -29,9 +29,9 @@ import Animated, {
   interpolate,
   useAnimatedProps,
 } from 'react-native-reanimated';
-import { Colors, Spacing, Radius, Typography } from '@/constants/theme';
+import { Colors, Spacing, Radius, Typography, useTheme } from '@/constants/theme';
 import { calculateFitnessEngine, BiologicalSex, ActivityLevel, FitnessGoal } from '@/utils/algorithm';
-import { useFitnessStore, useThemeMode } from '@/store/fitnessStore';
+import { useFitnessStore } from '@/store/fitnessStore';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -279,12 +279,25 @@ export default function SetupWizardScreen() {
   const router = useRouter();
   const setUser  = useFitnessStore((s) => s.setUser);
   const user     = useFitnessStore((s) => s.user);
-  const { isDarkMode } = useThemeMode();
+  const { colors, isDark: isDarkMode } = useTheme();
 
-  // ─ Resolve palette based on theme preference ───────────────────────────
-  const D = isDarkMode ? DARK_PALETTE : LIGHT_PALETTE;
+  // ─ Resolve palette dynamically based on global theme tokens ───────────────────────────
+  const D = React.useMemo(() => ({
+    bg: colors.bg,
+    card: colors.card,
+    cardBorder: colors.cardBorder,
+    glass: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+    glassBorder: isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
+    textPrimary: colors.text.primary,
+    textSecondary: colors.text.secondary,
+    textMuted: colors.muted,
+    accent: colors.lime,
+    accentGlow: isDarkMode ? 'rgba(52,211,153,0.25)' : 'rgba(46,125,94,0.15)',
+    statusBar: colors.statusBar,
+  }), [colors, isDarkMode]);
+
   // Rebuild styles whenever theme changes (memoized to avoid unnecessary recreates)
-  const s = React.useMemo(() => makeStyles(D), [isDarkMode]);
+  const s = React.useMemo(() => makeStyles(D), [D]);
 
   const isRecalibrating = user.level > 1 || user.xp > 0 || user.weight !== 70 || user.height !== 170;
 

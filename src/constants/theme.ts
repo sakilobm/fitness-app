@@ -3,49 +3,10 @@
 //  Warm cream backgrounds · white cards · deep forest-teal accents
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const Colors = {
-  bg: '#EDEBE5',             // warm cream — main app background
-  card: '#FFFFFF',            // pure white card surface
-  cardBorder: 'rgba(0,0,0,0.07)',
-  cardGlass: 'rgba(255,255,255,0.80)',
+import { LightColors } from '@/theme/tokens';
 
-  lime: '#2E7D5E',            // deep forest teal (primary accent)
-  amber: '#F59E0B',           // warm amber
-  danger: '#EF4444',          // red
-  muted: '#9CA3AF',           // medium gray
-  white: '#FFFFFF',
-  ivory: '#F8F5F0',
-
-  overlay: 'rgba(46,125,94,0.10)',
-  amberOverlay: 'rgba(245,158,11,0.10)',
-  dangerOverlay: 'rgba(239,68,68,0.10)',
-
-  text: {
-    primary: '#1C1C1E',
-    secondary: '#6B7280',
-    accent: '#2E7D5E',
-    amber: '#F59E0B',
-    danger: '#EF4444',
-  },
-
-  chart: {
-    calories: '#F59E0B',
-    protein: '#2E7D5E',
-    carbs: '#FB923C',
-    fibre: '#0EA5E9',
-    water: '#3B82F6',
-  },
-
-  // Pastel icon-bubble backgrounds (used for exercise / metric icon circles)
-  bubble: {
-    green:  '#D1FAE5',
-    orange: '#FEF3C7',
-    blue:   '#DBEAFE',
-    pink:   '#FCE7F3',
-    purple: '#EDE9FE',
-    teal:   '#CCFBF1',
-  },
-};
+export const Colors = LightColors;
+export { useTheme, ThemeProvider } from '@/theme';
 
 export const Spacing = {
   xs: 4,
