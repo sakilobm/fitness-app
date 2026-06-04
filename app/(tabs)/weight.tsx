@@ -142,10 +142,10 @@ function SparkLine({
 }
 
 const CALENDAR_WEEKS = 8;
-const today = new Date();
 
 function CalHeatmap() {
   const { colors, isDark } = useTheme();
+  const today = new Date();
   const days: { date: Date; status: 'logged' | 'missed' | 'goal' | 'future' }[] = [];
   for (let i = CALENDAR_WEEKS * 7 - 1; i >= 0; i--) {
     const d = new Date(today);
@@ -198,7 +198,7 @@ function BMIBar({ bmi }: { bmi: number }) {
     { label: 'Over', max: 29.9, color: colors.amber },
     { label: 'Obese', max: 40, color: colors.danger },
   ];
-  const pct = Math.min((bmi - 15) / (40 - 15), 1);
+  const pct = Math.max(0, Math.min((bmi - 15) / (40 - 15), 1));
   const category = BMI_CATEGORIES.find((c) => bmi <= c.max) ?? BMI_CATEGORIES[3];
   return (
     <View>
@@ -646,8 +646,9 @@ export default function WeightScreen() {
           <ScrollView style={modalS.historyScroll} contentContainerStyle={modalS.historyScrollContent} showsVerticalScrollIndicator={false}>
             {weightLogs.slice().reverse().map((log) => {
               const emojiMap = { morning: '🌅 Morn', afternoon: '☀️ Aft', night: '🌙 Ngt' };
-              const dateObj = new Date(log.date);
-              const formattedDate = dateObj.toLocaleDateString([], { day: 'numeric', month: 'short' });
+              const [yr, mo, dy] = log.date.split('-');
+              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              const formattedDate = `${parseInt(dy)} ${months[parseInt(mo) - 1]}`;
               
               const handleDelete = () => {
                 const actualIndex = weightLogs.findIndex((item) => item.id === log.id);

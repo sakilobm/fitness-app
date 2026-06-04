@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.2] - 2026-06-04T14:12:00+05:30
+
+### Fixed — Theme Adoption on Steps and Water screens
+
+**Architectural Decision:** Overhauled the **Steps & Walking** (`app/steps.tsx`) and **Water Tracking** (`app/water.tsx`) screens to completely consume the global dynamic `useTheme` hook. Migrated all static `StyleSheet.create` layouts to dynamic stylesheet factories (`getStyles(colors)`), resolving the remaining light-theme leaks (e.g. static ivory backgrounds, hardcoded grey borders, and low-contrast button labels) in dark mode.
+
+**Changes:**
+- **Themed Steps & Walking Screen (`app/steps.tsx`):** Converted static stylesheet to a dynamic factory `getStyles(colors)`. Bound component backgrounds, modal sheets, input rows, goal settings, and typography color fields to dynamic colors. Set button text/icon overlays to static white to ensure high contrast against the Indigo background.
+- **Themed Water Tracking Screen (`app/water.tsx`):** Migrated static layout styles and the cylinder tracking styles (`cyS`) to dynamic factories (`getStyles(colors)` and `getCyStyles(colors)`). Themed custom dialogs, input text wrappers, timeline dividers, quick-log buttons, and the main cylinder frame track to match the dark background.
+- **Unit and Type Checks:** Verified zero TypeScript compile errors via `npx tsc --noEmit` and successful execution of the 8 health calculation unit tests.
+
+#### Rollback
+See ROLLBACK.md section for v2.4.2.
+
+## [2.4.1] - 2026-06-04T13:58:00+05:30
+
+### Fixed — Worklet API Deprecations & Weight Log Stability
+
+**Architectural Decision:** Adapted the dynamic theme status overlay animations to use `scheduleOnRN` from the versioned `react-native-worklets` library, replacing the deprecated `runOnJS` from `react-native-reanimated`. Cleaned up calendar heatmap scoping and replaced `toLocaleDateString` options with safe manual splits to prevent crashes on Android Hermes.
+
+**Changes:**
+- **Replaced Deprecated Worklet Callbacks (`src/theme/ThemeProvider.tsx`):** Removed `runOnJS` imports and curried calls, adopting the flat signature `scheduleOnRN(callback, ...args)` to align with SDK 56 specifications.
+- **Dynamic Scoping (`app/(tabs)/weight.tsx`):** Moved the static `today` date reference inside the `CalHeatmap` component to ensure daily updates past midnight.
+- **Clamped BMI Position (`app/(tabs)/weight.tsx`):** Clamped the BMI pointer `pct` value between `0` and `1` to avoid layout overlaps on low metrics.
+- **Timezone-Safe Date Splitter (`app/(tabs)/weight.tsx`):** Refactored the log list to parse YYYY-MM-DD strings manually instead of calling `toLocaleDateString` with formatting options, fully bypassing Hermes ICU limitations on Android and timezone offset day shifts.
+
+#### Rollback
+See ROLLBACK.md section for v2.4.1.
+
 ## [2.4.0] - 2026-06-04T12:55:00+05:30
 
 ### Added — Global Persistence Theme System

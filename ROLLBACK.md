@@ -1,5 +1,37 @@
 # Rollback Plan
 
+If version `2.4.2` (Theme Adoption on Steps and Water screens) needs to be reverted due to layout issues, SVG rendering errors, or modal display problems, use this guide.
+
+## Rollback Procedure (Reverting to v2.4.1)
+
+1. **Revert modified steps and water screen files:**
+   ```powershell
+   git checkout v2.4.1 -- app/steps.tsx app/water.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.4.1` (Worklet API Deprecations & Weight Log Stability) needs to be reverted due to animation layout issues or dates formatting bugs, use this guide.
+
+## Rollback Procedure (Reverting to v2.4.0)
+
+1. **Revert modified animation and weight files:**
+   ```powershell
+   git checkout v2.4.0 -- src/theme/ThemeProvider.tsx app/(tabs)/weight.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.4.0` (Global Dynamic Persistence Theme System with Hook-based useTheme) needs to be reverted due to rendering issues or style compilation failures, use this guide.
 
 ## Rollback Procedure (Reverting to static theme colors v2.3.2)

@@ -1,5 +1,60 @@
 # Cursor Test & Validation Log
 
+## [2026-06-04T14:12:00+05:30] - Theme Adoption on Steps and Water Screens
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; npx tsc src/utils/healthCalculations.ts --ignoreConfig --outDir testing/dist --module commonjs --target es2020 --skipLibCheck --esModuleInterop; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Steps & Walking Screen Theme Integration (`app/steps.tsx`):**
+  - Integrated `useTheme()` hook to get dynamic `colors` values.
+  - Converted layout styles to dynamic stylesheet factory `getStyles(colors)` to automatically swap screen background (`colors.bg`), modal sheet background (`colors.card`), text inputs, indicators, and borders to themed variants.
+  - Themed SVG elements like the weekly steps bars chart dynamically.
+  - Hardcoded overlays on top of the constant steps brand color (`STEPS_COLOR` `#6366F1`) to static white (`colors.white`) to guarantee high contrast.
+- **Water Tracking Screen Theme Integration (`app/water.tsx`):**
+  - Converted main layout styles and water cylinder styles (`cyS`) to dynamic factories `getStyles(colors)` and `getCyStyles(colors)`.
+  - Allowed timeline borders, timeline log pills, delete button indicators, and the cylinder tracks to match dark/light modes.
+  - Set the modal sheet background dynamically to themed `colors.ivory` (`#F8F5F0` in light, `#131613` in dark), resolving the visual light theme leak when opening the custom logs or targets modals.
+
+## [2026-06-04T13:58:00+05:30] - Worklet API Deprecations & Weight Log Stability
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; npx tsc src/utils/healthCalculations.ts --ignoreConfig --outDir testing/dist --module commonjs --target es2020 --skipLibCheck --esModuleInterop; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Worklet Callback Deprecations (`src/theme/ThemeProvider.tsx`):** Replaced curried `runOnJS` with standard `scheduleOnRN` from `react-native-worklets` library to resolve compilation deprecation warnings and align with worklet specification.
+- **Dynamic Scoping (`app/(tabs)/weight.tsx`):** Scoped the static `today` variable inside the `CalHeatmap` component to dynamically re-evaluate the date relative to midnight rendering.
+- **Clamped BMI Gauge (`app/(tabs)/weight.tsx`):** Added a clamping guard `Math.max(0, Math.min(pct, 1))` to prevent gauge pointers from rendering off-screen for extremely low BMI logs.
+- **Timezone-Safe Date Splitter (`app/(tabs)/weight.tsx`):** Replaced the Hermes Android-incompatible `toLocaleDateString` options with safe manual splitting of the YYYY-MM-DD format, resolving all locale formatting crashes and date offset errors.
+
 ## [2026-06-04T12:55:00+05:30] - Global Persistence Theme System, useTheme hook implementation, and setup wizard input color contrast resolution
 
 ### Automated Checks

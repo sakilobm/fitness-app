@@ -12,7 +12,8 @@ import StatBadge from '@/components/ui/StatBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
-import { Colors, Typography, Radius, Shadows } from '@/constants/theme';
+import { Typography, Radius, Shadows, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 import { router } from 'expo-router';
 import { useWorkoutEngine, useHydrationTracker, useBmiTracker, useProfileSettings } from '@/store/fitnessStore';
 import { stepsToCalories, stepsToDistanceKm, formatStepCount, getDayLabel } from '@/utils/steps';
@@ -24,6 +25,7 @@ const STEPS_COLOR = '#6366F1';
 // ─── Dynamic Weekly Bars Chart ───────────────────────────────────────────────
 
 function WeekBars({ data, goal }: { data: { date: string; steps: number }[]; goal: number }) {
+  const { colors } = useTheme();
   const barW = (W - 80) / 7;
   const maxVal = Math.max(...data.map((d) => d.steps), goal);
   const chartH = 110;
@@ -50,9 +52,9 @@ function WeekBars({ data, goal }: { data: { date: string; steps: number }[]; goa
         const isToday = i === data.length - 1;
         const color =
           d.steps === 0 ? 'rgba(0,0,0,0.06)'
-          : d.steps >= goal ? Colors.amber
+          : d.steps >= goal ? colors.amber
           : isToday ? STEPS_COLOR
-          : Colors.muted + '55';
+          : colors.muted + '55';
         
         const label = getDayLabel(d.date);
 
@@ -73,7 +75,7 @@ function WeekBars({ data, goal }: { data: { date: string; steps: number }[]; goa
             {/* Day label */}
             <SvgText
               x={x + bw / 2} y={chartH + 18}
-              fill={isToday ? STEPS_COLOR : Colors.muted}
+              fill={isToday ? STEPS_COLOR : colors.muted}
               fontSize={11} textAnchor="middle" fontWeight={isToday ? '700' : '400'}
             >
               {label.charAt(0)}
@@ -82,7 +84,7 @@ function WeekBars({ data, goal }: { data: { date: string; steps: number }[]; goa
             {d.steps > 0 && (
               <SvgText
                 x={x + bw / 2} y={chartH - h - 5}
-                fill={color === Colors.muted + '55' ? Colors.muted : color}
+                fill={color === colors.muted + '55' ? colors.muted : color}
                 fontSize={9} textAnchor="middle"
               >
                 {formatStepCount(d.steps)}
@@ -98,6 +100,7 @@ function WeekBars({ data, goal }: { data: { date: string; steps: number }[]; goa
 // ─── Streak Dots Component ───────────────────────────────────────────────────
 
 function StreakDots({ history, goal }: { history: { steps: number }[]; goal: number }) {
+  const { colors } = useTheme();
   const days = history.slice(-14);
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -110,8 +113,8 @@ function StreakDots({ history, goal }: { history: { steps: number }[]; goal: num
               key={i}
               style={[
                 streakS.dot,
-                hit ? streakS.dotHit : streakS.dotMiss,
-                isLast && streakS.dotToday,
+                hit ? { backgroundColor: STEPS_COLOR + '66' } : { backgroundColor: colors.danger + '44' },
+                isLast && { borderWidth: 2, borderColor: STEPS_COLOR, backgroundColor: STEPS_COLOR },
               ]}
             />
           );
@@ -123,14 +126,12 @@ function StreakDots({ history, goal }: { history: { steps: number }[]; goal: num
 
 const streakS = StyleSheet.create({
   dot: { width: 20, height: 20, borderRadius: 10 },
-  dotHit: { backgroundColor: STEPS_COLOR + '66' },
-  dotMiss: { backgroundColor: Colors.danger + '44' },
-  dotToday: { borderWidth: 2, borderColor: STEPS_COLOR, backgroundColor: STEPS_COLOR },
 });
 
 // ─── Motion Breakdown ────────────────────────────────────────────────────────
 
-function MotionBreakdown({ stepsCount }: { stepsCount: number }) {
+function MotionBreakdown({ stepsCount, styles }: { stepsCount: number; styles: any }) {
+  const { colors } = useTheme();
   // Simulate walking/running/stationary distribution based on step count
   const walkPct = stepsCount > 0 ? Math.min(0.7, stepsCount / 15000) : 0;
   const runPct = stepsCount > 5000 ? Math.min(0.2, (stepsCount - 5000) / 20000) : 0;
@@ -138,8 +139,8 @@ function MotionBreakdown({ stepsCount }: { stepsCount: number }) {
 
   const MOTION = [
     { label: 'Walking', pct: walkPct, color: STEPS_COLOR },
-    { label: 'Running', pct: runPct, color: Colors.amber },
-    { label: 'Stationary', pct: statPct, color: Colors.muted + '55' },
+    { label: 'Running', pct: runPct, color: colors.amber },
+    { label: 'Stationary', pct: statPct, color: colors.muted + '55' },
   ];
 
   return (
@@ -163,6 +164,8 @@ const QUICK_ADD_AMOUNTS = [500, 1000, 2000, 5000];
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function StepsScreen() {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const {
     stepsCount, addManualSteps, activeMinutes,
@@ -263,7 +266,7 @@ export default function StepsScreen() {
           <Text style={styles.stepsGoal}>/ {goal.toLocaleString()} steps</Text>
           <View style={styles.ringStats}>
             <View style={styles.ringStat}>
-              <Ionicons name="flame" size={14} color={Colors.amber} />
+              <Ionicons name="flame" size={14} color={colors.amber} />
               <Text style={styles.ringStatVal}>{caloriesBurned}</Text>
               <Text style={styles.ringStatLabel}>kcal</Text>
             </View>
@@ -287,7 +290,7 @@ export default function StepsScreen() {
           onPress={() => setShowAddModal(true)}
           activeOpacity={0.85}
         >
-          <Ionicons name="add-circle" size={20} color={Colors.bg} />
+          <Ionicons name="add-circle" size={20} color={colors.white} />
           <Text style={styles.logStepsTxt}>Log Steps</Text>
         </TouchableOpacity>
       </View>
@@ -299,8 +302,8 @@ export default function StepsScreen() {
         <View style={styles.chartLegend}>
           {[
             { label: 'Today', color: STEPS_COLOR },
-            { label: 'Goal hit', color: Colors.amber },
-            { label: 'Below goal', color: Colors.muted },
+            { label: 'Goal hit', color: colors.amber },
+            { label: 'Below goal', color: colors.muted },
           ].map((l) => (
             <View key={l.label} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: l.color }]} />
@@ -316,14 +319,14 @@ export default function StepsScreen() {
           </View>
           <View style={styles.weekSumDivider} />
           <View style={styles.weekSumItem}>
-            <Text style={[styles.weekSumVal, { color: Colors.amber }]}>
+            <Text style={[styles.weekSumVal, { color: colors.amber }]}>
               {stepsToCalories(weeklyTotal, user.weight).toLocaleString()}
             </Text>
             <Text style={styles.weekSumLabel}>kcal burned</Text>
           </View>
           <View style={styles.weekSumDivider} />
           <View style={styles.weekSumItem}>
-            <Text style={[styles.weekSumVal, { color: Colors.lime }]}>
+            <Text style={[styles.weekSumVal, { color: colors.lime }]}>
               {stepsToDistanceKm(weeklyTotal, user.height)}
             </Text>
             <Text style={styles.weekSumLabel}>km walked</Text>
@@ -332,9 +335,9 @@ export default function StepsScreen() {
       </GlassCard>
 
       {/* ════════ Motion Breakdown ════════ */}
-      <GlassCard accentColor={Colors.amber}>
-        <SectionHeader title="Time in Motion" accentColor={Colors.amber} />
-        <MotionBreakdown stepsCount={stepsCount} />
+      <GlassCard accentColor={colors.amber}>
+        <SectionHeader title="Time in Motion" accentColor={colors.amber} />
+        <MotionBreakdown stepsCount={stepsCount} styles={styles} />
       </GlassCard>
 
       {/* ════════ Goal Settings ════════ */}
@@ -378,7 +381,7 @@ export default function StepsScreen() {
         <StreakDots history={stepHistory.slice(-14)} goal={goal} />
         <View style={styles.streakStats}>
           <StatBadge label="Streak" value={`${streakCount}d 🔥`} color={STEPS_COLOR} />
-          <StatBadge label="Best Day" value={bestDay.toLocaleString()} color={Colors.amber} />
+          <StatBadge label="Best Day" value={bestDay.toLocaleString()} color={colors.amber} />
           <StatBadge label="Avg/Day" value={avgSteps.toLocaleString()} color={STEPS_COLOR} />
         </View>
       </GlassCard>
@@ -437,7 +440,7 @@ export default function StepsScreen() {
               <TextInput
                 style={styles.stepInput}
                 placeholder="Enter steps..."
-                placeholderTextColor={Colors.muted}
+                placeholderTextColor={colors.muted}
                 keyboardType="number-pad"
                 value={manualInput}
                 onChangeText={setManualInput}
@@ -450,7 +453,7 @@ export default function StepsScreen() {
             {manualInput.length > 0 && parseInt(manualInput, 10) > 0 && (
               <View style={styles.previewRow}>
                 <View style={styles.previewItem}>
-                  <Ionicons name="flame" size={14} color={Colors.amber} />
+                  <Ionicons name="flame" size={14} color={colors.amber} />
                   <Text style={styles.previewVal}>
                     +{stepsToCalories(parseInt(manualInput, 10), user.weight)} kcal
                   </Text>
@@ -471,7 +474,7 @@ export default function StepsScreen() {
               activeOpacity={0.85}
               disabled={!manualInput || parseInt(manualInput, 10) <= 0}
             >
-              <Ionicons name="checkmark-circle" size={18} color={Colors.bg} />
+              <Ionicons name="checkmark-circle" size={18} color={colors.white} />
               <Text style={styles.saveBtnTxt}>Add Steps</Text>
             </TouchableOpacity>
           </View>
@@ -517,7 +520,7 @@ export default function StepsScreen() {
               <TextInput
                 style={styles.stepInput}
                 placeholder="Custom goal..."
-                placeholderTextColor={Colors.muted}
+                placeholderTextColor={colors.muted}
                 keyboardType="number-pad"
                 value={goalInput}
                 onChangeText={setGoalInput}
@@ -532,7 +535,7 @@ export default function StepsScreen() {
               activeOpacity={0.85}
               disabled={parseInt(goalInput, 10) < 1000}
             >
-              <Ionicons name="checkmark-circle" size={18} color={Colors.bg} />
+              <Ionicons name="checkmark-circle" size={18} color={colors.white} />
               <Text style={styles.saveBtnTxt}>Save Goal</Text>
             </TouchableOpacity>
           </View>
@@ -544,19 +547,19 @@ export default function StepsScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
 
   // Ring section
   ringSection: { alignItems: 'center', gap: 12, paddingVertical: 8 },
-  stepsNum: { ...Typography.hero, color: Colors.text.primary },
-  stepsGoal: { ...Typography.caption, color: Colors.muted },
+  stepsNum: { ...Typography.hero, color: colors.text.primary },
+  stepsGoal: { ...Typography.caption, color: colors.muted },
   ringStats: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 16 },
   ringStat: { alignItems: 'center', gap: 2 },
-  ringStatVal: { ...Typography.h4, color: Colors.text.primary },
-  ringStatLabel: { ...Typography.micro, color: Colors.muted },
-  ringStatDivider: { width: 1, height: 30, backgroundColor: Colors.cardBorder },
+  ringStatVal: { ...Typography.h4, color: colors.text.primary },
+  ringStatLabel: { ...Typography.micro, color: colors.muted },
+  ringStatDivider: { width: 1, height: 30, backgroundColor: colors.cardBorder },
   ringPctBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: STEPS_COLOR + '15',
@@ -579,37 +582,37 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  logStepsTxt: { ...Typography.bodyBold, color: Colors.bg },
+  logStepsTxt: { ...Typography.bodyBold, color: colors.white },
 
   // Chart
   chartLegend: { flexDirection: 'row', gap: 16, marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 2 },
-  legendText: { ...Typography.caption, color: Colors.muted },
+  legendText: { ...Typography.caption, color: colors.muted },
 
   // Weekly summary
   weekSummary: {
     flexDirection: 'row', justifyContent: 'space-around',
     marginTop: 16, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: Colors.cardBorder,
+    borderTopWidth: 1, borderTopColor: colors.cardBorder,
   },
   weekSumItem: { alignItems: 'center', gap: 2 },
   weekSumVal: { ...Typography.h4 },
-  weekSumLabel: { ...Typography.micro, color: Colors.muted },
-  weekSumDivider: { width: 1, height: 32, backgroundColor: Colors.cardBorder, alignSelf: 'center' },
+  weekSumLabel: { ...Typography.micro, color: colors.muted },
+  weekSumDivider: { width: 1, height: 32, backgroundColor: colors.cardBorder, alignSelf: 'center' },
 
   // Motion
   motionRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
   motionItem: { alignItems: 'center', gap: 8 },
   motionPct: { ...Typography.captionBold },
-  motionLabel: { ...Typography.caption, color: Colors.muted },
+  motionLabel: { ...Typography.caption, color: colors.muted },
 
   // Goal
   goalToggle: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   goalInfo: { alignItems: 'center', marginBottom: 8 },
   goalValue: { ...Typography.hero },
-  goalUnit: { ...Typography.body, color: Colors.muted },
-  goalSub: { ...Typography.caption, color: Colors.muted, textAlign: 'center' },
+  goalUnit: { ...Typography.body, color: colors.muted },
+  goalSub: { ...Typography.caption, color: colors.muted, textAlign: 'center' },
   editGoalBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     alignSelf: 'center', marginTop: 12,
@@ -627,7 +630,7 @@ const styles = StyleSheet.create({
   tipCard: {
     flexDirection: 'row', gap: 12,
     marginTop: 12, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: Colors.cardBorder,
+    borderTopWidth: 1, borderTopColor: colors.cardBorder,
   },
   tipIconWrap: {
     width: 44, height: 44, borderRadius: 14,
@@ -635,8 +638,8 @@ const styles = StyleSheet.create({
   },
   tipEmoji: { fontSize: 22 },
   tipContent: { flex: 1, gap: 3 },
-  tipTitle: { ...Typography.bodyBold, color: Colors.text.primary },
-  tipDesc: { ...Typography.caption, color: Colors.muted, lineHeight: 17 },
+  tipTitle: { ...Typography.bodyBold, color: colors.text.primary },
+  tipDesc: { ...Typography.caption, color: colors.muted, lineHeight: 17 },
 
   // Modal
   modalOverlay: {
@@ -645,18 +648,18 @@ const styles = StyleSheet.create({
   },
   modalDismiss: { flex: 1 },
   modalSheet: {
-    backgroundColor: Colors.card,
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, paddingBottom: 40,
     ...Shadows.card,
   },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: Colors.muted + '40',
+    backgroundColor: colors.muted + '40',
     alignSelf: 'center', marginBottom: 20,
   },
-  modalTitle: { ...Typography.h2, color: Colors.text.primary, textAlign: 'center' },
-  modalSubtitle: { ...Typography.caption, color: Colors.muted, textAlign: 'center', marginTop: 4, marginBottom: 20 },
+  modalTitle: { ...Typography.h2, color: colors.text.primary, textAlign: 'center' },
+  modalSubtitle: { ...Typography.caption, color: colors.muted, textAlign: 'center', marginTop: 4, marginBottom: 20 },
 
   // Quick add
   quickAddRow: { flexDirection: 'row', gap: 8, marginBottom: 20, flexWrap: 'wrap', justifyContent: 'center' },
@@ -673,24 +676,24 @@ const styles = StyleSheet.create({
   goalPill: {
     paddingHorizontal: 16, paddingVertical: 10,
     borderRadius: Radius.pill, borderWidth: 1,
-    borderColor: Colors.cardBorder, backgroundColor: Colors.card,
+    borderColor: colors.cardBorder, backgroundColor: colors.card,
   },
   goalPillActive: { backgroundColor: STEPS_COLOR + '18', borderColor: STEPS_COLOR },
-  goalPillTxt: { ...Typography.captionBold, color: Colors.muted },
+  goalPillTxt: { ...Typography.captionBold, color: colors.muted },
   goalPillTxtActive: { color: STEPS_COLOR },
 
   // Input
   inputRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.bg, borderRadius: Radius.md,
+    backgroundColor: colors.bg, borderRadius: Radius.md,
     paddingHorizontal: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    borderWidth: 1, borderColor: colors.cardBorder,
   },
   stepInput: {
     flex: 1, height: 52,
-    ...Typography.h3, color: Colors.text.primary,
+    ...Typography.h3, color: colors.text.primary,
   },
-  inputUnit: { ...Typography.caption, color: Colors.muted },
+  inputUnit: { ...Typography.caption, color: colors.muted },
 
   // Preview
   previewRow: {
@@ -698,7 +701,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', marginBottom: 16,
   },
   previewItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  previewVal: { ...Typography.captionBold, color: Colors.text.secondary },
+  previewVal: { ...Typography.captionBold, color: colors.text.secondary },
 
   // Save
   saveBtn: {
@@ -712,5 +715,5 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   saveBtnDisabled: { opacity: 0.4 },
-  saveBtnTxt: { ...Typography.bodyBold, color: Colors.bg },
+  saveBtnTxt: { ...Typography.bodyBold, color: colors.white },
 });

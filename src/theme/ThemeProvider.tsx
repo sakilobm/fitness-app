@@ -10,9 +10,9 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
-  runOnJS,
   Easing,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -50,7 +50,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     rotation.value = withTiming(360, { duration: 400, easing: Easing.out(Easing.cubic) }, () => {
       // Fade out the overlay
       opacity.value = withDelay(150, withTiming(0, { duration: 250 }, () => {
-        runOnJS(setIsTransitioning)(false);
+        scheduleOnRN(setIsTransitioning, false);
       }));
     });
   };
@@ -69,7 +69,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // 1. Fade in overlay mask quickly
     opacity.value = withTiming(0.96, { duration: 120 }, () => {
       // 2. Perform the state update and icon animation
-      runOnJS(applyThemeChange)(val);
+      scheduleOnRN(applyThemeChange, val);
     });
   };
 

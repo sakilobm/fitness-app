@@ -10,7 +10,8 @@ import GlassCard from '@/components/ui/GlassCard';
 import StatBadge from '@/components/ui/StatBadge';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { Colors, Typography, Radius } from '@/constants/theme';
+import { Typography, Radius, useTheme } from '@/constants/theme';
+import { ThemeColors } from '@/theme';
 import { router } from 'expo-router';
 import { useFitnessStore, useHydrationTracker } from '@/store/fitnessStore';
 
@@ -32,6 +33,8 @@ const initialLog: LogEntry[] = [
 ];
 
 function WaterCylinder({ filled }: { filled: number }) {
+  const { colors } = useTheme();
+  const cyS = React.useMemo(() => getCyStyles(colors), [colors]);
   const fillHeight = useSharedValue(0);
 
   useEffect(() => {
@@ -60,32 +63,34 @@ function WaterCylinder({ filled }: { filled: number }) {
   );
 }
 
-const cyS = StyleSheet.create({
+const getCyStyles = (colors: ThemeColors) => StyleSheet.create({
   track: {
     width: CYLINDER_W,
     height: CYLINDER_H,
     borderRadius: 60,
     backgroundColor: 'rgba(59,130,246,0.08)',
     borderWidth: 1.5,
-    borderColor: Colors.chart.water + '66',
+    borderColor: colors.chart.water + '66',
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
   fill: {
     width: '100%',
-    backgroundColor: Colors.chart.water + 'BB',
+    backgroundColor: colors.chart.water + 'BB',
   },
   waveRow: {
     position: 'absolute',
     left: 0, right: 0,
     alignItems: 'center',
   },
-  wave: { color: Colors.chart.water, opacity: 0.4, fontSize: 16, letterSpacing: -2 },
+  wave: { color: colors.chart.water, opacity: 0.4, fontSize: 16, letterSpacing: -2 },
 });
 
 const QUICK_AMOUNTS = [150, 250, 500];
 
 export default function WaterScreen() {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   const { user } = useFitnessStore();
@@ -138,20 +143,20 @@ export default function WaterScreen() {
         title="Water Tracking"
         subtitle="HYDRATION"
         icon={{ lib: 'Ionicons', name: 'water' }}
-        accentColor={Colors.chart.water}
+        accentColor={colors.chart.water}
         showBack
         onBack={() => router.back()}
       />
 
       {/* Hero cylinder */}
-      <GlassCard accentColor={Colors.chart.water}>
+      <GlassCard accentColor={colors.chart.water}>
         <View style={styles.heroSection}>
           <WaterCylinder filled={filled} />
           <View style={styles.heroText}>
             <Text style={styles.mlNum}>{totalMl}<Text style={styles.mlUnit}> ml</Text></Text>
             <Text style={styles.mlGoal}>of {goalMl} ml goal</Text>
             <View style={[styles.mlBadge, goalMet && styles.goalMetBadge]}>
-              <Ionicons name={goalMet ? "trophy" : "water"} size={11} color={goalMet ? Colors.amber : Colors.chart.water} />
+              <Ionicons name={goalMet ? "trophy" : "water"} size={11} color={goalMet ? colors.amber : colors.chart.water} />
               <Text style={[styles.mlBadgeText, goalMet && styles.goalMetBadgeText]}>
                 {goalMet ? 'Goal Achieved!' : `${Math.round(filled * 100)}% hydrated`}
               </Text>
@@ -162,16 +167,16 @@ export default function WaterScreen() {
         {/* Goal met reward banner (Option A - Recommended) */}
         {goalMet && (
           <View style={styles.rewardBanner}>
-            <Ionicons name="sparkles" size={16} color={Colors.amber} />
+            <Ionicons name="sparkles" size={16} color={colors.amber} />
             <Text style={styles.rewardText}>🎉 Daily Hydration Goal Achieved! Good job!</Text>
-            <Ionicons name="sparkles" size={16} color={Colors.amber} />
+            <Ionicons name="sparkles" size={16} color={colors.amber} />
           </View>
         )}
       </GlassCard>
 
       {/* Quick add */}
-      <GlassCard accentColor={Colors.chart.water}>
-        <SectionHeader title="Quick Add" accentColor={Colors.chart.water} />
+      <GlassCard accentColor={colors.chart.water}>
+        <SectionHeader title="Quick Add" accentColor={colors.chart.water} />
         <View style={styles.quickRow}>
           {QUICK_AMOUNTS.map((ml) => (
             <TouchableOpacity
@@ -180,7 +185,7 @@ export default function WaterScreen() {
               onPress={() => addWater(ml)}
               activeOpacity={0.75}
             >
-              <Ionicons name="water" size={20} color={Colors.chart.water} />
+              <Ionicons name="water" size={20} color={colors.chart.water} />
               <Text style={styles.quickMl}>{ml} ml</Text>
             </TouchableOpacity>
           ))}
@@ -193,18 +198,18 @@ export default function WaterScreen() {
             }}
             activeOpacity={0.75}
           >
-            <Ionicons name="create-outline" size={20} color={Colors.muted} />
-            <Text style={[styles.quickMl, { color: Colors.muted }]}>Custom</Text>
+            <Ionicons name="create-outline" size={20} color={colors.muted} />
+            <Text style={[styles.quickMl, { color: colors.muted }]}>Custom</Text>
           </TouchableOpacity>
         </View>
       </GlassCard>
 
       {/* Log history */}
       <GlassCard>
-        <SectionHeader title="Today's Log" accentColor={Colors.chart.water} />
+        <SectionHeader title="Today's Log" accentColor={colors.chart.water} />
         {log.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="water-outline" size={44} color={Colors.muted} />
+            <Ionicons name="water-outline" size={44} color={colors.muted} />
             <Text style={styles.emptyText}>No logs yet — start drinking!</Text>
           </View>
         ) : (
@@ -218,13 +223,13 @@ export default function WaterScreen() {
                 <View style={styles.logInfo}>
                   <Text style={styles.logTime}>{entry.time}</Text>
                   <View style={styles.logPill}>
-                    <Ionicons name="water" size={10} color={Colors.chart.water} />
+                    <Ionicons name="water" size={10} color={colors.chart.water} />
                     <Text style={styles.logPillText}>{entry.ml} ml</Text>
                   </View>
                   
                   {/* Delete button (Option A - Recommended) */}
                   <TouchableOpacity style={styles.deleteLogBtn} onPress={() => handleDeleteLog(entry.id)} activeOpacity={0.75}>
-                    <Ionicons name="close-circle" size={16} color={Colors.danger + '88'} />
+                    <Ionicons name="close-circle" size={16} color={colors.danger + '88'} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -242,39 +247,39 @@ export default function WaterScreen() {
         }}
         activeOpacity={0.9}
       >
-        <GlassCard accentColor={Colors.chart.water}>
+        <GlassCard accentColor={colors.chart.water}>
           <SectionHeader 
             title="Daily Goal Target" 
-            accentColor={Colors.chart.water}
+            accentColor={colors.chart.water}
             action="Change Target"
           />
           <View style={styles.goalRow}>
             <View style={styles.goalIconWrap}>
-              <Ionicons name="trophy" size={20} color={Colors.chart.water} />
+              <Ionicons name="trophy" size={20} color={colors.chart.water} />
             </View>
             <View style={styles.goalContent}>
               <Text style={styles.goalValue}>{goalMl} ml</Text>
               <Text style={styles.goalRange}>Recommended: 2,000–3,000 ml/day</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.chart.water} />
+            <Ionicons name="chevron-forward" size={18} color={colors.chart.water} />
           </View>
         </GlassCard>
       </TouchableOpacity>
 
       {/* Stats row connected to state */}
       <View style={styles.statsRow}>
-        <StatBadge label="Streak" value={`${streakVal + (goalMet ? 1 : 0)}d 🔥`} color={Colors.chart.water} />
-        <StatBadge label="Best Day" value={`${bestDay} ml`} color={Colors.chart.water} />
-        <StatBadge label="Avg/Day" value={`${avgDay} ml`} color={Colors.lime} />
+        <StatBadge label="Streak" value={`${streakVal + (goalMet ? 1 : 0)}d 🔥`} color={colors.chart.water} />
+        <StatBadge label="Best Day" value={`${bestDay} ml`} color={colors.chart.water} />
+        <StatBadge label="Avg/Day" value={`${avgDay} ml`} color={colors.lime} />
       </View>
 
       {/* Reminder chip */}
       <TouchableOpacity style={styles.reminderChip} activeOpacity={0.8}>
         <View style={styles.reminderIconWrap}>
-          <Ionicons name="alarm" size={18} color={Colors.amber} />
+          <Ionicons name="alarm" size={18} color={colors.amber} />
         </View>
         <Text style={styles.reminderText}>Next reminder at 3:00 PM</Text>
-        <Ionicons name="chevron-forward" size={18} color={Colors.amber} />
+        <Ionicons name="chevron-forward" size={18} color={colors.amber} />
       </TouchableOpacity>
 
       {/* Custom Log entry Modal */}
@@ -290,7 +295,7 @@ export default function WaterScreen() {
               <View style={styles.modalHeaderRow}>
                 <Text style={styles.modalTitle}>Custom Amount</Text>
                 <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowCustom(false)}>
-                  <Ionicons name="close" size={20} color={Colors.text.primary} />
+                  <Ionicons name="close" size={20} color={colors.text.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -298,12 +303,12 @@ export default function WaterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Milliliters (ml)</Text>
                 <View style={[styles.inputFieldWrap, !!customError && styles.inputFieldError]}>
-                  <Ionicons name="water-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                  <Ionicons name="water-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
                     placeholder="250"
-                    placeholderTextColor={Colors.muted}
+                    placeholderTextColor={colors.muted}
                     value={customVal}
                     onChangeText={(t) => {
                       setCustomVal(t);
@@ -330,7 +335,7 @@ export default function WaterScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="water" size={16} color={Colors.white} />
+                <Ionicons name="water" size={16} color={colors.white} />
                 <Text style={styles.modalSaveBtnText}>Add Water Intake</Text>
               </TouchableOpacity>
 
@@ -355,7 +360,7 @@ export default function WaterScreen() {
               <View style={styles.modalHeaderRow}>
                 <Text style={styles.modalTitle}>Daily Hydration Goal</Text>
                 <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowGoalModal(false)}>
-                  <Ionicons name="close" size={20} color={Colors.text.primary} />
+                  <Ionicons name="close" size={20} color={colors.text.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -380,7 +385,7 @@ export default function WaterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Or Enter Precise Target (ml)</Text>
                 <View style={styles.inputFieldWrap}>
-                  <Ionicons name="trophy-outline" size={16} color={Colors.muted} style={styles.inputIcon} />
+                  <Ionicons name="trophy-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                   <TextInput
                     style={styles.textInput}
                     keyboardType="numeric"
@@ -404,7 +409,7 @@ export default function WaterScreen() {
                 disabled={tempGoalVal < 500 || tempGoalVal > 10000}
                 activeOpacity={0.8}
               >
-                <Ionicons name="checkmark-circle" size={16} color={Colors.white} />
+                <Ionicons name="checkmark-circle" size={16} color={colors.white} />
                 <Text style={styles.modalSaveBtnText}>Save Daily Goal</Text>
               </TouchableOpacity>
 
@@ -419,31 +424,31 @@ export default function WaterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16, gap: 16 },
 
   heroSection: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingVertical: 8, justifyContent: 'center' },
   heroText: { gap: 6 },
-  mlNum: { ...Typography.hero, color: Colors.chart.water },
-  mlUnit: { ...Typography.h2, color: Colors.chart.water },
-  mlGoal: { ...Typography.caption, color: Colors.muted },
+  mlNum: { ...Typography.hero, color: colors.chart.water },
+  mlUnit: { ...Typography.h2, color: colors.chart.water },
+  mlGoal: { ...Typography.caption, color: colors.muted },
   mlBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: Colors.chart.water + '18',
+    backgroundColor: colors.chart.water + '18',
     borderRadius: Radius.pill,
     paddingHorizontal: 12, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.chart.water + '40',
+    borderWidth: 1, borderColor: colors.chart.water + '40',
   },
-  mlBadgeText: { ...Typography.captionBold, color: Colors.chart.water },
+  mlBadgeText: { ...Typography.captionBold, color: colors.chart.water },
   goalMetBadge: {
-    backgroundColor: Colors.amber + '18',
-    borderColor: Colors.amber + '40',
+    backgroundColor: colors.amber + '18',
+    borderColor: colors.amber + '40',
   },
   goalMetBadgeText: {
-    color: Colors.amber,
+    color: colors.amber,
   },
 
   rewardBanner: {
@@ -451,8 +456,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.amber + '12',
-    borderColor: Colors.amber + '35',
+    backgroundColor: colors.amber + '12',
+    borderColor: colors.amber + '35',
     borderWidth: 1,
     padding: 10,
     borderRadius: Radius.md,
@@ -460,40 +465,40 @@ const styles = StyleSheet.create({
   },
   rewardText: {
     ...Typography.captionBold,
-    color: Colors.amber,
+    color: colors.amber,
   },
 
   quickRow: { flexDirection: 'row', gap: 8 },
   quickBtn: {
     flex: 1, alignItems: 'center', gap: 6,
-    backgroundColor: Colors.chart.water + '12',
+    backgroundColor: colors.chart.water + '12',
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.chart.water + '35',
+    borderWidth: 1, borderColor: colors.chart.water + '35',
     paddingVertical: 12,
   },
-  customBtn: { backgroundColor: Colors.card, borderColor: Colors.cardBorder },
-  quickMl: { ...Typography.captionBold, color: Colors.text.primary },
+  customBtn: { backgroundColor: colors.card, borderColor: colors.cardBorder },
+  quickMl: { ...Typography.captionBold, color: colors.text.primary },
 
   emptyState: { alignItems: 'center', gap: 8, paddingVertical: 24 },
-  emptyText: { ...Typography.body, color: Colors.muted },
+  emptyText: { ...Typography.body, color: colors.muted },
 
   logList: { gap: 0 },
   logEntry: { flexDirection: 'row', gap: 12, minHeight: 48 },
   logTimeline: { alignItems: 'center', width: 20 },
-  logDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.chart.water, marginTop: 4 },
-  logLine: { flex: 1, width: 1, backgroundColor: Colors.cardBorder, marginTop: 4 },
+  logDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.chart.water, marginTop: 4 },
+  logLine: { flex: 1, width: 1, backgroundColor: colors.cardBorder, marginTop: 4 },
   logInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 12 },
-  logTime: { ...Typography.caption, color: Colors.muted, width: 40 },
+  logTime: { ...Typography.caption, color: colors.muted, width: 40 },
   logPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: Colors.chart.water + '18',
+    backgroundColor: colors.chart.water + '18',
     borderRadius: Radius.pill,
     paddingHorizontal: 12, paddingVertical: 4,
-    borderWidth: 1, borderColor: Colors.chart.water + '35',
+    borderWidth: 1, borderColor: colors.chart.water + '35',
   },
-  logPillText: { ...Typography.captionBold, color: Colors.chart.water },
+  logPillText: { ...Typography.captionBold, color: colors.chart.water },
   deleteLogBtn: {
     padding: 4,
     marginLeft: 'auto',
@@ -507,88 +512,88 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: Colors.chart.water + '15',
+    backgroundColor: colors.chart.water + '15',
     borderWidth: 1,
-    borderColor: Colors.chart.water + '30',
+    borderColor: colors.chart.water + '30',
     alignItems: 'center',
     justifyContent: 'center',
   },
   goalContent: { flex: 1, gap: 2 },
-  goalValue: { ...Typography.h2, color: Colors.chart.water },
-  goalRange: { ...Typography.caption, color: Colors.muted },
+  goalValue: { ...Typography.h2, color: colors.chart.water },
+  goalRange: { ...Typography.caption, color: colors.muted },
 
   statsRow: { flexDirection: 'row', gap: 8 },
 
   reminderChip: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.amberOverlay,
+    backgroundColor: colors.amberOverlay,
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.amber + '35',
+    borderWidth: 1, borderColor: colors.amber + '35',
     padding: 14,
   },
   reminderIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: Colors.amber + '15',
+    backgroundColor: colors.amber + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reminderText: { ...Typography.body, color: Colors.text.primary, flex: 1 },
+  reminderText: { ...Typography.body, color: colors.text.primary, flex: 1 },
 
   // Modal styles
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(28, 28, 30, 0.60)' },
   modalKeyboard: { flex: 1, justifyContent: 'flex-end', width: '100%' },
   modalSheet: {
-    backgroundColor: Colors.ivory, borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
+    backgroundColor: colors.ivory, borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
     paddingTop: 20, paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 24,
     minHeight: 400, maxHeight: '90%',
     borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 0,
-    borderColor: Colors.lime + '20',
+    borderColor: colors.lime + '20',
   },
   modalHandle: {
     alignSelf: 'center', width: 40, height: 4,
-    backgroundColor: Colors.muted + '44', borderRadius: 2, marginBottom: 12,
+    backgroundColor: colors.muted + '44', borderRadius: 2, marginBottom: 12,
   },
   modalHeaderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20,
   },
-  modalTitle: { ...Typography.h3, color: Colors.text.primary },
+  modalTitle: { ...Typography.h3, color: colors.text.primary },
   modalCloseBtn: {
-    width: 32, height: 32, borderRadius: Radius.pill, backgroundColor: Colors.bg,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.cardBorder,
+    width: 32, height: 32, borderRadius: Radius.pill, backgroundColor: colors.bg,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.cardBorder,
   },
   inputGroup: { gap: 6, marginBottom: 16 },
-  inputLabel: { ...Typography.captionBold, color: Colors.text.primary },
+  inputLabel: { ...Typography.captionBold, color: colors.text.primary },
   inputFieldWrap: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card,
+    borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,
     paddingHorizontal: 12, height: 46,
   },
-  inputFieldError: { borderColor: Colors.danger, backgroundColor: Colors.danger + '05' },
+  inputFieldError: { borderColor: colors.danger, backgroundColor: colors.danger + '05' },
   inputIcon: { marginRight: 8 },
-  textInput: { flex: 1, ...Typography.body, color: Colors.text.primary, padding: 0 },
-  errorText: { fontSize: 9, fontWeight: '600', color: Colors.danger, marginTop: 2 },
+  textInput: { flex: 1, ...Typography.body, color: colors.text.primary, padding: 0 },
+  errorText: { fontSize: 9, fontWeight: '600', color: colors.danger, marginTop: 2 },
   modalInput: {
-    backgroundColor: Colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
-    padding: 12, color: Colors.text.primary, ...Typography.h3, textAlign: 'center',
+    backgroundColor: colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,
+    padding: 12, color: colors.text.primary, ...Typography.h3, textAlign: 'center',
   },
   modalSaveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.lime, borderRadius: Radius.md, height: 48, marginTop: 12,
+    backgroundColor: colors.lime, borderRadius: Radius.md, height: 48, marginTop: 12,
   },
-  modalSaveBtnText: { ...Typography.bodyBold, color: Colors.white },
+  modalSaveBtnText: { ...Typography.bodyBold, color: colors.white },
   modalCancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
-  modalCancelBtnText: { ...Typography.bodyBold, color: Colors.danger },
+  modalCancelBtnText: { ...Typography.bodyBold, color: colors.danger },
 
   // Goal Editor Pills
   goalPillsContainer: { gap: 6, marginBottom: 16 },
   goalPillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   goalPill: {
-    flex: 1, minWidth: '28%', height: 38, borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.cardBorder,
-    backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center',
+    flex: 1, minWidth: '28%', height: 38, borderRadius: Radius.pill, borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center',
   },
-  goalPillActive: { borderColor: Colors.amber, backgroundColor: Colors.amber + '12' },
-  goalPillText: { ...Typography.captionBold, color: Colors.muted },
-  goalPillTextActive: { color: Colors.amber },
+  goalPillActive: { borderColor: colors.amber, backgroundColor: colors.amber + '12' },
+  goalPillText: { ...Typography.captionBold, color: colors.muted },
+  goalPillTextActive: { color: colors.amber },
 });
