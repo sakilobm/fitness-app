@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,11 @@ import { useProfileSettings, useThemeMode } from '@/store/fitnessStore';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
+import Animated, {
+  FadeInUp, FadeInDown,
+  useSharedValue, useAnimatedStyle,
+  withSpring, withTiming, interpolate,
+} from 'react-native-reanimated';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -64,6 +69,31 @@ const AVATAR_PRESETS = [
   { id: 'av5', label: 'Boxing', url: 'https://images.unsplash.com/photo-1491756906593-95123989ad30?w=150&auto=format&fit=crop&q=80' },
   { id: 'av6', label: 'Cyclist', url: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=150&auto=format&fit=crop&q=80' },
 ];
+
+// ─── Spring-press animated row ────────────────────────────────────────────────
+// Each settings row uses this for a satisfying scale+opacity micro-interaction
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+function PressableRow({ onPress, children, style }: { onPress?: () => void; children: React.ReactNode; style?: any }) {
+  const scale   = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const aStyle  = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+  const handleIn  = () => { scale.value = withSpring(0.97, { damping: 18, stiffness: 300 }); opacity.value = withTiming(0.85, { duration: 80 }); };
+  const handleOut = () => { scale.value = withSpring(1,    { damping: 14, stiffness: 200 }); opacity.value = withTiming(1,    { duration: 120 }); };
+  return (
+    <AnimatedTouchable
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handleIn}
+      onPressOut={handleOut}
+      style={[aStyle, style]}
+    >
+      {children}
+    </AnimatedTouchable>
+  );
+}
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -418,115 +448,197 @@ export default function ProfileScreen() {
         </View>
       </GlassCard>
 
-      {/* Static Settings Settings */}
-      <GlassCard>
-        <SectionHeader title="Settings" accentColor={Colors.muted} />
-        <View style={styles.settingsList}>
-          {/* Action: Recalibrate Fitness Goals via Setup Wizard */}
-          <TouchableOpacity style={styles.settingRow} activeOpacity={0.75} onPress={() => router.push('/(auth)/setup')}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.bubble.green }]}>
+      {/* ══ SETTINGS ══════════════════════════════════════════════════════════ */}
+
+      {/* Group 1 — Actions */}
+      <Animated.View entering={FadeInUp.delay(100).springify().damping(18)}>
+        <View style={sS.groupLabel}>
+          <View style={[sS.groupDot, { backgroundColor: Colors.lime }]} />
+          <Text style={sS.groupLabelText}>Actions</Text>
+        </View>
+        <View style={sS.card}>
+          <PressableRow style={sS.row} onPress={() => router.push('/(auth)/setup')}>
+            <View style={[sS.iconBubble, { backgroundColor: Colors.bubble.green }]}>
               <Ionicons name="sparkles" size={18} color={Colors.lime} />
             </View>
-            <Text style={[styles.settingLabel, { color: Colors.lime }]}>Recalibrate Fitness Engine</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
-          </TouchableOpacity>
+            <View style={sS.rowContent}>
+              <Text style={[sS.rowTitle, { color: Colors.lime }]}>Recalibrate Fitness Engine</Text>
+              <Text style={sS.rowSub}>Re-run setup wizard</Text>
+            </View>
+            <View style={sS.chevronWrap}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+            </View>
+          </PressableRow>
 
-          <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: '#6366F1' + '15' }]}>
-              <Ionicons name="moon" size={18} color="#6366F1" />
-            </View>
-            <Text style={styles.settingLabel}>Dark Theme</Text>
-            <Switch
-              value={isDarkMode} onValueChange={setIsDarkMode}
-              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '88' }}
-              thumbColor={isDarkMode ? Colors.lime : Colors.muted}
-            />
-          </View>
+          <View style={sS.divider} />
 
-          <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.amber + '15' }]}>
-              <MaterialCommunityIcons name="scale-bathroom" size={18} color={Colors.amber} />
-            </View>
-            <Text style={styles.settingLabel}>Weight Unit</Text>
-            <View style={styles.unitToggle}>
-              <TouchableOpacity style={[styles.unitBtn, unitKg && styles.unitBtnActive]} onPress={() => setUnitKg(true)}>
-                <Text style={[styles.unitBtnText, unitKg && styles.unitBtnTextActive]}>kg</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.unitBtn, !unitKg && styles.unitBtnActive]} onPress={() => setUnitKg(false)}>
-                <Text style={[styles.unitBtnText, !unitKg && styles.unitBtnTextActive]}>lbs</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.chart.water + '15' }]}>
-              <Ionicons name="water" size={18} color={Colors.chart.water} />
-            </View>
-            <Text style={styles.settingLabel}>Volume Unit</Text>
-            <View style={styles.unitToggle}>
-              <TouchableOpacity style={[styles.unitBtn, unitMl && styles.unitBtnActive]} onPress={() => setUnitMl(true)}>
-                <Text style={[styles.unitBtnText, unitMl && styles.unitBtnTextActive]}>ml</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.unitBtn, !unitMl && styles.unitBtnActive]} onPress={() => setUnitMl(false)}>
-                <Text style={[styles.unitBtnText, !unitMl && styles.unitBtnTextActive]}>oz</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.lime + '15' }]}>
-              <Ionicons name="notifications" size={18} color={Colors.lime} />
-            </View>
-            <Text style={styles.settingLabel}>Notifications</Text>
-            <Switch
-              value={notifications} onValueChange={setNotifications}
-              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '88' }}
-              thumbColor={notifications ? Colors.lime : Colors.muted}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.settingRow} activeOpacity={0.75}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.chart.fibre + '15' }]}>
-              <Ionicons name="download-outline" size={18} color={Colors.chart.fibre} />
-            </View>
-            <Text style={styles.settingLabel}>Export Data</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingRow} activeOpacity={0.75}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.danger + '15' }]}>
-              <Ionicons name="lock-closed" size={18} color={Colors.danger} />
-            </View>
-            <Text style={styles.settingLabel}>Privacy & Security</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.settingRow}
-            activeOpacity={0.75}
-            onPress={() => setShowSplashPreview(true)}
-          >
-            <View style={[styles.settingIconWrap, { backgroundColor: 'rgba(46,125,94,0.18)' }]}>
+          <PressableRow style={sS.row} onPress={() => setShowSplashPreview(true)}>
+            <View style={[sS.iconBubble, { backgroundColor: 'rgba(46,125,94,0.15)' }]}>
               <Ionicons name="flash" size={18} color="#2E7D5E" />
             </View>
-            <Text style={styles.settingLabel}>Preview Splash Screen</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.muted} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} activeOpacity={0.75} onPress={logoutUser}>
-            <View style={[styles.settingIconWrap, { backgroundColor: Colors.danger + '22' }]}>
-              <Ionicons name="log-out" size={18} color={Colors.danger} />
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Preview Splash Screen</Text>
+              <Text style={sS.rowSub}>Watch the startup animation</Text>
             </View>
-            <Text style={[styles.settingLabel, { color: Colors.danger, fontWeight: '700' }]}>Log Out</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.danger} />
-          </TouchableOpacity>
+            <View style={sS.chevronWrap}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+            </View>
+          </PressableRow>
         </View>
-      </GlassCard>
+      </Animated.View>
 
-      <View style={styles.versionBlock}>
-        <Text style={styles.version}>FitForge v1.0.0</Text>
-        <Text style={styles.versionSub}>Made with 💚 for a healthier you</Text>
-      </View>
+      {/* Group 2 — Preferences */}
+      <Animated.View entering={FadeInUp.delay(180).springify().damping(18)}>
+        <View style={sS.groupLabel}>
+          <View style={[sS.groupDot, { backgroundColor: '#6366F1' }]} />
+          <Text style={sS.groupLabelText}>Preferences</Text>
+        </View>
+        <View style={sS.card}>
+          {/* Dark Theme toggle */}
+          <View style={sS.row}>
+            <View style={[sS.iconBubble, { backgroundColor: '#6366F115' }]}>
+              <Ionicons name="moon" size={18} color="#6366F1" />
+            </View>
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Dark Theme</Text>
+              <Text style={sS.rowSub}>{isDarkMode ? 'Dark mode on' : 'Light mode on'}</Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={setIsDarkMode}
+              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '99' }}
+              thumbColor={isDarkMode ? Colors.lime : '#ccc'}
+            />
+          </View>
+
+          <View style={sS.divider} />
+
+          {/* Notifications toggle */}
+          <View style={sS.row}>
+            <View style={[sS.iconBubble, { backgroundColor: Colors.lime + '18' }]}>
+              <Ionicons name="notifications" size={18} color={Colors.lime} />
+            </View>
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Push Notifications</Text>
+              <Text style={sS.rowSub}>{notifications ? 'Enabled' : 'Disabled'}</Text>
+            </View>
+            <Switch
+              value={notifications}
+              onValueChange={setNotifications}
+              trackColor={{ false: 'rgba(0,0,0,0.10)', true: Colors.lime + '99' }}
+              thumbColor={notifications ? Colors.lime : '#ccc'}
+            />
+          </View>
+
+          <View style={sS.divider} />
+
+          {/* Weight unit pill */}
+          <View style={sS.row}>
+            <View style={[sS.iconBubble, { backgroundColor: Colors.amber + '18' }]}>
+              <MaterialCommunityIcons name="scale-bathroom" size={18} color={Colors.amber} />
+            </View>
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Weight Unit</Text>
+            </View>
+            <View style={sS.pillToggle}>
+              <TouchableOpacity
+                style={[sS.pill, unitKg && sS.pillActive]}
+                onPress={() => setUnitKg(true)}
+              >
+                <Text style={[sS.pillText, unitKg && sS.pillTextActive]}>kg</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[sS.pill, !unitKg && sS.pillActive]}
+                onPress={() => setUnitKg(false)}
+              >
+                <Text style={[sS.pillText, !unitKg && sS.pillTextActive]}>lbs</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={sS.divider} />
+
+          {/* Volume unit pill */}
+          <View style={sS.row}>
+            <View style={[sS.iconBubble, { backgroundColor: Colors.chart.water + '18' }]}>
+              <Ionicons name="water" size={18} color={Colors.chart.water} />
+            </View>
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Volume Unit</Text>
+            </View>
+            <View style={sS.pillToggle}>
+              <TouchableOpacity
+                style={[sS.pill, unitMl && sS.pillActive]}
+                onPress={() => setUnitMl(true)}
+              >
+                <Text style={[sS.pillText, unitMl && sS.pillTextActive]}>ml</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[sS.pill, !unitMl && sS.pillActive]}
+                onPress={() => setUnitMl(false)}
+              >
+                <Text style={[sS.pillText, !unitMl && sS.pillTextActive]}>oz</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* Group 3 — Privacy & Data */}
+      <Animated.View entering={FadeInUp.delay(260).springify().damping(18)}>
+        <View style={sS.groupLabel}>
+          <View style={[sS.groupDot, { backgroundColor: Colors.danger }]} />
+          <Text style={sS.groupLabelText}>Privacy & Data</Text>
+        </View>
+        <View style={sS.card}>
+          <PressableRow style={sS.row}>
+            <View style={[sS.iconBubble, { backgroundColor: Colors.chart.fibre + '18' }]}>
+              <Ionicons name="download-outline" size={18} color={Colors.chart.fibre} />
+            </View>
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Export My Data</Text>
+              <Text style={sS.rowSub}>Download a copy of your data</Text>
+            </View>
+            <View style={sS.chevronWrap}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+            </View>
+          </PressableRow>
+
+          <View style={sS.divider} />
+
+          <PressableRow style={sS.row}>
+            <View style={[sS.iconBubble, { backgroundColor: Colors.danger + '15' }]}>
+              <Ionicons name="lock-closed" size={18} color={Colors.danger} />
+            </View>
+            <View style={sS.rowContent}>
+              <Text style={sS.rowTitle}>Privacy & Security</Text>
+              <Text style={sS.rowSub}>Manage your account security</Text>
+            </View>
+            <View style={sS.chevronWrap}>
+              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+            </View>
+          </PressableRow>
+        </View>
+      </Animated.View>
+
+      {/* Logout — standalone danger card */}
+      <Animated.View entering={FadeInUp.delay(340).springify().damping(18)}>
+        <PressableRow style={sS.logoutCard} onPress={logoutUser}>
+          <View style={[sS.iconBubble, { backgroundColor: Colors.danger + '20' }]}>
+            <Ionicons name="log-out" size={18} color={Colors.danger} />
+          </View>
+          <Text style={sS.logoutLabel}>Log Out</Text>
+          <Ionicons name="chevron-forward" size={16} color={Colors.danger + 'AA'} />
+        </PressableRow>
+      </Animated.View>
+
+
+      <Animated.View entering={FadeInUp.delay(420).springify().damping(18)}>
+        <View style={sS.versionBlock}>
+          <Text style={sS.version}>FitForge v1.0.0</Text>
+          <Text style={sS.versionSub}>Made with 💚 for a healthier you</Text>
+        </View>
+      </Animated.View>
 
       {/* Edit Profile Modal (Option A - Recommended Segmented-tab Overlay) */}
       <Modal
@@ -1536,4 +1648,64 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: Colors.text.secondary,
   },
+});
+
+// ─── Settings section styles (sS) ────────────────────────────────────────────
+const sS = StyleSheet.create({
+  groupLabel: {
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4,
+  },
+  groupDot: { width: 6, height: 6, borderRadius: 3 },
+  groupLabelText: {
+    fontSize: 11, fontWeight: '700', letterSpacing: 1.2,
+    color: Colors.muted, textTransform: 'uppercase',
+  },
+  card: {
+    backgroundColor: Colors.ivory,
+    borderRadius: 18,
+    borderWidth: 1, borderColor: Colors.cardBorder,
+    overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14, gap: 14,
+  },
+  divider: {
+    height: 1, backgroundColor: Colors.cardBorder,
+    marginLeft: 68,
+  },
+  iconBubble: {
+    width: 38, height: 38, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rowContent: { flex: 1 },
+  rowTitle: {
+    fontSize: 15, fontWeight: '600', color: Colors.text.primary, marginBottom: 1,
+  },
+  rowSub: { fontSize: 12, color: Colors.muted },
+  chevronWrap: {
+    width: 22, height: 22, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 7,
+  },
+  pillToggle: {
+    flexDirection: 'row', gap: 2,
+    backgroundColor: Colors.cardBorder, borderRadius: 10, padding: 3,
+  },
+  pill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8 },
+  pillActive: { backgroundColor: Colors.ivory },
+  pillText: { fontSize: 12, fontWeight: '600', color: Colors.muted },
+  pillTextActive: { color: Colors.lime },
+  logoutCard: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 15, gap: 14,
+    backgroundColor: Colors.danger + '0D',
+    borderRadius: 18, borderWidth: 1, borderColor: Colors.danger + '22',
+  },
+  logoutLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.danger },
+  versionBlock: { alignItems: 'center', paddingVertical: 12, gap: 3 },
+  version: { fontSize: 12, color: Colors.muted },
+  versionSub: { fontSize: 11, color: Colors.muted, opacity: 0.55 },
 });
