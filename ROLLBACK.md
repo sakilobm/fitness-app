@@ -1,5 +1,21 @@
 # Rollback Plan
 
+If version `2.5.1` (Android Native Haptic Exception & Settings Toasts Migration) needs to be reverted due to layout issues, Toast banner timing problems, or haptics behavior anomalies, use this guide.
+
+## Rollback Procedure (Reverting to v2.5.0)
+
+1. **Revert modified haptic utilities and settings screen files:**
+   ```powershell
+   git checkout v2.5.0 -- src/utils/haptics.ts app/settings.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.5.0` (Settings preferences and decoupled profile screen) needs to be reverted due to layout issues, navigation conflicts, or conversion bugs, use this guide.
 
 ## Rollback Procedure (Reverting to v2.4.3)

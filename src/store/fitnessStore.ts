@@ -81,6 +81,8 @@ const initialUserProfile: UserProfile = {
   volumeUnit: 'ml',
   notificationsEnabled: true,
   hapticsEnabled: true,
+  privateProfileEnabled: false,
+  appLockEnabled: false,
 };
 
 const initialMeals: Meal[] = [
@@ -251,6 +253,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
         if ('volumeUnit' in dbUpdate) { dbUpdate.volume_unit = dbUpdate.volumeUnit; delete dbUpdate.volumeUnit; }
         if ('notificationsEnabled' in dbUpdate) { dbUpdate.notifications_enabled = dbUpdate.notificationsEnabled; delete dbUpdate.notificationsEnabled; }
         if ('hapticsEnabled' in dbUpdate) { dbUpdate.haptics_enabled = dbUpdate.hapticsEnabled; delete dbUpdate.hapticsEnabled; }
+        delete dbUpdate.privateProfileEnabled;
+        delete dbUpdate.appLockEnabled;
         
         supabase.from('profiles').update(dbUpdate).eq('id', data.user.id).then();
       }
@@ -559,6 +563,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
           volumeUnit: profile.volume_unit || 'ml',
           notificationsEnabled: profile.notifications_enabled !== undefined ? profile.notifications_enabled : true,
           hapticsEnabled: profile.haptics_enabled !== undefined ? profile.haptics_enabled : true,
+          privateProfileEnabled: state.user.privateProfileEnabled,
+          appLockEnabled: state.user.appLockEnabled,
         }
       }));
     }
@@ -696,6 +702,8 @@ export function useProfileSettings() {
   const volumeUnit           = useFitnessStore((s) => s.user.volumeUnit);
   const notificationsEnabled = useFitnessStore((s) => s.user.notificationsEnabled);
   const hapticsEnabled       = useFitnessStore((s) => s.user.hapticsEnabled);
+  const privateProfileEnabled = useFitnessStore((s) => s.user.privateProfileEnabled);
+  const appLockEnabled       = useFitnessStore((s) => s.user.appLockEnabled);
   const setUser              = useFitnessStore((s) => s.setUser);
   const updateUserGoal       = useFitnessStore((s) => s.updateUserGoal);
   const updateUserMotto      = useFitnessStore((s) => s.updateUserMotto);
@@ -703,11 +711,13 @@ export function useProfileSettings() {
   // Reconstruct user object for screens that need the full shape (edit modal etc.)
   const user = { name, email, age, height, weight, goal, motto, profilePic,
                  calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
-                 weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled };
+                 weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled,
+                 privateProfileEnabled, appLockEnabled };
 
   return { user, name, email, age, height, weight, goal, motto, profilePic,
            calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
            weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled,
+           privateProfileEnabled, appLockEnabled,
            setUser, updateUserGoal, updateUserMotto };
 }
 

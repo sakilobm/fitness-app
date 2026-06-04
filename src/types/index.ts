@@ -62,6 +62,8 @@ export interface UserProfile {
   volumeUnit?: 'ml' | 'oz';
   notificationsEnabled?: boolean;
   hapticsEnabled?: boolean;
+  privateProfileEnabled?: boolean;
+  appLockEnabled?: boolean;
 }
 
 export interface WeightLog {

@@ -101,6 +101,8 @@ export default function SettingsScreen() {
   // Preference switches
   const [notifications, setNotifications] = useState(user.notificationsEnabled ?? true);
   const [haptics, setHaptics] = useState(user.hapticsEnabled ?? true);
+  const [privateProfile, setPrivateProfile] = useState(user.privateProfileEnabled ?? false);
+  const [appLock, setAppLock] = useState(user.appLockEnabled ?? false);
 
   // Modal / Overlay Controls
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -113,6 +115,20 @@ export default function SettingsScreen() {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+
+  // Premium Toast States & Helper
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'info' | 'success' | 'alert'>('info');
+
+  const showToast = (message: string, type: 'info' | 'success' | 'alert' = 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    triggerHaptic(type === 'success' ? 'success' : type === 'alert' ? 'error' : 'selection');
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  };
 
   // Handle Weight Unit Toggling with value conversion
   const handleWeightUnitChange = (newUnit: 'kg' | 'lbs') => {
@@ -134,7 +150,7 @@ export default function SettingsScreen() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Gallery access permissions are required to select an avatar.');
+        showToast('Gallery access permissions are required to select an avatar.', 'alert');
         return;
       }
 
@@ -148,6 +164,7 @@ export default function SettingsScreen() {
       if (!result.canceled && result.assets && result.assets[0]) {
         setFormProfilePic(result.assets[0].uri);
       }
+
     } catch (e) {
       console.warn('Image picker error: ', e);
     }
@@ -158,7 +175,7 @@ export default function SettingsScreen() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Camera permissions are required to capture an avatar photo.');
+        showToast('Camera permissions are required to capture an avatar photo.', 'alert');
         return;
       }
 
@@ -202,7 +219,7 @@ export default function SettingsScreen() {
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
-      Alert.alert('Validation Error', 'Please correct the errors in the basic metrics section before saving.');
+      showToast('Please correct errors in basic metrics section before saving.', 'alert');
       return;
     }
 
@@ -225,10 +242,11 @@ export default function SettingsScreen() {
       volumeUnit,
       notificationsEnabled: notifications,
       hapticsEnabled: haptics,
+      privateProfileEnabled: privateProfile,
+      appLockEnabled: appLock,
     });
 
-    triggerHaptic('success');
-    Alert.alert('Success', 'Settings saved and synced successfully.');
+    showToast('Settings saved and synced successfully.', 'success');
   };
 
   // ─── Sync Supabase manually ───────────────────────────────────────────────
@@ -257,13 +275,33 @@ export default function SettingsScreen() {
       setHaptics(updatedUser.hapticsEnabled ?? true);
       setWeightUnit(updatedUser.weightUnit ?? 'kg');
       setVolumeUnit(updatedUser.volumeUnit ?? 'ml');
-      triggerHaptic('success');
-      Alert.alert('Synchronized', 'All logs and profile details synced with Supabase cloud backup.');
+      setPrivateProfile(updatedUser.privateProfileEnabled ?? false);
+      setAppLock(updatedUser.appLockEnabled ?? false);
+      showToast('All logs and profile details synced with cloud backup.', 'success');
     } catch (e) {
-      triggerHaptic('error');
-      Alert.alert('Sync Offline', 'Could not sync with Supabase. Offline cache preserved.');
+      showToast('Could not sync with Supabase. Offline cache preserved.', 'info');
     } finally {
       setShowSyncing(false);
+    }
+  };
+
+  // ─── Change Account Password ───────────────────────────────────────────────
+  const handleChangePassword = async () => {
+    triggerHaptic('selection');
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user || !authData.user.email) {
+      showToast('Password change is only available for online cloud accounts.', 'info');
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(authData.user.email, {
+        redirectTo: 'fitforge://reset-password',
+      });
+      if (error) throw error;
+      showToast(`Password reset link sent to ${authData.user.email}.`, 'success');
+    } catch (e: any) {
+      showToast(e.message || 'Failed to send password reset request.', 'alert');
     }
   };
 
@@ -302,15 +340,14 @@ export default function SettingsScreen() {
         title: 'FitForge Personal Data Export',
       });
     } catch (e) {
-      Alert.alert('Error', 'Failed to share data export payload.');
+      showToast('Failed to share data export payload.', 'alert');
     }
   };
 
   // ─── Clear All History Database Purge ──────────────────────────────────────────
   const handleClearHistory = () => {
     if (clearConfirmText !== 'CLEAR') {
-      triggerHaptic('error');
-      Alert.alert('Invalid Confirmation', 'Please type the word CLEAR exactly to confirm data deletion.');
+      showToast('Please type CLEAR exactly to confirm deletion.', 'alert');
       return;
     }
 
@@ -338,10 +375,9 @@ export default function SettingsScreen() {
       }
     });
 
-    triggerHaptic('error');
     setShowClearModal(false);
     setClearConfirmText('');
-    Alert.alert('Purged', 'All tracking records and history logs have been successfully cleared.');
+    showToast('All tracking records and history logs cleared.', 'success');
   };
 
   const handleLogout = async () => {
@@ -366,6 +402,23 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      {/* Dynamic Simulated Notification Toast Banner */}
+      {toastMessage && (
+        <View style={[styles.toastContainer, { top: insets.top + 10 }]}>
+          <GlassCard noPadding style={StyleSheet.flatten([styles.toastCard, { borderColor: toastType === 'success' ? colors.lime + '40' : toastType === 'alert' ? colors.danger + '40' : colors.chart.water + '40' }])}>
+            <View style={[styles.toastAccentBar, { backgroundColor: toastType === 'success' ? colors.lime : toastType === 'alert' ? colors.danger : colors.chart.water }]} />
+            <View style={styles.toastBody}>
+              <Ionicons
+                name={toastType === 'success' ? 'checkmark-circle' : toastType === 'alert' ? 'trash-outline' : 'notifications'}
+                size={18}
+                color={toastType === 'success' ? colors.lime : toastType === 'alert' ? colors.danger : colors.chart.water}
+              />
+              <Text numberOfLines={2} style={styles.toastText}>{toastMessage}</Text>
+            </View>
+          </GlassCard>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
@@ -787,6 +840,66 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
+        {/* ─── Privacy & Security Preferences ─── */}
+        <Animated.View entering={FadeInUp.delay(220).springify().damping(18)}>
+          <View style={styles.groupLabel}>
+            <View style={[styles.groupDot, { backgroundColor: colors.danger }]} />
+            <Text style={styles.groupLabelText}>Privacy & Security</Text>
+          </View>
+
+          <GlassCard>
+            {/* Private profile mode toggle */}
+            <View style={styles.row}>
+              <View style={[styles.iconBubble, { backgroundColor: colors.danger + '12' }]}>
+                <Ionicons name="lock-closed" size={18} color={colors.danger} />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowTitle}>Private Profile Mode</Text>
+                <Text style={styles.rowSub}>{privateProfile ? 'Profile details hidden locally' : 'Public sharing active'}</Text>
+              </View>
+              <Switch
+                value={privateProfile}
+                onValueChange={(val) => { setPrivateProfile(val); triggerHaptic('medium'); }}
+                trackColor={{ false: 'rgba(0,0,0,0.10)', true: colors.lime + '99' }}
+                thumbColor={privateProfile ? colors.lime : '#ccc'}
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* App lock toggle */}
+            <View style={styles.row}>
+              <View style={[styles.iconBubble, { backgroundColor: '#6366F115' }]}>
+                <Ionicons name="shield-checkmark" size={18} color="#6366F1" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowTitle}>App Passcode Lock</Text>
+                <Text style={styles.rowSub}>{appLock ? 'Require passcode on start' : 'App lock disabled'}</Text>
+              </View>
+              <Switch
+                value={appLock}
+                onValueChange={(val) => { setAppLock(val); triggerHaptic('medium'); }}
+                trackColor={{ false: 'rgba(0,0,0,0.10)', true: colors.lime + '99' }}
+                thumbColor={appLock ? colors.lime : '#ccc'}
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Change password button */}
+            <PressableRow style={styles.row} onPress={handleChangePassword}>
+              <View style={[styles.iconBubble, { backgroundColor: colors.amber + '15' }]}>
+                <Ionicons name="key" size={18} color={colors.amber} />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowTitle}>Change Account Password</Text>
+                <Text style={styles.rowSub}>Send password reset instructions</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+            </PressableRow>
+          </GlassCard>
+        </Animated.View>
+
         {/* ─── Privacy, Data & Actions ─── */}
         <Animated.View entering={FadeInUp.delay(250).springify().damping(18)}>
           <View style={styles.groupLabel}>
@@ -1144,4 +1257,33 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   docTitle: { ...Typography.h3, color: colors.text.primary },
   closeBtnSmall: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.cardBorder },
   docContent: { ...Typography.body, color: colors.text.secondary, lineHeight: 22, marginBottom: 20 },
+
+  // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    left: 16, right: 16,
+    zIndex: 9999,
+  },
+  toastCard: {
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  toastAccentBar: {
+    height: 3,
+  },
+  toastBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 10,
+  },
+  toastText: {
+    ...Typography.captionBold,
+    color: colors.text.primary,
+    flex: 1,
+  },
 });

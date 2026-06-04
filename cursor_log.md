@@ -1,6 +1,33 @@
 # Cursor Test & Validation Log
 
+## [2026-06-04T18:25:00+05:30] - Native Haptic Exception Fix & Settings Toast Notifications
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit; node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with 0 errors.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Native Haptics Error Resolution (`src/utils/haptics.ts`):**
+  - Confirmed `.catch(() => {})` is appended to all asynchronous `expo-haptics` promises, suppressing any native unavailability errors on Android devices/simulators.
+- **Glassmorphic Toast Notifications (`app/settings.tsx`):**
+  - Added timed Toast overlay notification states (`toastMessage`, `toastType`) and layout styling matching the reminders screen.
+  - Migrated basic field validations, profile save success, cloud sync alerts, data exports, password reset details, and database wipe events from system alert popups to custom premium Toasts.
+
 ## [2026-06-04T17:30:00+05:30] - Settings Preferences and Decoupled Profile Screen
+
 
 ### Automated Checks
 - **Command:** `npx tsc --noEmit; node testing/test_health_calculations.js`

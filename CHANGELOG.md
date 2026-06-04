@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.1] - 2026-06-04T18:25:00+05:30
+
+### Fixed — Android Native Haptic Exception & Settings Toasts Migration
+
+**Architectural Decision:** Replaced standard system alert dialog boxes in the Settings page with a premium, glassmorphic timed Toast notification banner to match the reminders tab. Handled the `UnavailabilityError` from `expo-haptics` on Android/simulators by appending `.catch(() => {})` directly to all asynchronous haptic promises, preventing uncaught promise rejection app crashes.
+
+**Changes:**
+- **Haptic Exception Prevention (`src/utils/haptics.ts`):**
+  - Appended `.catch(() => {})` to all `Haptics.*` promise calls. This safely traps and silences native haptic errors on platforms or emulators without haptic motors or missing native links.
+- **Glassmorphic Toasts in Settings (`app/settings.tsx`):**
+  - Integrated local state hooks and a timed Toast helper (`showToast`) absolute-positioned near the top status bar.
+  - Migrated metric validators, save success feedback, cloud sync notifications, data exports, password reset alerts, and database clear messages from intrusive system alerts to top overlay Toast banners.
+  - Retained system `Alert.alert` exclusively for the **Log Out** confirm dialogue box to maintain safety friction.
+
+#### Rollback
+See ROLLBACK.md section for v2.5.1.
+
 ## [2.5.0] - 2026-06-04T17:30:00+05:30
 
 ### Added — Full Settings Preferences & Decoupled Profile Screen
