@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog, DailyLog } from '../types';
+import {
+  FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog,
+  DailyLog, SleepLog,
+  HeartRateLog, BloodPressureLog, BloodGlucoseLog, OxygenLog,
+} from '../types';
+import { computeSleepScore, estimateStages } from '../constants/sleep';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
 import { zustandMMKVStorage, mmkvSaveLog, mmkvDeleteLog, mmkvHydrateLogs } from '../utils/mmkvStorage';
@@ -57,6 +62,29 @@ interface FitnessState {
   // Calendar daily snapshots
   dailyLogs: DailyLog[];
   upsertDailyLog: (log: DailyLog) => void;
+
+  // Sleep tracking
+  sleepLogs: SleepLog[];
+  addSleepLog: (log: Omit<SleepLog, 'id'>) => void;
+  deleteSleepLog: (id: string) => void;
+  updateSleepLog: (id: string, updates: Partial<Omit<SleepLog, 'id'>>) => void;
+
+  // Vitals
+  heartRateLogs:     HeartRateLog[];
+  addHeartRate:      (log: Omit<HeartRateLog, 'id'>) => void;
+  deleteHeartRate:   (id: string) => void;
+
+  bloodPressureLogs:  BloodPressureLog[];
+  addBloodPressure:   (log: Omit<BloodPressureLog, 'id'>) => void;
+  deleteBloodPressure:(id: string) => void;
+
+  bloodGlucoseLogs:  BloodGlucoseLog[];
+  addBloodGlucose:   (log: Omit<BloodGlucoseLog, 'id'>) => void;
+  deleteBloodGlucose:(id: string) => void;
+
+  oxygenLogs:        OxygenLog[];
+  addOxygen:         (log: Omit<OxygenLog, 'id'>) => void;
+  deleteOxygen:      (id: string) => void;
 
   // Hydration state
   hydrateStore: () => Promise<void>;
@@ -223,6 +251,82 @@ const generateInitialStepHistory = (): StepLog[] => {
   return history;
 };
 
+const generateInitialSleepLogs = (): SleepLog[] => {
+  // [daysAgo, bedH, bedM, wakeH, wakeM, wakeUps]
+  const seed: [number, number, number, number, number, number][] = [
+    [13, 23, 0,  6, 30, 1], [12, 23, 30, 7,  0, 0],
+    [11,  0, 15, 6,  0, 2], [10, 23,  0, 7, 30, 0],
+    [ 9, 23, 45, 6, 15, 1], [ 8, 22, 30, 6,  0, 0],
+    [ 7,  0, 30, 7, 30, 1], [ 6, 23, 15, 6, 45, 0],
+    [ 5, 23,  0, 5, 30, 3], [ 4, 22, 45, 7,  0, 0],
+    [ 3,  0,  0, 6, 30, 2], [ 2, 23, 30, 7, 15, 1],
+    [ 1, 23,  0, 6, 30, 1],
+  ];
+  return seed.map(([daysAgo, bh, bm, wh, wm, wakeUps]) => {
+    const bedtime  = `${String(bh).padStart(2,'0')}:${String(bm).padStart(2,'0')}`;
+    const wakeTime = `${String(wh).padStart(2,'0')}:${String(wm).padStart(2,'0')}`;
+    const diff = (wh * 60 + wm) - (bh * 60 + bm);
+    const totalMin = diff > 0 ? diff : diff + 24 * 60;
+    const { deepMin, remMin, lightMin, awakeMin, cycles } = estimateStages(totalMin, wakeUps);
+    const score = computeSleepScore({ totalMin, deepMin, remMin, awakeMin, wakeUps });
+    const d = new Date(); d.setDate(d.getDate() - (daysAgo - 1));
+    return {
+      id: `sleep_seed_${daysAgo}`,
+      date: d.toISOString().split('T')[0],
+      bedtime, wakeTime, totalMin,
+      deepMin, remMin, lightMin, awakeMin,
+      wakeUps, cycles, score,
+    };
+  });
+};
+
+const getPastTimeStr = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - 30);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+};
+
+const generateInitialHRLogs = (): HeartRateLog[] => {
+  const seeds: [number, number][] = [
+    [13,68],[12,71],[11,65],[10,72],[9,69],[8,67],[7,73],[6,70],[5,66],[4,74],[3,68],[2,71],[1,69]
+  ];
+  return seeds.map(([daysAgo, bpm]) => ({
+    id: `hr_seed_${daysAgo}`, date: getPastDateStr(daysAgo), time: '07:30',
+    bpm, context: 'resting' as const,
+  }));
+};
+
+const generateInitialBPLogs = (): BloodPressureLog[] => {
+  const seeds: [number, number, number][] = [
+    [13,118,76],[12,122,79],[11,119,77],[10,125,81],[9,120,78],
+    [8,117,75],[7,123,80],[6,121,79],[5,119,77],[4,126,82],[3,118,76],[2,122,79],[1,120,78]
+  ];
+  return seeds.map(([daysAgo, sys, dia]) => ({
+    id: `bp_seed_${daysAgo}`, date: getPastDateStr(daysAgo), time: '07:45',
+    systolic: sys, diastolic: dia, pulse: 68, position: 'sitting' as const, arm: 'left' as const,
+  }));
+};
+
+const generateInitialGlucoseLogs = (): BloodGlucoseLog[] => {
+  const seeds: [number, number][] = [
+    [13,92],[12,95],[11,89],[10,98],[9,91],[8,94],[7,96],[6,88],[5,97],[4,93],[3,90],[2,95],[1,92]
+  ];
+  return seeds.map(([daysAgo, value]) => ({
+    id: `glc_seed_${daysAgo}`, date: getPastDateStr(daysAgo), time: '06:30',
+    value, unit: 'mg/dL' as const, context: 'fasting' as const,
+  }));
+};
+
+const generateInitialOxygenLogs = (): OxygenLog[] => {
+  const seeds: [number, number][] = [
+    [13,98],[12,99],[11,97],[10,98],[9,99],[8,97],[7,98],[6,99],[5,98],[4,97],[3,98],[2,99],[1,97]
+  ];
+  return seeds.map(([daysAgo, spo2]) => ({
+    id: `o2_seed_${daysAgo}`, date: getPastDateStr(daysAgo), time: '08:00',
+    spo2, pulse: 69,
+  }));
+};
+
 // Available dashboard grid items by default
 const defaultDashboardGrid = ['activity', 'nutrition', 'water', 'weight', 'workout_focus'];
 
@@ -243,6 +347,11 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   dashboardGrid: defaultDashboardGrid,
   isDarkMode: true,
   dailyLogs: [],
+  sleepLogs: generateInitialSleepLogs(),
+  heartRateLogs:    generateInitialHRLogs(),
+  bloodPressureLogs: generateInitialBPLogs(),
+  bloodGlucoseLogs:  generateInitialGlucoseLogs(),
+  oxygenLogs:        generateInitialOxygenLogs(),
 
   setUser: (updatedUser) => {
     set((state) => ({ user: { ...state.user, ...updatedUser } }));
@@ -530,6 +639,53 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     }));
   },
 
+  addSleepLog: (log) => {
+    const newLog: SleepLog = { ...log, id: `sleep_${Date.now()}` };
+    set((state) => ({
+      sleepLogs: [newLog, ...state.sleepLogs.filter((l) => l.date !== log.date)],
+    }));
+  },
+
+  deleteSleepLog: (id) => {
+    set((state) => ({ sleepLogs: state.sleepLogs.filter((l) => l.id !== id) }));
+  },
+
+  updateSleepLog: (id, updates) => {
+    set((state) => ({
+      sleepLogs: state.sleepLogs.map((l) => (l.id === id ? { ...l, ...updates } : l)),
+    }));
+  },
+
+  // ── Vitals CRUD ─────────────────────────────────────────────────────────────
+
+  addHeartRate: (log) => set((state) => ({
+    heartRateLogs: [{ ...log, id: `hr_${Date.now()}` }, ...state.heartRateLogs],
+  })),
+  deleteHeartRate: (id) => set((state) => ({
+    heartRateLogs: state.heartRateLogs.filter((l) => l.id !== id),
+  })),
+
+  addBloodPressure: (log) => set((state) => ({
+    bloodPressureLogs: [{ ...log, id: `bp_${Date.now()}` }, ...state.bloodPressureLogs],
+  })),
+  deleteBloodPressure: (id) => set((state) => ({
+    bloodPressureLogs: state.bloodPressureLogs.filter((l) => l.id !== id),
+  })),
+
+  addBloodGlucose: (log) => set((state) => ({
+    bloodGlucoseLogs: [{ ...log, id: `glc_${Date.now()}` }, ...state.bloodGlucoseLogs],
+  })),
+  deleteBloodGlucose: (id) => set((state) => ({
+    bloodGlucoseLogs: state.bloodGlucoseLogs.filter((l) => l.id !== id),
+  })),
+
+  addOxygen: (log) => set((state) => ({
+    oxygenLogs: [{ ...log, id: `o2_${Date.now()}` }, ...state.oxygenLogs],
+  })),
+  deleteOxygen: (id) => set((state) => ({
+    oxygenLogs: state.oxygenLogs.filter((l) => l.id !== id),
+  })),
+
   toggleWidgetVisibility: (id) => {
     set((state) => {
       const exists = state.dashboardGrid.includes(id);
@@ -634,7 +790,12 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     stepHistory:   state.stepHistory,
     dashboardGrid: state.dashboardGrid,
     isDarkMode:    state.isDarkMode,
-    dailyLogs:     state.dailyLogs,
+    dailyLogs:          state.dailyLogs,
+    sleepLogs:          state.sleepLogs,
+    heartRateLogs:      state.heartRateLogs,
+    bloodPressureLogs:  state.bloodPressureLogs,
+    bloodGlucoseLogs:   state.bloodGlucoseLogs,
+    oxygenLogs:         state.oxygenLogs,
   }),
 }));
 

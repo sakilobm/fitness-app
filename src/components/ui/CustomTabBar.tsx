@@ -18,15 +18,17 @@ const BAR_H = 64;
 const PILL_W = 54;
 const PILL_H = 42;
 
-type TabName = 'index' | 'weight' | 'nutrition' | 'calendar' | 'reminders' | 'profile';
+type TabName = 'index' | 'weight' | 'nutrition' | 'calendar' | 'sleep' | 'vitals' | 'reminders' | 'profile';
 
 const TAB_LABELS: Record<TabName, string> = {
-  index: 'Home',
-  weight: 'Weight',
+  index:     'Home',
+  weight:    'Weight',
   nutrition: 'Food',
-  calendar: 'Calendar',
+  calendar:  'Calendar',
+  sleep:     'Sleep',
+  vitals:    'Vitals',
   reminders: 'Remind',
-  profile: 'Profile',
+  profile:   'Profile',
 };
 
 function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean; size?: number }) {
@@ -41,6 +43,10 @@ function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean
       return <MaterialCommunityIcons name={(focused ? 'food-apple' : 'food-apple-outline') as MCIName} size={size} color={color} />;
     case 'calendar':
       return <Ionicons name={(focused ? 'calendar' : 'calendar-outline') as IoniconName} size={size} color={color} />;
+    case 'sleep':
+      return <Ionicons name={(focused ? 'moon' : 'moon-outline') as IoniconName} size={size} color={color} />;
+    case 'vitals':
+      return <Ionicons name={(focused ? 'heart' : 'heart-outline') as IoniconName} size={size} color={color} />;
     case 'reminders':
       return <Ionicons name={(focused ? 'notifications' : 'notifications-outline') as IoniconName} size={size} color={color} />;
     case 'profile':

@@ -96,3 +96,67 @@ export interface DailyLog {
   mealsLogged: number;    // 0–4 meal types with items
 }
 
+export interface SleepLog {
+  id: string;
+  date: string;        // YYYY-MM-DD — the morning the user woke up
+  bedtime: string;     // HH:mm (24h)
+  wakeTime: string;    // HH:mm (24h)
+  totalMin: number;    // computed total sleep duration
+  deepMin: number;
+  remMin: number;
+  lightMin: number;
+  awakeMin: number;
+  wakeUps: number;     // interruption count
+  cycles: number;      // estimated 90-min cycles
+  score: number;       // 0–100 quality score
+  notes?: string;
+}
+
+// ── Vitals ────────────────────────────────────────────────────────────────────
+
+export type HeartRateContext = 'resting' | 'active' | 'post-workout' | 'sleeping';
+export type BPPosition       = 'sitting' | 'standing' | 'lying';
+export type BPArm            = 'left' | 'right';
+export type GlucoseUnit      = 'mg/dL' | 'mmol/L';
+export type GlucoseContext   = 'fasting' | 'pre-meal' | 'post-meal' | 'bedtime' | 'random';
+
+export interface HeartRateLog {
+  id:       string;
+  date:     string;           // YYYY-MM-DD
+  time:     string;           // HH:mm
+  bpm:      number;
+  context:  HeartRateContext;
+  notes?:   string;
+}
+
+export interface BloodPressureLog {
+  id:        string;
+  date:      string;
+  time:      string;
+  systolic:  number;          // mmHg
+  diastolic: number;          // mmHg
+  pulse:     number;          // bpm
+  position:  BPPosition;
+  arm:       BPArm;
+  notes?:    string;
+}
+
+export interface BloodGlucoseLog {
+  id:       string;
+  date:     string;
+  time:     string;
+  value:    number;           // always stored as mg/dL internally
+  unit:     GlucoseUnit;      // user's preferred display unit
+  context:  GlucoseContext;
+  notes?:   string;
+}
+
+export interface OxygenLog {
+  id:      string;
+  date:    string;
+  time:    string;
+  spo2:    number;            // 0–100 %
+  pulse:   number;            // bpm
+  notes?:  string;
+}
+

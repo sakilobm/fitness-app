@@ -6,3 +6,7 @@ export type { HealthSyncStatus, HealthConnectSyncResult } from './useHealthConne
 export { useCalendarNav } from './useCalendarNav';
 export { useCalendarData } from './useCalendarData';
 export type { DayStatus, MonthStats, DayDetail } from './useCalendarData';
+export { useSleepLogger } from './useSleepLogger';
+export type { SleepLoggerResult } from './useSleepLogger';
+export { useVitals } from './useVitals';
+export type { VitalsResult } from './useVitals';
