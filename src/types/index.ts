@@ -89,3 +89,10 @@ export interface BMILog {
   category: 'underweight' | 'normal' | 'overweight' | 'obese';
 }
 
+export interface DailyLog {
+  date: string;           // YYYY-MM-DD
+  waterMl: number;        // total ml consumed
+  caloriesKcal: number;   // total kcal from all meals
+  mealsLogged: number;    // 0–4 meal types with items
+}
+

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog } from '../types';
+import { FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog, DailyLog } from '../types';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
 import { zustandMMKVStorage, mmkvSaveLog, mmkvDeleteLog, mmkvHydrateLogs } from '../utils/mmkvStorage';
@@ -53,6 +53,10 @@ interface FitnessState {
   // App Theme Preference
   isDarkMode: boolean;
   setIsDarkMode: (value: boolean) => void;
+
+  // Calendar daily snapshots
+  dailyLogs: DailyLog[];
+  upsertDailyLog: (log: DailyLog) => void;
 
   // Hydration state
   hydrateStore: () => Promise<void>;
@@ -238,6 +242,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   stepHistory: generateInitialStepHistory(),
   dashboardGrid: defaultDashboardGrid,
   isDarkMode: true,
+  dailyLogs: [],
 
   setUser: (updatedUser) => {
     set((state) => ({ user: { ...state.user, ...updatedUser } }));
@@ -516,6 +521,15 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
   setIsDarkMode: (value) => set({ isDarkMode: value }),
 
+  upsertDailyLog: (log) => {
+    set((state) => ({
+      dailyLogs: [
+        ...(state.dailyLogs || []).filter((l) => l.date !== log.date),
+        log,
+      ],
+    }));
+  },
+
   toggleWidgetVisibility: (id) => {
     set((state) => {
       const exists = state.dashboardGrid.includes(id);
@@ -620,6 +634,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     stepHistory:   state.stepHistory,
     dashboardGrid: state.dashboardGrid,
     isDarkMode:    state.isDarkMode,
+    dailyLogs:     state.dailyLogs,
   }),
 }));
 

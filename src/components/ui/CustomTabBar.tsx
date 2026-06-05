@@ -18,12 +18,13 @@ const BAR_H = 64;
 const PILL_W = 54;
 const PILL_H = 42;
 
-type TabName = 'index' | 'weight' | 'nutrition' | 'reminders' | 'profile';
+type TabName = 'index' | 'weight' | 'nutrition' | 'calendar' | 'reminders' | 'profile';
 
 const TAB_LABELS: Record<TabName, string> = {
   index: 'Home',
   weight: 'Weight',
   nutrition: 'Food',
+  calendar: 'Calendar',
   reminders: 'Remind',
   profile: 'Profile',
 };
@@ -38,6 +39,8 @@ function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean
       return <MaterialCommunityIcons name="scale-bathroom" size={size} color={color} />;
     case 'nutrition':
       return <MaterialCommunityIcons name={(focused ? 'food-apple' : 'food-apple-outline') as MCIName} size={size} color={color} />;
+    case 'calendar':
+      return <Ionicons name={(focused ? 'calendar' : 'calendar-outline') as IoniconName} size={size} color={color} />;
     case 'reminders':
       return <Ionicons name={(focused ? 'notifications' : 'notifications-outline') as IoniconName} size={size} color={color} />;
     case 'profile':

@@ -7,10 +7,11 @@ export default function TabsLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      {/* Explicit order: Home → Weight → Food → Reminders → Profile */}
+      {/* Explicit order: Home → Weight → Food → Calendar → Reminders → Profile */}
       <Tabs.Screen name="index" />
       <Tabs.Screen name="weight" />
       <Tabs.Screen name="nutrition" />
+      <Tabs.Screen name="calendar" />
       <Tabs.Screen name="reminders" />
       <Tabs.Screen name="profile" />
     </Tabs>

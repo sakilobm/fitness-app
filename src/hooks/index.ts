@@ -3,3 +3,6 @@ export { useWaterLogger } from './useWaterLogger';
 export { useSettingsForm } from './useSettingsForm';
 export { useHealthConnect } from './useHealthConnect';
 export type { HealthSyncStatus, HealthConnectSyncResult } from './useHealthConnect';
+export { useCalendarNav } from './useCalendarNav';
+export { useCalendarData } from './useCalendarData';
+export type { DayStatus, MonthStats, DayDetail } from './useCalendarData';
