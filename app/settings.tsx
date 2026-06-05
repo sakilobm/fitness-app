@@ -20,9 +20,9 @@ import { triggerHaptic } from '@/utils/haptics';
 import { kgToLbs, mlToOz, ozToMl } from '@/utils/units';
 import Animated, {
   FadeInUp, FadeInDown, FadeIn, ZoomIn,
-  useSharedValue, useAnimatedStyle, withSpring, interpolate,
+  useSharedValue, useAnimatedStyle, withSpring, withDelay, withSequence, interpolate,
 } from 'react-native-reanimated';
-import { useSettingsForm } from '@/hooks';
+import { useSettingsForm, useHealthConnect } from '@/hooks';
 
 // ─── Preset Avatars for Fast Selection ─────────────────────────────────────────
 const AVATAR_PRESETS = [
@@ -70,6 +70,34 @@ export default function SettingsScreen() {
     toastMessage, toastType, showToast,
   } = useSettingsForm();
 
+  // Health Connect
+  const hc = useHealthConnect();
+
+  const handleHealthConnect = async () => {
+    triggerHaptic('medium');
+    const ok = await hc.connect();
+    if (ok) showToast('Health Connect linked — tap Sync Now to import data.', 'success');
+    else showToast('Permission denied or Health Connect unavailable.', 'alert');
+  };
+
+  const handleHealthSync = async () => {
+    triggerHaptic('selection');
+    const result = await hc.syncAll();
+    const total = result.steps + result.weightLogs + result.waterLogs;
+    if (total > 0) {
+      showToast(`Synced ${result.steps.toLocaleString()} steps · ${result.weightLogs} weight · ${result.waterLogs} water records.`, 'success');
+    } else {
+      showToast('Synced — no new records found since last import.', 'info');
+    }
+  };
+
+  const formatSyncTime = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    return `${Math.floor(diff / 3600000)}h ago`;
+  };
+
   // Modal / Overlay Controls
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -95,6 +123,34 @@ export default function SettingsScreen() {
   const confirmBtnAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: confirmBtnScale.value }],
     opacity: interpolate(confirmBtnScale.value, [0.95, 1], [0.3, 1]),
+  }));
+
+  // ── Result animation ──────────────────────────────────────────────────────
+  const resultIconScale = useSharedValue(0);
+  const resultGlowScale = useSharedValue(0);
+
+  useEffect(() => {
+    if (clearResult) {
+      resultGlowScale.value = withSpring(1, { damping: 10, stiffness: 100 });
+      resultIconScale.value = withDelay(60,
+        withSequence(
+          withSpring(1.18, { damping: 7, stiffness: 220 }),
+          withSpring(1,    { damping: 14, stiffness: 160 }),
+        ),
+      );
+    } else {
+      resultIconScale.value = 0;
+      resultGlowScale.value = 0;
+    }
+  }, [clearResult]);
+
+  const resultIconAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: resultIconScale.value }],
+  }));
+
+  const resultGlowAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: resultGlowScale.value }],
+    opacity: interpolate(resultGlowScale.value, [0, 1], [0, 0.2]),
   }));
 
   const handleTestHaptic = () => {
@@ -268,15 +324,20 @@ export default function SettingsScreen() {
   const handleClearLocal = () => {
     if (clearConfirmText !== 'CLEAR') return;
     triggerHaptic('success');
-    useFitnessStore.setState({
-      weightLogs: [], waterLogs: [], stepHistory: [],
-      stepsCount: 0, activeMinutes: 0, meals: EMPTY_MEALS,
-    });
-    setClearResult('success');
+    setIsClearing(true);
+    // Micro-delay lets the spinner render before the synchronous state wipe
     setTimeout(() => {
-      closeClearModal();
-      showToast('Local device history cleared successfully.', 'success');
-    }, 1600);
+      useFitnessStore.setState({
+        weightLogs: [], waterLogs: [], stepHistory: [],
+        stepsCount: 0, activeMinutes: 0, meals: EMPTY_MEALS,
+      });
+      setIsClearing(false);
+      setClearResult('success');
+      setTimeout(() => {
+        closeClearModal();
+        showToast('Local device history cleared successfully.', 'success');
+      }, 1600);
+    }, 350);
   };
 
   const handleClearCloud = async () => {
@@ -839,6 +900,107 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
+        {/* ─── Health & Fitness Apps ─── */}
+        <Animated.View entering={FadeInUp.delay(235).springify().damping(18)}>
+          <View style={styles.groupLabel}>
+            <View style={[styles.groupDot, { backgroundColor: '#EF4444' }]} />
+            <Text style={styles.groupLabelText}>Health & Fitness Apps</Text>
+          </View>
+
+          <GlassCard accentColor="#EF4444">
+            {/* Status row */}
+            <View style={styles.row}>
+              <View style={[styles.iconBubble, { backgroundColor: '#EF444415' }]}>
+                <Ionicons name="heart" size={18} color="#EF4444" />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowTitle}>Health Connect</Text>
+                <Text style={styles.rowSub}>
+                  {hc.isAvailable === false
+                    ? 'Not available on this device'
+                    : 'Steps · Weight · Hydration · Heart Rate'}
+                </Text>
+              </View>
+              <View style={[
+                styles.hcStatusBadge,
+                { backgroundColor: hc.isConnected ? colors.lime + '15' : colors.card, borderColor: hc.isConnected ? colors.lime + '30' : colors.cardBorder },
+              ]}>
+                <View style={[styles.hcStatusDot, { backgroundColor: hc.isConnected ? colors.lime : colors.muted + '50' }]} />
+                <Text style={[styles.hcStatusText, { color: hc.isConnected ? colors.lime : colors.muted }]}>
+                  {hc.isConnected ? 'On' : 'Off'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Data chips */}
+            <View style={styles.hcChipsRow}>
+              {([
+                { icon: 'footsteps', label: 'Steps' },
+                { icon: 'barbell-outline', label: 'Weight' },
+                { icon: 'water-outline', label: 'Water' },
+                { icon: 'heart-outline', label: 'Heart Rate' },
+              ] as const).map(({ icon, label }) => (
+                <View key={label} style={styles.hcChip}>
+                  <Ionicons name={icon} size={11} color={hc.isConnected ? colors.lime : colors.muted} />
+                  <Text style={[styles.hcChipText, { color: hc.isConnected ? colors.lime : colors.muted }]}>{label}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Connect / Sync action */}
+            <View style={styles.row}>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowSub}>
+                  {hc.lastSyncTime
+                    ? `Last synced ${formatSyncTime(hc.lastSyncTime)}`
+                    : hc.isConnected
+                      ? 'Ready to sync your health data'
+                      : 'Connect to import data from Health Connect'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.syncBtn,
+                  { borderColor: '#EF4444', backgroundColor: '#EF444415' },
+                  (hc.status === 'connecting' || hc.status === 'syncing') && { opacity: 0.6 },
+                ]}
+                onPress={hc.isConnected ? handleHealthSync : handleHealthConnect}
+                disabled={hc.status === 'connecting' || hc.status === 'syncing' || hc.isAvailable === false}
+              >
+                {(hc.status === 'connecting' || hc.status === 'syncing') ? (
+                  <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                  <Text style={[styles.syncBtnTxt, { color: '#EF4444' }]}>
+                    {hc.isConnected ? 'Sync Now' : 'Connect'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Last sync result summary */}
+            {hc.lastSyncResult && hc.status === 'idle' && (
+              <Animated.View entering={FadeIn.duration(300)} style={styles.hcResultRow}>
+                <View style={styles.hcResultItem}>
+                  <Text style={styles.hcResultValue}>{hc.lastSyncResult.steps.toLocaleString()}</Text>
+                  <Text style={styles.hcResultLabel}>steps today</Text>
+                </View>
+                <View style={styles.hcResultDivider} />
+                <View style={styles.hcResultItem}>
+                  <Text style={styles.hcResultValue}>{hc.lastSyncResult.weightLogs}</Text>
+                  <Text style={styles.hcResultLabel}>weight added</Text>
+                </View>
+                <View style={styles.hcResultDivider} />
+                <View style={styles.hcResultItem}>
+                  <Text style={styles.hcResultValue}>{hc.lastSyncResult.waterLogs}</Text>
+                  <Text style={styles.hcResultLabel}>water added</Text>
+                </View>
+              </Animated.View>
+            )}
+          </GlassCard>
+        </Animated.View>
+
         {/* ─── Privacy, Data & Actions ─── */}
         <Animated.View entering={FadeInUp.delay(250).springify().damping(18)}>
           <View style={styles.groupLabel}>
@@ -1094,20 +1256,44 @@ export default function SettingsScreen() {
 
             {/* Animated result feedback */}
             {clearResult && (
-              <Animated.View entering={ZoomIn.springify().damping(14)} style={styles.resultContent}>
-                <Ionicons
-                  name={clearResult === 'success' ? 'checkmark-circle' : 'close-circle'}
-                  size={72}
-                  color={clearResult === 'success' ? colors.lime : colors.danger}
-                />
-                <Text style={[styles.resultTitle, { color: clearResult === 'success' ? colors.lime : colors.danger }]}>
-                  {clearResult === 'success' ? 'Cleared!' : 'Failed'}
-                </Text>
-                <Text style={styles.resultSub}>
-                  {clearResult === 'success'
-                    ? `${clearTarget === 'local' ? 'Local cache' : 'Cloud records'} removed successfully`
-                    : 'Something went wrong. Please try again.'}
-                </Text>
+              <Animated.View entering={FadeIn.duration(180)} style={styles.resultContent}>
+                {/* Icon with glow behind */}
+                <View style={styles.resultIconContainer}>
+                  <Animated.View style={[
+                    styles.resultGlow,
+                    { backgroundColor: clearResult === 'success' ? colors.lime : colors.danger },
+                    resultGlowAnimStyle,
+                  ]} />
+                  <Animated.View style={[
+                    styles.resultIconWrap,
+                    {
+                      borderColor: clearResult === 'success' ? colors.lime + '50' : colors.danger + '50',
+                      backgroundColor: clearResult === 'success' ? colors.lime + '12' : colors.danger + '12',
+                      shadowColor: clearResult === 'success' ? colors.lime : colors.danger,
+                    },
+                    resultIconAnimStyle,
+                  ]}>
+                    <Ionicons
+                      name={clearResult === 'success' ? 'checkmark' : 'close'}
+                      size={40}
+                      color={clearResult === 'success' ? colors.lime : colors.danger}
+                    />
+                  </Animated.View>
+                </View>
+
+                <Animated.View entering={FadeInDown.delay(200).springify().damping(18)}>
+                  <Text style={[styles.resultTitle, { color: clearResult === 'success' ? colors.lime : colors.danger }]}>
+                    {clearResult === 'success' ? 'All Clear' : 'Failed'}
+                  </Text>
+                </Animated.View>
+
+                <Animated.View entering={FadeInDown.delay(300).springify().damping(20)}>
+                  <Text style={styles.resultSub}>
+                    {clearResult === 'success'
+                      ? `${clearTarget === 'local' ? 'Local cache' : 'Cloud records'} wiped successfully`
+                      : 'Something went wrong. Please try again.'}
+                  </Text>
+                </Animated.View>
               </Animated.View>
             )}
 
@@ -1337,20 +1523,47 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   resultContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
-    gap: 12,
-    minHeight: 180,
+    paddingVertical: 28,
+    gap: 8,
+    minHeight: 220,
+  },
+  resultIconContainer: {
+    width: 160,
+    height: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  resultGlow: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+  },
+  resultIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 22,
+    elevation: 10,
   },
   resultTitle: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '800',
     letterSpacing: -0.5,
+    textAlign: 'center',
   },
   resultSub: {
     ...Typography.body,
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
+    paddingHorizontal: 16,
   },
 
   // Docs
@@ -1358,6 +1571,32 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   docTitle: { ...Typography.h3, color: colors.text.primary },
   closeBtnSmall: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.cardBorder },
   docContent: { ...Typography.body, color: colors.text.secondary, lineHeight: 22, marginBottom: 20 },
+
+  // Health Connect
+  hcStatusBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: Radius.pill, borderWidth: 1,
+  },
+  hcStatusDot: { width: 6, height: 6, borderRadius: 3 },
+  hcStatusText: { fontSize: 11, fontWeight: '700' },
+  hcChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2, marginBottom: 6 },
+  hcChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 9, paddingVertical: 4,
+    borderRadius: Radius.pill, backgroundColor: colors.card,
+    borderWidth: 1, borderColor: colors.cardBorder,
+  },
+  hcChipText: { fontSize: 10, fontWeight: '600' },
+  hcResultRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card, borderRadius: Radius.lg,
+    padding: 12, marginTop: 4, borderWidth: 1, borderColor: colors.cardBorder,
+  },
+  hcResultItem: { flex: 1, alignItems: 'center', gap: 2 },
+  hcResultValue: { fontSize: 17, fontWeight: '800', color: colors.text.primary },
+  hcResultLabel: { fontSize: 10, fontWeight: '600', color: colors.text.secondary },
+  hcResultDivider: { width: 1, height: 28, backgroundColor: colors.cardBorder },
 
   // Toast Styles
   toastContainer: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Dimensions, StatusBar } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -25,6 +25,7 @@ interface Props {
 
 export default function AnimatedSplashScreen({ isAppReady, preview = false, onPreviewDismiss }: Props) {
   const [isAnimationComplete, setIsAnimationComplete] = useState(false);
+  const startTime = useRef(Date.now());
 
   // ── Container (overlay) — only opacity, NO scale so it stays full-bleed ──
   const overlayOpacity = useSharedValue(1);
@@ -63,9 +64,9 @@ export default function AnimatedSplashScreen({ isAppReady, preview = false, onPr
       ),
     );
 
-    // In preview mode: auto-exit after 3.5s
+    // In preview mode: auto-exit after 2.2s
     if (preview) {
-      const timer = setTimeout(() => triggerExit(), 3500);
+      const timer = setTimeout(() => triggerExit(), 2200);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -85,9 +86,14 @@ export default function AnimatedSplashScreen({ isAppReady, preview = false, onPr
 
   useEffect(() => {
     if (!isAppReady || preview) return;
+    // Entrance animation completes at ~750ms from mount (text delay 320 + spring 420).
+    // Wait at least that long before fading so the logo is never interrupted.
+    // On slow boots (>750ms) the extra delay collapses to the 200ms buffer.
+    const elapsed = Date.now() - startTime.current;
+    const minDelay = Math.max(200, 750 - elapsed);
     overlayOpacity.value = withDelay(
-      1500,
-      withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) }, (finished) => {
+      minDelay,
+      withTiming(0, { duration: 380, easing: Easing.out(Easing.ease) }, (finished) => {
         if (finished) runOnJS(setIsAnimationComplete)(true);
       }),
     );

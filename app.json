@@ -8,14 +8,28 @@
     "userInterfaceStyle": "dark",
     "scheme": "fitforge",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "FitForge reads your health data to sync steps, weight and activity into your fitness dashboard.",
+        "NSHealthUpdateUsageDescription": "FitForge saves your weight and hydration logs back to Apple Health."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#fafafa"
       },
-      "package": "com.b.sakil.fitnessapp"
+      "package": "com.b.sakil.fitnessapp",
+      "minSdkVersion": 26,
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_HYDRATION",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.WRITE_WEIGHT",
+        "android.permission.health.WRITE_HYDRATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -24,7 +38,13 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-health-connect",
+        {
+          "healthConnectVersion": "1.1.0-alpha11"
+        }
+      ]
     ]
   }
 }
