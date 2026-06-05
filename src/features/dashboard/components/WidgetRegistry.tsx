@@ -139,8 +139,8 @@ export const NumericDeltaWidget = React.memo(function NumericDeltaWidget(
       isPositive: pos,
       deltaText: pos ? `+${d.toFixed(1)}` : `${d.toFixed(1)}`,
       trendIcon: data.trend === 'gaining' ? 'arrow-up-outline'
-               : data.trend === 'losing'  ? 'arrow-down-outline'
-               : 'remove-outline',
+        : data.trend === 'losing' ? 'arrow-down-outline'
+          : 'remove-outline',
     };
   }, [data.currentValue, data.previousValue, data.trend]);
 
@@ -191,7 +191,7 @@ function MetricCardInner<T extends WidgetType>({ config }: { config: WidgetConfi
   const { colors, isDark } = useTheme();
   const widgetStyles = React.useMemo(() => getWidgetStyles(colors, isDark), [colors, isDark]);
   const WidgetComponent = REGISTRY[config.type] as React.FC<any>;
-  
+
   if (!WidgetComponent) return null;
 
   return (
@@ -351,9 +351,10 @@ const getWidgetStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.cre
   },
   // Chip styles
   chipContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 2,
     paddingVertical: 4,
   },
   chipValue: {

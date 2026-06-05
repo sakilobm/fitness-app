@@ -1,235 +1,466 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform,
+  Modal, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring,
+  useSharedValue, useAnimatedStyle, withSpring, withTiming,
 } from 'react-native-reanimated';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Radius, Typography, useTheme } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Radius, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
-
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+import { TabName, ALL_TABS, TAB_LABELS, TAB_META } from '@/constants/tabs';
+import { TabIcon } from './TabIcon';
+import { useTabLayoutStore } from '@/store/tabLayoutStore';
+import { CustomizeTabSheet } from './CustomizeTabSheet';
 
 const { width: W } = Dimensions.get('window');
-const BAR_H = 64;
-const PILL_W = 54;
+const BAR_H  = 64;
 const PILL_H = 42;
 
-type TabName = 'index' | 'weight' | 'nutrition' | 'calendar' | 'sleep' | 'vitals' | 'reminders' | 'profile';
-
-const TAB_LABELS: Record<TabName, string> = {
-  index:     'Home',
-  weight:    'Weight',
-  nutrition: 'Food',
-  calendar:  'Calendar',
-  sleep:     'Sleep',
-  vitals:    'Vitals',
-  reminders: 'Remind',
-  profile:   'Profile',
-};
-
-function TabIcon({ name, focused, size = 22 }: { name: TabName; focused: boolean; size?: number }) {
-  const { colors } = useTheme();
-  const color = focused ? colors.lime : colors.muted;
-  switch (name) {
-    case 'index':
-      return <Ionicons name={(focused ? 'home' : 'home-outline') as IoniconName} size={size} color={color} />;
-    case 'weight':
-      return <MaterialCommunityIcons name="scale-bathroom" size={size} color={color} />;
-    case 'nutrition':
-      return <MaterialCommunityIcons name={(focused ? 'food-apple' : 'food-apple-outline') as MCIName} size={size} color={color} />;
-    case 'calendar':
-      return <Ionicons name={(focused ? 'calendar' : 'calendar-outline') as IoniconName} size={size} color={color} />;
-    case 'sleep':
-      return <Ionicons name={(focused ? 'moon' : 'moon-outline') as IoniconName} size={size} color={color} />;
-    case 'vitals':
-      return <Ionicons name={(focused ? 'heart' : 'heart-outline') as IoniconName} size={size} color={color} />;
-    case 'reminders':
-      return <Ionicons name={(focused ? 'notifications' : 'notifications-outline') as IoniconName} size={size} color={color} />;
-    case 'profile':
-      return <Ionicons name={(focused ? 'person' : 'person-outline') as IoniconName} size={size} color={color} />;
-  }
-}
-
+// ── Single tab button ─────────────────────────────────────────────────────────
 function TabButton({
-  name, focused, onPress, tabWidth,
-}: { name: TabName; focused: boolean; onPress: () => void; tabWidth: number }) {
-  const { colors } = useTheme();
-  const styles = React.useMemo(() => getStyles(colors), [colors]);
-  const iconScale = useSharedValue(focused ? 1.1 : 1);
+  name, focused, onPress, tabWidth, colors,
+}: { name: TabName; focused: boolean; onPress: () => void; tabWidth: number; colors: ThemeColors }) {
+  const iconScale  = useSharedValue(focused ? 1.12 : 1);
   const pressScale = useSharedValue(1);
+  const labelOp    = useSharedValue(focused ? 1 : 0);
+  const labelH     = useSharedValue(focused ? 14 : 0);
 
   useEffect(() => {
     iconScale.value = withSpring(focused ? 1.12 : 1, { damping: 14, stiffness: 220 });
+    labelOp.value   = withTiming(focused ? 1 : 0, { duration: 180 });
+    labelH.value    = withTiming(focused ? 14 : 0, { duration: 180 });
   }, [focused]);
 
-  const iconAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: iconScale.value }],
+  const iconAnimStyle  = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
+  const pressAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }));
+  const labelWrapStyle = useAnimatedStyle(() => ({
+    maxHeight: labelH.value,
+    opacity:   labelOp.value,
   }));
-  const pressAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pressScale.value }],
-  }));
+
+  const iconColor = focused ? colors.lime : colors.muted;
 
   return (
     <TouchableOpacity
       onPress={onPress}
       onPressIn={() => { pressScale.value = withSpring(0.88, { damping: 10, stiffness: 400 }); }}
-      onPressOut={() => { pressScale.value = withSpring(1, { damping: 12, stiffness: 280 }); }}
+      onPressOut={() => { pressScale.value = withSpring(1,    { damping: 12, stiffness: 280 }); }}
       activeOpacity={1}
-      style={[styles.tabBtn, { width: tabWidth }]}
+      style={[st.tabBtn, { width: tabWidth }]}
     >
-      <Animated.View style={pressAnimStyle}>
-        <Animated.View style={[styles.iconWrap, iconAnimStyle]}>
-          <TabIcon name={name} focused={focused} />
+      <Animated.View style={[st.tabInner, pressAnimStyle]}>
+        <Animated.View style={[st.iconWrap, iconAnimStyle]}>
+          <TabIcon name={name} focused={focused} color={iconColor} />
         </Animated.View>
-        <Text style={[styles.label, focused && styles.labelActive]}>
-          {TAB_LABELS[name]}
-        </Text>
+        <Animated.View style={[{ overflow: 'hidden' }, labelWrapStyle]}>
+          <Text style={[st.label, { color: iconColor }]}>
+            {TAB_LABELS[name]}
+          </Text>
+        </Animated.View>
       </Animated.View>
     </TouchableOpacity>
   );
 }
 
+// ── More button ───────────────────────────────────────────────────────────────
+function MoreButton({
+  active, onPress, tabWidth, colors,
+}: { active: boolean; onPress: () => void; tabWidth: number; colors: ThemeColors }) {
+  const pressScale = useSharedValue(1);
+  const iconScale  = useSharedValue(active ? 1.12 : 1);
+  const labelOp    = useSharedValue(active ? 1 : 0);
+  const labelH     = useSharedValue(active ? 14 : 0);
+
+  useEffect(() => {
+    iconScale.value = withSpring(active ? 1.12 : 1, { damping: 14, stiffness: 220 });
+    labelOp.value   = withTiming(active ? 1 : 0, { duration: 180 });
+    labelH.value    = withTiming(active ? 14 : 0, { duration: 180 });
+  }, [active]);
+
+  const iconAnimStyle  = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
+  const pressAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }));
+  const labelWrapStyle = useAnimatedStyle(() => ({
+    maxHeight: labelH.value,
+    opacity:   labelOp.value,
+  }));
+
+  const color = active ? colors.lime : colors.muted;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={() => { pressScale.value = withSpring(0.88, { damping: 10, stiffness: 400 }); }}
+      onPressOut={() => { pressScale.value = withSpring(1,    { damping: 12, stiffness: 280 }); }}
+      activeOpacity={1}
+      style={[st.tabBtn, { width: tabWidth }]}
+    >
+      <Animated.View style={[st.tabInner, pressAnimStyle]}>
+        <Animated.View style={[st.iconWrap, iconAnimStyle]}>
+          <Ionicons name={active ? 'grid' : 'grid-outline'} size={22} color={color} />
+        </Animated.View>
+        <Animated.View style={[{ overflow: 'hidden' }, labelWrapStyle]}>
+          <Text style={[st.label, { color }]}>More</Text>
+        </Animated.View>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// ── More sheet ────────────────────────────────────────────────────────────────
+const SHEET_H = 280;
+
+function MoreSheet({
+  visible, onClose, onNavigate, onCustomize, currentTab, insets, colors,
+}: {
+  visible:     boolean;
+  onClose:     () => void;
+  onNavigate:  (name: TabName) => void;
+  onCustomize: () => void;
+  currentTab:  TabName;
+  insets:      { bottom: number };
+  colors:      ThemeColors;
+}) {
+  const primaryTabs  = useTabLayoutStore(s => s.primaryTabs);
+  const secondaryTabs = ALL_TABS.filter(t => !primaryTabs.includes(t));
+
+  const [rendered, setRendered] = useState(visible);
+  const translateY  = useSharedValue(visible ? 0 : SHEET_H);
+  const backdropOp  = useSharedValue(visible ? 1 : 0);
+
+  useEffect(() => {
+    if (visible) {
+      setRendered(true);
+      translateY.value = withSpring(0, { damping: 22, stiffness: 260, mass: 0.9 });
+      backdropOp.value = withTiming(1, { duration: 220 });
+    } else {
+      backdropOp.value = withTiming(0, { duration: 200 });
+      translateY.value = withSpring(SHEET_H, { damping: 22, stiffness: 260, mass: 0.9 });
+      const t = setTimeout(() => setRendered(false), 380);
+      return () => clearTimeout(t);
+    }
+  }, [visible]);
+
+  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+  const bgStyle    = useAnimatedStyle(() => ({ opacity: backdropOp.value }));
+
+  if (!rendered) return null;
+
+  const TAB_BAR_BOTTOM = Math.max(insets.bottom, 6) + 10 + BAR_H + 8;
+
+  return (
+    <Modal visible={true} transparent animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[st.backdrop, bgStyle]}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          st.sheet,
+          {
+            backgroundColor: colors.card,
+            borderColor:      colors.cardBorder,
+            bottom: TAB_BAR_BOTTOM,
+          },
+          sheetStyle,
+        ]}
+      >
+        {/* Handle + header row */}
+        <View style={[st.handle, { backgroundColor: colors.muted + '50' }]} />
+        <View style={st.sheetHeader}>
+          <Text style={[st.sheetTitle, { color: colors.muted }]}>MORE</Text>
+          <TouchableOpacity onPress={onCustomize} style={st.editBtn} activeOpacity={0.75}>
+            <Ionicons name="settings-outline" size={13} color={colors.muted} />
+            <Text style={[st.editTxt, { color: colors.muted }]}>Customize</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 2×2 Grid */}
+        <View style={st.grid}>
+          {secondaryTabs.map(name => {
+            const meta   = TAB_META[name];
+            const active = currentTab === name;
+            return (
+              <TouchableOpacity
+                key={name}
+                onPress={() => { onNavigate(name); onClose(); }}
+                activeOpacity={0.78}
+                style={[
+                  st.gridCard,
+                  {
+                    backgroundColor: active ? meta.color + '15' : colors.bg,
+                    borderColor:     active ? meta.color        : colors.cardBorder,
+                  },
+                ]}
+              >
+                <View style={[st.iconBubble, { backgroundColor: meta.color + '20' }]}>
+                  <TabIcon name={name} focused={active} size={20} color={meta.color} />
+                </View>
+                <View style={st.cardText}>
+                  <Text style={[st.cardLabel, { color: active ? meta.color : colors.text.primary }]}>
+                    {TAB_LABELS[name]}
+                  </Text>
+                  <Text style={[st.cardDesc, { color: colors.muted }]} numberOfLines={1}>
+                    {meta.desc}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+// ── Main CustomTabBar ─────────────────────────────────────────────────────────
 type TabBarProps = {
-  state: { index: number; routes: { key: string; name: string }[] };
+  state:      { index: number; routes: { key: string; name: string }[] };
   navigation: any;
 };
 
 export default function CustomTabBar({ state, navigation }: TabBarProps) {
-  const { colors, isDark } = useTheme();
-  const styles = React.useMemo(() => getStyles(colors), [colors]);
-  const insets = useSafeAreaInsets();
-  const barWidth = W - 32;
-  const tabWidth = barWidth / state.routes.length;
+  const { colors }    = useTheme();
+  const insets        = useSafeAreaInsets();
+  const [moreOpen,       setMoreOpen]       = useState(false);
+  const [customizeOpen,  setCustomizeOpen]  = useState(false);
 
-  const pillX = useSharedValue(state.index * tabWidth + (tabWidth - PILL_W) / 2);
+  const primaryTabs  = useTabLayoutStore(s => s.primaryTabs);
+  const setPrimary   = useTabLayoutStore(s => s.setPrimaryTabs);
+
+  const barWidth  = W - 32;
+  const tabWidth  = barWidth / 5;   // always 5 slots: 4 primary + More
+  const PILL_W    = tabWidth - 16;
+
+  const currentRouteName = (state.routes[state.index]?.name ?? 'index') as TabName;
+  const secondaryTabs    = ALL_TABS.filter(t => !primaryTabs.includes(t));
+  const isPrimary        = primaryTabs.includes(currentRouteName);
+  const isSecondary      = secondaryTabs.includes(currentRouteName);
+
+  const visibleIndex = isPrimary ? primaryTabs.indexOf(currentRouteName) : 4;
+
+  const pillX = useSharedValue(visibleIndex * tabWidth + (tabWidth - PILL_W) / 2);
 
   useEffect(() => {
     pillX.value = withSpring(
-      state.index * tabWidth + (tabWidth - PILL_W) / 2,
+      visibleIndex * tabWidth + (tabWidth - PILL_W) / 2,
       { damping: 22, stiffness: 180, mass: 0.8 },
     );
-  }, [state.index, tabWidth]);
+  }, [visibleIndex, tabWidth]);
 
   const pillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: pillX.value }],
   }));
 
-  return (
-    <View style={[styles.wrapper, { bottom: Math.max(insets.bottom, 6) + 10 }]}>
-      {/* Soft teal glow — iOS only */}
-      {Platform.OS === 'ios' && <View style={styles.outerGlow} />}
+  function navigate(routeName: string) {
+    const route = state.routes.find(r => r.name === routeName);
+    if (!route) return;
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (!event.defaultPrevented) navigation.navigate(routeName);
+  }
 
-      <View style={styles.glass}>
-        {/* Subtle top border highlight */}
-        <View style={styles.topShine} />
-        {/* Sliding active pill */}
-        <Animated.View style={[styles.pill, pillStyle]} />
-        {/* Tabs */}
-        <View style={styles.row}>
-          {state.routes.map((route, index) => (
-            <TabButton
-              key={route.key}
-              name={route.name as TabName}
-              focused={state.index === index}
+  function handleCustomize() {
+    setMoreOpen(false);
+    // slight delay so MoreSheet can close first
+    setTimeout(() => setCustomizeOpen(true), 120);
+  }
+
+  return (
+    <>
+      <View style={[st.wrapper, { bottom: Math.max(insets.bottom, 6) + 10 }]}>
+        {Platform.OS === 'ios' && (
+          <View style={[st.outerGlow, { shadowColor: colors.lime }]} />
+        )}
+
+        <View style={[
+          st.glass,
+          {
+            backgroundColor: colors.card + 'F4',
+            borderColor:     colors.cardBorder,
+            shadowColor:     colors.text.primary,
+          },
+        ]}>
+          <View style={st.topShine} />
+          <Animated.View style={[
+            st.pill,
+            {
+              top:             (BAR_H - PILL_H) / 2,
+              width:           PILL_W,
+              backgroundColor: colors.overlay,
+              borderColor:     colors.lime + '35',
+            },
+            pillStyle,
+          ]} />
+
+          <View style={st.row}>
+            {primaryTabs.map(name => {
+              const route = state.routes.find(r => r.name === name);
+              if (!route) return null;
+              return (
+                <TabButton
+                  key={name}
+                  name={name}
+                  focused={currentRouteName === name}
+                  tabWidth={tabWidth}
+                  colors={colors}
+                  onPress={() => navigate(name)}
+                />
+              );
+            })}
+
+            <MoreButton
+              active={isSecondary || moreOpen}
+              onPress={() => setMoreOpen(v => !v)}
               tabWidth={tabWidth}
-              onPress={() => {
-                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                if (!event.defaultPrevented) navigation.navigate(route.name);
-              }}
+              colors={colors}
             />
-          ))}
+          </View>
         </View>
       </View>
-    </View>
+
+      <MoreSheet
+        visible={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        onNavigate={name => { setMoreOpen(false); navigate(name); }}
+        onCustomize={handleCustomize}
+        currentTab={currentRouteName}
+        insets={insets}
+        colors={colors}
+      />
+
+      <CustomizeTabSheet
+        visible={customizeOpen}
+        onClose={() => setCustomizeOpen(false)}
+        primaryTabs={primaryTabs}
+        onSave={setPrimary}
+        colors={colors}
+      />
+    </>
   );
 }
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+// ── Styles ────────────────────────────────────────────────────────────────────
+const st = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: 16, right: 16,
   },
-
-  // Soft teal ambient glow (iOS only)
   outerGlow: {
     position: 'absolute',
     top: 6, left: 10, right: 10, bottom: -6,
     borderRadius: Radius.xl,
-    shadowColor: colors.lime,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 18,
+    elevation: 0,
   },
-
   glass: {
     height: BAR_H,
-    backgroundColor: colors.card + 'F2',
     borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
     overflow: 'hidden',
-    // Android depth
     elevation: 16,
-    shadowColor: colors.text.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
   },
-
   topShine: {
     position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    height: 1,
+    top: 0, left: 20, right: 20, height: 1,
     backgroundColor: 'rgba(46,125,94,0.25)',
     borderRadius: 1,
   },
-
   pill: {
     position: 'absolute',
-    top: (BAR_H - PILL_H) / 2,
-    width: PILL_W,
     height: PILL_H,
     borderRadius: 18,
-    backgroundColor: colors.overlay,
     borderWidth: 1,
-    borderColor: colors.lime + '35',
   },
-
   row: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flex: 1, flexDirection: 'row', alignItems: 'center',
   },
-
   tabBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     height: BAR_H,
   },
-
+  tabInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     height: 26,
   },
-
   label: {
     fontSize: 9,
-    fontWeight: '600',
-    color: colors.muted,
-    letterSpacing: 0.4,
+    fontWeight: '700',
+    letterSpacing: 0.5,
     textAlign: 'center',
-    marginTop: 3,
+    marginTop: 2,
   },
 
-  labelActive: {
-    color: colors.lime,
+  // ── More sheet ─────────────────────────────────────────────────────────────
+  backdrop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.40)',
   },
+  sheet: {
+    position: 'absolute',
+    left: 16, right: 16,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    paddingTop: 10,
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+    elevation: 24,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+  },
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    alignSelf: 'center', marginBottom: 10,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sheetTitle: {
+    fontSize: 10, fontWeight: '800', letterSpacing: 1.2,
+  },
+  editBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 10,
+  },
+  editTxt: { fontSize: 11, fontWeight: '600' },
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  gridCard: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+  },
+  iconBubble: {
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cardText:  { flex: 1 },
+  cardLabel: { fontSize: 13, fontWeight: '800' },
+  cardDesc:  { fontSize: 10, marginTop: 2 },
 });
