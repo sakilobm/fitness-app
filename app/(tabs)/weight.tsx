@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Dimensions, 
-  Modal, 
-  TextInput, 
-  KeyboardAvoidingView, 
-  Platform 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
@@ -22,263 +21,45 @@ import { useProfileSettings, useBmiTracker } from '@/store/fitnessStore';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Typography, Radius, Spacing, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
-import { kgToLbs, lbsToKg } from '@/utils/units';
+import { kgToLbs } from '@/utils/units';
 import { triggerHaptic } from '@/utils/haptics';
+import SparkLine from '@/components/charts/SparkLine';
+import CalHeatmap from '@/components/charts/CalHeatmap';
+import BMIBar from '@/components/charts/BMIBar';
+import { useWeightLogger } from '@/hooks';
 
 const { width: W } = Dimensions.get('window');
-const CHART_W = W - 64;
-const CHART_H = 140;
 
 type Period = 'today' | 'week' | 'month' | '3m';
-
-function SparkLine({ 
-  data, 
-  period, 
-  statuses, 
-  onPointPress 
-}: { 
-  data: number[]; 
-  period?: Period; 
-  statuses?: boolean[]; 
-  onPointPress?: (idx: number) => void;
-}) {
-  const { colors } = useTheme();
-  if (!data || data.length === 0) return null;
-  const min = Math.min(...data) - 0.5;
-  const max = Math.max(...data) + 0.5;
-  
-  // Add horizontal margins for visual breathing room and text boundary protection
-  const PADDING_X = 36;
-  const pts = data.map((v, i) => ({
-    x: data.length > 1 
-      ? PADDING_X + (i / (data.length - 1)) * (CHART_W - 2 * PADDING_X) 
-      : CHART_W / 2,
-    y: CHART_H - ((v - min) / (max - min)) * CHART_H,
-  }));
-
-  const pathD = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
-  const areaD = pts.length > 0 
-    ? `${pathD} L${pts[pts.length - 1].x},${CHART_H} L${pts[0].x},${CHART_H} Z` 
-    : '';
-
-  const timeLabels = ['Morn 🌅', 'Aft ☀️', 'Ngt 🌙'];
-
-  return (
-    <Svg width={CHART_W} height={CHART_H + 30}>
-      <Defs>
-        <SvgLinearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={colors.lime} stopOpacity="0.25" />
-          <Stop offset="1" stopColor={colors.lime} stopOpacity="0" />
-        </SvgLinearGradient>
-      </Defs>
-      {areaD ? <Path d={areaD} fill="url(#lineGrad)" /> : null}
-      <Path d={pathD} stroke={colors.lime} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      
-      {/* Render points */}
-      {pts.map((pt, idx) => {
-        const isTodayView = period === 'today';
-        const isLogged = !isTodayView || (statuses && statuses[idx]);
-        
-        if (!isLogged) {
-          return (
-            <Circle
-              key={idx}
-              cx={pt.x}
-              cy={pt.y}
-              r={4}
-              fill={colors.card}
-              stroke={colors.lime}
-              strokeWidth={1.5}
-              strokeDasharray="2,2"
-            />
-          );
-        }
-
-        return (
-          <React.Fragment key={idx}>
-            <Circle cx={pt.x} cy={pt.y} r={6} fill={colors.lime} opacity={0.25} />
-            <Circle cx={pt.x} cy={pt.y} r={4} fill={colors.lime} />
-            {/* Tap handlers for fullscreen interactive chart */}
-            {onPointPress && (
-              <Circle
-                cx={pt.x}
-                cy={pt.y}
-                r={20}
-                fill="transparent"
-                onPress={() => onPointPress(idx)}
-              />
-            )}
-            {/* Value label for today's points or the last point */}
-            {(isTodayView || idx === pts.length - 1) && (
-              <SvgText 
-                x={pt.x} 
-                y={pt.y - 12} 
-                textAnchor="middle" 
-                fill={colors.lime} 
-                fontSize={11} 
-                fontWeight="700"
-              >
-                {data[idx].toFixed(1)}
-              </SvgText>
-            )}
-          </React.Fragment>
-        );
-      })}
-
-      {/* Time labels for today's view */}
-      {period === 'today' && pts.map((pt, idx) => (
-        <SvgText
-          key={`lbl-${idx}`}
-          x={pt.x}
-          y={CHART_H + 18}
-          textAnchor="middle"
-          fill={colors.text.primary}
-          fontSize={10}
-          fontWeight="600"
-        >
-          {timeLabels[idx]}
-        </SvgText>
-      ))}
-    </Svg>
-  );
-}
-
-const CALENDAR_WEEKS = 8;
-
-function CalHeatmap() {
-  const { colors, isDark } = useTheme();
-  const today = new Date();
-  const days: { date: Date; status: 'logged' | 'missed' | 'goal' | 'future' }[] = [];
-  for (let i = CALENDAR_WEEKS * 7 - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const isFuture = d > today;
-    const rand = Math.random();
-    days.push({
-      date: d,
-      status: isFuture ? 'future' : rand > 0.7 ? 'goal' : rand > 0.3 ? 'logged' : 'missed',
-    });
-  }
-
-  const statusColor: Record<string, string> = {
-    logged: colors.lime + '88',
-    missed: colors.danger + '55',
-    goal: colors.lime,
-    future: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-  };
-
-  return (
-    <View style={cal.grid}>
-      {Array.from({ length: CALENDAR_WEEKS }).map((_, wi) => (
-        <View key={wi} style={cal.col}>
-          {days.slice(wi * 7, wi * 7 + 7).map((d, di) => (
-            <View
-              key={di}
-              style={[cal.day, { backgroundColor: statusColor[d.status] }]}
-            />
-          ))}
-        </View>
-      ))}
-    </View>
-  );
-}
-
-const cal = StyleSheet.create({
-  grid: { flexDirection: 'row', gap: 4 },
-  col: { gap: 4, flex: 1 },
-  day: { height: 14, borderRadius: 3 },
-});
-
-
-
-function BMIBar({ bmi }: { bmi: number }) {
-  const { colors } = useTheme();
-  const bmiS = React.useMemo(() => getBmiS(colors), [colors]);
-  const BMI_CATEGORIES = [
-    { label: 'Under', max: 18.5, color: colors.chart.water },
-    { label: 'Normal', max: 24.9, color: colors.lime },
-    { label: 'Over', max: 29.9, color: colors.amber },
-    { label: 'Obese', max: 40, color: colors.danger },
-  ];
-  const pct = Math.max(0, Math.min((bmi - 15) / (40 - 15), 1));
-  const category = BMI_CATEGORIES.find((c) => bmi <= c.max) ?? BMI_CATEGORIES[3];
-  return (
-    <View>
-      <View style={bmiS.row}>
-        {BMI_CATEGORIES.map((c, i) => (
-          <View key={i} style={[bmiS.segment, { backgroundColor: c.color + '44' }]} />
-        ))}
-        <View style={[bmiS.pointer, { left: `${pct * 100}%` as any }]}>
-          <View style={[bmiS.pointerDot, { backgroundColor: category.color }]} />
-        </View>
-      </View>
-      <View style={bmiS.labels}>
-        {BMI_CATEGORIES.map((c) => (
-          <Text key={c.label} style={bmiS.catLabel}>{c.label}</Text>
-        ))}
-      </View>
-      <View style={[bmiS.resultBadge, { backgroundColor: category.color + '15', borderColor: category.color + '35' }]}>
-        <View style={[bmiS.resultDot, { backgroundColor: category.color }]} />
-        <Text style={[bmiS.bmiValue, { color: category.color }]}>BMI {bmi} — {category.label}weight</Text>
-      </View>
-    </View>
-  );
-}
-
-const getBmiS = (colors: ThemeColors) => StyleSheet.create({
-  row: { height: 12, borderRadius: 6, flexDirection: 'row', overflow: 'visible', marginBottom: 6, position: 'relative' },
-  segment: { flex: 1 },
-  pointer: { position: 'absolute', top: -4, marginLeft: -8 },
-  pointerDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 3, borderColor: colors.card },
-  labels: { flexDirection: 'row', justifyContent: 'space-between' },
-  catLabel: { ...Typography.micro, color: colors.muted, flex: 1, textAlign: 'center' },
-  resultBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: 8,
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  resultDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  bmiValue: { ...Typography.bodyBold },
-});
 
 const MILESTONES = [90, 85, 80, 75];
 
 export default function WeightScreen() {
   const { colors, isDark: isDarkMode } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
-  const bmiS = React.useMemo(() => getBmiS(colors), [colors]);
   const modalS = React.useMemo(() => getModalS(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [period, setPeriod] = useState<Period>('week');
 
   const { user } = useProfileSettings();
-  const {
-    weightLogs,
-    addWeightLog,
-    deleteWeightLog,
-  } = useBmiTracker();
+  const { weightLogs, deleteWeightLog } = useBmiTracker();
 
   const streak = user.streak;
-  const isLbs = user.weightUnit === 'lbs';
 
-  // Modal control states
-  const [logModalVisible, setLogModalVisible] = useState(false);
+  const {
+    isLbs,
+    logModalVisible, setLogModalVisible,
+    logWeightValue, setLogWeightValue,
+    logDateOffset, setLogDateOffset,
+    logTimeOfDay, setLogTimeOfDay,
+    logError, setLogError,
+    openLogModal,
+    handleAdjustWeight,
+    handleSaveWeightLog,
+  } = useWeightLogger();
+
   const [fullscreenModalVisible, setFullscreenModalVisible] = useState(false);
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
-  const [logWeightValue, setLogWeightValue] = useState('78.4');
-  const [logDateOffset, setLogDateOffset] = useState<'today' | 'yesterday'>('today');
-  const [logTimeOfDay, setLogTimeOfDay] = useState<'morning' | 'afternoon' | 'night'>('morning');
-  const [logError, setLogError] = useState('');
 
   // Intraday logs for today date
   const todayDateStr = new Date().toISOString().split('T')[0];
@@ -349,47 +130,6 @@ export default function WeightScreen() {
         : dailyWeightValues;
 
   const chartData = isLbs ? rawChartData.map(kgToLbs) : rawChartData;
-
-  const openLogModal = () => {
-    setLogWeightValue(displayCurrentWeight.toFixed(1));
-    setLogDateOffset('today');
-    setLogError('');
-    
-    // Auto-select based on time of day
-    const hr = new Date().getHours();
-    if (hr < 12) {
-      setLogTimeOfDay('morning');
-    } else if (hr < 17) {
-      setLogTimeOfDay('afternoon');
-    } else {
-      setLogTimeOfDay('night');
-    }
-    
-    setLogModalVisible(true);
-  };
-
-  const handleAdjustWeight = (amount: number) => {
-    const nextVal = parseFloat(logWeightValue) + amount;
-    const minWeight = isLbs ? 66 : 30;
-    const maxWeight = isLbs ? 660 : 300;
-    if (!isNaN(nextVal) && nextVal > minWeight && nextVal < maxWeight) {
-      setLogWeightValue(nextVal.toFixed(1));
-    }
-  };
-
-  const handleSaveWeightLog = () => {
-    const val = parseFloat(logWeightValue);
-    const minWeight = isLbs ? 66 : 30;
-    const maxWeight = isLbs ? 660 : 300;
-    if (isNaN(val) || val <= minWeight || val >= maxWeight) {
-      setLogError(`Enter weight between ${minWeight} and ${maxWeight} ${isLbs ? 'lbs' : 'kg'}`);
-      return;
-    }
-
-    const savedWeight = isLbs ? lbsToKg(val) : val;
-    addWeightLog(parseFloat(savedWeight.toFixed(1)), logTimeOfDay, logDateOffset);
-    setLogModalVisible(false);
-  };
 
   return (
     <ScrollView

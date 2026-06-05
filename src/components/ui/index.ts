@@ -8,3 +8,6 @@ export { default as DonutChart } from './DonutChart';
 export { default as PillButton } from './PillButton';
 export { default as ScreenHeader } from './ScreenHeader';
 export { default as AppIcon, AppIconDef } from './AppIcon';
+export { default as ModalSheet } from './ModalSheet';
+export { default as PressableRow } from './PressableRow';
+export { default as NutritionScore } from './NutritionScore';

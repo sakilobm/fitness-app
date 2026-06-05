@@ -17,6 +17,7 @@ import MacroBar from '@/components/ui/MacroBar';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import ProgressRing from '@/components/ui/ProgressRing';
+import NutritionScore from '@/components/ui/NutritionScore';
 import { Typography, Radius, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
@@ -66,34 +67,6 @@ const initialMeals: Meal[] = [
   },
 ];
 
-function NutritionScore({ score }: { score: 'A' | 'B' | 'C' }) {
-  const { colors: tc } = useTheme();
-  const colors: Record<string, string> = { A: tc.lime, B: tc.amber, C: tc.danger };
-  const pcts: Record<string, number> = { A: 0.92, B: 0.72, C: 0.52 };
-  const labels: Record<string, string> = { A: 'Excellent', B: 'Good', C: 'Needs Work' };
-  return (
-    <View style={scoreS.container}>
-      <ProgressRing size={64} strokeWidth={6} progress={pcts[score]} color={colors[score]}>
-        <Text style={[scoreS.letter, { color: colors[score] }]}>{score}</Text>
-      </ProgressRing>
-      <View style={[scoreS.labelBadge, { backgroundColor: colors[score] + '15', borderColor: colors[score] + '35' }]}>
-        <Text style={[scoreS.labelText, { color: colors[score] }]}>{labels[score]}</Text>
-      </View>
-    </View>
-  );
-}
-
-const scoreS = StyleSheet.create({
-  container: { alignItems: 'center', gap: 6 },
-  letter: { ...Typography.h2 },
-  labelBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  labelText: { ...Typography.micro },
-});
 
 export default function NutritionScreen() {
   const { colors, isDark } = useTheme();

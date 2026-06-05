@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch,
   TextInput, KeyboardAvoidingView, Platform, Modal, Image, Share, Alert
@@ -8,6 +8,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import PressableRow from '@/components/ui/PressableRow';
 import { Typography, Radius, Shadows, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,12 +17,11 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 import { triggerHaptic } from '@/utils/haptics';
-import { kgToLbs, lbsToKg, mlToOz, ozToMl } from '@/utils/units';
+import { kgToLbs, mlToOz, ozToMl } from '@/utils/units';
 import Animated, {
   FadeInUp, FadeInDown,
-  useSharedValue, useAnimatedStyle,
-  withSpring, withTiming
 } from 'react-native-reanimated';
+import { useSettingsForm } from '@/hooks';
 
 // ─── Preset Avatars for Fast Selection ─────────────────────────────────────────
 const AVATAR_PRESETS = [
@@ -33,36 +33,6 @@ const AVATAR_PRESETS = [
   { id: 'av6', label: 'Cyclist', url: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=150&auto=format&fit=crop&q=80' },
 ];
 
-// ─── Spring-press animated button wrapper ─────────────────────────────────────
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-function PressableRow({ onPress, children, style }: { onPress?: () => void; children: React.ReactNode; style?: any }) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-  const aStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-  const handleIn = () => {
-    scale.value = withSpring(0.97, { damping: 18, stiffness: 300 });
-    opacity.value = withTiming(0.85, { duration: 80 });
-  };
-  const handleOut = () => {
-    scale.value = withSpring(1, { damping: 14, stiffness: 200 });
-    opacity.value = withTiming(1, { duration: 120 });
-  };
-  return (
-    <AnimatedTouchable
-      activeOpacity={1}
-      onPress={onPress}
-      onPressIn={handleIn}
-      onPressOut={handleOut}
-      style={[aStyle, style]}
-    >
-      {children}
-    </AnimatedTouchable>
-  );
-}
-
 // ─── Main Settings Screen ─────────────────────────────────────────────────────
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -73,36 +43,31 @@ export default function SettingsScreen() {
   const styles = useMemo(() => getStyles(colors, isDarkMode), [colors, isDarkMode]);
 
   // Zustand stores
-  const { user, setUser } = useProfileSettings();
+  const { user } = useProfileSettings();
   const fitnessStore = useFitnessStore();
 
-  // ─── State Management for Editing Fields ──────────────────────────────────────
-  const [formName, setFormName] = useState(user.name);
-  const [formAge, setFormAge] = useState(user.age.toString());
-  const [formHeight, setFormHeight] = useState(user.height.toString());
-
-  // Preferences
-  const [weightUnit, setWeightUnit] = useState(user.weightUnit ?? 'kg');
-  const [volumeUnit, setVolumeUnit] = useState(user.volumeUnit ?? 'ml');
-
-  // Weight preference-aware init
-  const initialWeight = (user.weightUnit ?? 'kg') === 'lbs' ? kgToLbs(user.weight).toString() : user.weight.toString();
-  const [formWeight, setFormWeight] = useState(initialWeight);
-  const [formGoal, setFormGoal] = useState(user.goal);
-  const [formMotto, setFormMotto] = useState(user.motto);
-  const [formProfilePic, setFormProfilePic] = useState(user.profilePic || '');
-
-  // Advanced Goals (numeric states for instant slider / adjuster feedback)
-  const [formCalorieGoal, setFormCalorieGoal] = useState(user.calorieGoal);
-  const [formWaterGoal, setFormWaterGoal] = useState(user.waterGoal);
-  const [formStepsGoal, setFormStepsGoal] = useState(user.stepsGoal);
-  const [formWorkoutGoal, setFormWorkoutGoal] = useState(user.workoutGoal);
-
-  // Preference switches
-  const [notifications, setNotifications] = useState(user.notificationsEnabled ?? true);
-  const [haptics, setHaptics] = useState(user.hapticsEnabled ?? true);
-  const [privateProfile, setPrivateProfile] = useState(user.privateProfileEnabled ?? false);
-  const [appLock, setAppLock] = useState(user.appLockEnabled ?? false);
+  const {
+    formName, setFormName,
+    formAge, setFormAge,
+    formHeight, setFormHeight,
+    formWeight, setFormWeight,
+    formGoal, setFormGoal,
+    formMotto, setFormMotto,
+    formProfilePic, setFormProfilePic,
+    formCalorieGoal, setFormCalorieGoal,
+    formWaterGoal, setFormWaterGoal,
+    formStepsGoal, setFormStepsGoal,
+    formWorkoutGoal, setFormWorkoutGoal,
+    weightUnit, setWeightUnit, volumeUnit, setVolumeUnit,
+    notifications, setNotifications,
+    haptics, setHaptics,
+    privateProfile, setPrivateProfile,
+    appLock, setAppLock,
+    formErrors, setFormErrors,
+    handleWeightUnitChange,
+    handleSave,
+    toastMessage, toastType, showToast,
+  } = useSettingsForm();
 
   // Modal / Overlay Controls
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -114,22 +79,6 @@ export default function SettingsScreen() {
     visible: false, title: '', content: ''
   });
 
-  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
-
-  // Premium Toast States & Helper
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<'info' | 'success' | 'alert'>('info');
-
-  const showToast = (message: string, type: 'info' | 'success' | 'alert' = 'info') => {
-    setToastMessage(message);
-    setToastType(type);
-    triggerHaptic(type === 'success' ? 'success' : type === 'alert' ? 'error' : 'selection');
-    const timer = setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-    return () => clearTimeout(timer);
-  };
-
   const [hapticTestIndex, setHapticTestIndex] = useState(0);
 
   const handleTestHaptic = () => {
@@ -138,20 +87,6 @@ export default function SettingsScreen() {
     triggerHaptic(type);
     showToast(`Triggered ${type.toUpperCase()} haptic pattern ⚡`, 'info');
     setHapticTestIndex(hapticTestIndex + 1);
-  };
-
-  // Handle Weight Unit Toggling with value conversion
-  const handleWeightUnitChange = (newUnit: 'kg' | 'lbs') => {
-    if (newUnit === weightUnit) return;
-    const currentWeightVal = parseFloat(formWeight);
-    if (!isNaN(currentWeightVal) && currentWeightVal > 0) {
-      if (newUnit === 'lbs') {
-        setFormWeight(kgToLbs(currentWeightVal).toString());
-      } else {
-        setFormWeight(lbsToKg(currentWeightVal).toString());
-      }
-    }
-    setWeightUnit(newUnit);
   };
 
   // ─── Native Image Picker ──────────────────────────────────────────────────────
@@ -202,61 +137,6 @@ export default function SettingsScreen() {
     } catch (e) {
       console.warn('Camera capture error: ', e);
     }
-  };
-
-  // ─── Save Profile Updates ─────────────────────────────────────────────────────
-  const handleSave = () => {
-    const errors: Record<string, string> = {};
-
-    if (!formName.trim()) errors.name = 'Full name is required';
-
-    const ageNum = parseInt(formAge, 10);
-    if (!formAge || isNaN(ageNum) || ageNum <= 0 || ageNum > 120) errors.age = 'Invalid age (1-120)';
-
-    const heightNum = parseFloat(formHeight);
-    if (!formHeight || isNaN(heightNum) || heightNum <= 50 || heightNum > 250) errors.height = 'Invalid height (50-250)';
-
-    const weightNum = parseFloat(formWeight);
-    if (weightUnit === 'lbs') {
-      if (!formWeight || isNaN(weightNum) || weightNum <= 22 || weightNum > 1100) {
-        errors.weight = 'Invalid weight (22-1100 lbs)';
-      }
-    } else {
-      if (!formWeight || isNaN(weightNum) || weightNum <= 10 || weightNum > 500) {
-        errors.weight = 'Invalid weight (10-500 kg)';
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      showToast('Please correct errors in basic metrics section before saving.', 'alert');
-      return;
-    }
-
-    const finalWeightInKg = weightUnit === 'lbs' ? lbsToKg(weightNum) : weightNum;
-
-    // Save back to Zustand (which auto-syncs to Supabase profiles DB if logged in)
-    setUser({
-      name: formName.trim(),
-      age: ageNum,
-      height: heightNum,
-      weight: finalWeightInKg,
-      goal: formGoal,
-      motto: formMotto.trim(),
-      calorieGoal: formCalorieGoal,
-      waterGoal: formWaterGoal,
-      stepsGoal: formStepsGoal,
-      workoutGoal: formWorkoutGoal,
-      profilePic: formProfilePic,
-      weightUnit,
-      volumeUnit,
-      notificationsEnabled: notifications,
-      hapticsEnabled: haptics,
-      privateProfileEnabled: privateProfile,
-      appLockEnabled: appLock,
-    });
-
-    showToast('Settings saved and synced successfully.', 'success');
   };
 
   // ─── Sync Supabase manually ───────────────────────────────────────────────

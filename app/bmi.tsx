@@ -1,13 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform,
+  Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, {
-  Rect, Text as SvgText, G, Path, Circle,
-  Defs, LinearGradient as SvgGrad, Stop, Line,
-} from 'react-native-svg';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
@@ -17,205 +13,15 @@ import { Colors, Typography, Radius, Shadows } from '@/constants/theme';
 import { router } from 'expo-router';
 import { useProfileSettings, useBmiTracker, useWorkoutEngine, useHydrationTracker } from '@/store/fitnessStore';
 import {
-  getBMIResult, BMI_CATEGORIES, bmiToGaugePosition,
+  getBMIResult,
   getIdealWeightRange, getWeightToNormal,
   generateSuggestions,
 } from '@/utils/bmi';
+import BMIGauge from '@/components/charts/BMIGauge';
+import BMISparkline from '@/components/charts/BMISparkline';
+import BMICategoryCards from '@/components/charts/BMICategoryCards';
 
-const { width: W } = Dimensions.get('window');
-const BMI_COLOR = '#0EA5E9'; // Sky blue accent for BMI screen
-const GAUGE_W = W - 80;
-const GAUGE_H = 28;
-const CHART_W = W - 64;
-const CHART_H = 120;
-
-// ─── BMI Gauge Component ─────────────────────────────────────────────────────
-
-function BMIGauge({ bmi }: { bmi: number }) {
-  const position = bmiToGaugePosition(bmi);
-  const markerX = 8 + position * (GAUGE_W - 16);
-
-  return (
-    <View style={gaugeStyles.container}>
-      <Svg width={GAUGE_W} height={GAUGE_H + 50}>
-        <Defs>
-          <SvgGrad id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#3B82F6" />
-            <Stop offset="0.28" stopColor="#2E7D5E" />
-            <Stop offset="0.6" stopColor="#F59E0B" />
-            <Stop offset="1" stopColor="#EF4444" />
-          </SvgGrad>
-        </Defs>
-
-        {/* Gauge track */}
-        <Rect x={0} y={16} width={GAUGE_W} height={GAUGE_H} rx={14} fill="url(#gaugeGrad)" opacity={0.2} />
-        <Rect x={0} y={16} width={GAUGE_W} height={GAUGE_H} rx={14} fill="url(#gaugeGrad)" opacity={0.85} />
-
-        {/* Category boundaries */}
-        {[18.5, 25, 30].map((boundary) => {
-          const x = 8 + bmiToGaugePosition(boundary) * (GAUGE_W - 16);
-          return (
-            <Line key={boundary} x1={x} y1={14} x2={x} y2={GAUGE_H + 18} stroke="rgba(255,255,255,0.5)" strokeWidth={2} />
-          );
-        })}
-
-        {/* Marker */}
-        <Circle cx={markerX} cy={16 + GAUGE_H / 2} r={14}
-          fill="white" stroke={getBMIResult(bmi, 170).color} strokeWidth={3}
-        />
-        <SvgText
-          x={markerX} y={16 + GAUGE_H / 2 + 4}
-          fill={getBMIResult(bmi, 170).color}
-          fontSize={10} fontWeight="800" textAnchor="middle"
-        >
-          {bmi.toFixed(1)}
-        </SvgText>
-
-        {/* Labels */}
-        <SvgText x={GAUGE_W * 0.07} y={GAUGE_H + 38} fill="#3B82F6" fontSize={9} fontWeight="600" textAnchor="middle">Under</SvgText>
-        <SvgText x={GAUGE_W * 0.35} y={GAUGE_H + 38} fill="#2E7D5E" fontSize={9} fontWeight="600" textAnchor="middle">Normal</SvgText>
-        <SvgText x={GAUGE_W * 0.6} y={GAUGE_H + 38} fill="#F59E0B" fontSize={9} fontWeight="600" textAnchor="middle">Over</SvgText>
-        <SvgText x={GAUGE_W * 0.85} y={GAUGE_H + 38} fill="#EF4444" fontSize={9} fontWeight="600" textAnchor="middle">Obese</SvgText>
-      </Svg>
-    </View>
-  );
-}
-
-const gaugeStyles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 8 },
-});
-
-// ─── BMI History Sparkline ───────────────────────────────────────────────────
-
-function BMISparkline({ data }: { data: { date: string; bmi: number }[] }) {
-  if (data.length < 2) {
-    return (
-      <View style={{ alignItems: 'center', padding: 24 }}>
-        <Text style={{ ...Typography.caption, color: Colors.muted }}>Need more data for trend</Text>
-      </View>
-    );
-  }
-
-  const recent = data.slice(-14);
-  const values = recent.map((d) => d.bmi);
-  const min = Math.min(...values) - 0.5;
-  const max = Math.max(...values) + 0.5;
-  const range = max - min || 1;
-
-  const pts = values.map((v, i) => ({
-    x: (i / (values.length - 1)) * CHART_W,
-    y: CHART_H - ((v - min) / range) * CHART_H,
-  }));
-
-  const pathD = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
-  const areaD = `${pathD} L${CHART_W},${CHART_H} L0,${CHART_H} Z`;
-
-  // Normal BMI zone lines
-  const normalMinY = CHART_H - ((18.5 - min) / range) * CHART_H;
-  const normalMaxY = CHART_H - ((25 - min) / range) * CHART_H;
-
-  return (
-    <Svg width={CHART_W} height={CHART_H + 8}>
-      <Defs>
-        <SvgGrad id="bmiAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={BMI_COLOR} stopOpacity="0.25" />
-          <Stop offset="1" stopColor={BMI_COLOR} stopOpacity="0" />
-        </SvgGrad>
-      </Defs>
-
-      {/* Normal zone band */}
-      {normalMinY >= 0 && normalMaxY >= 0 && (
-        <Rect x={0} y={Math.min(normalMinY, normalMaxY)} 
-          width={CHART_W} height={Math.abs(normalMinY - normalMaxY)}
-          fill="#2E7D5E" opacity={0.08} rx={4}
-        />
-      )}
-
-      {/* Area fill */}
-      <Path d={areaD} fill="url(#bmiAreaGrad)" />
-      {/* Line */}
-      <Path d={pathD} stroke={BMI_COLOR} strokeWidth={2.5} fill="none"
-        strokeLinecap="round" strokeLinejoin="round"
-      />
-      {/* Dots */}
-      {pts.map((p, i) => (
-        <Circle key={i} cx={p.x} cy={p.y}
-          r={i === pts.length - 1 ? 5 : 3}
-          fill={i === pts.length - 1 ? BMI_COLOR : BMI_COLOR + '88'}
-        />
-      ))}
-
-      {/* Normal zone labels */}
-      {normalMaxY >= 0 && normalMaxY <= CHART_H && (
-        <SvgText x={CHART_W - 2} y={normalMaxY - 3}
-          fill="#2E7D5E" fontSize={8} textAnchor="end" opacity={0.6}
-        >
-          25.0
-        </SvgText>
-      )}
-      {normalMinY >= 0 && normalMinY <= CHART_H && (
-        <SvgText x={CHART_W - 2} y={normalMinY + 10}
-          fill="#2E7D5E" fontSize={8} textAnchor="end" opacity={0.6}
-        >
-          18.5
-        </SvgText>
-      )}
-    </Svg>
-  );
-}
-
-// ─── Category Info Cards ─────────────────────────────────────────────────────
-
-function CategoryCards({ currentCategory }: { currentCategory: string }) {
-  return (
-    <View style={catStyles.grid}>
-      {BMI_CATEGORIES.map((cat) => {
-        const isActive = cat.label.toLowerCase() === currentCategory;
-        return (
-          <View
-            key={cat.label}
-            style={[
-              catStyles.card,
-              isActive && { borderColor: cat.color, backgroundColor: cat.color + '08' },
-            ]}
-          >
-            <View style={[catStyles.indicator, { backgroundColor: cat.color }]} />
-            <View style={catStyles.cardContent}>
-              <Text style={[catStyles.label, isActive && { color: cat.color, fontWeight: '700' }]}>
-                {cat.label}
-              </Text>
-              <Text style={catStyles.range}>{cat.range}</Text>
-            </View>
-            {isActive && (
-              <View style={[catStyles.activeBadge, { backgroundColor: cat.color + '18' }]}>
-                <Text style={[catStyles.activeText, { color: cat.color }]}>You</Text>
-              </View>
-            )}
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-const catStyles = StyleSheet.create({
-  grid: { gap: 8 },
-  card: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.cardBorder,
-    paddingVertical: 12, paddingHorizontal: 14, gap: 12,
-  },
-  indicator: { width: 4, height: 32, borderRadius: 2 },
-  cardContent: { flex: 1, gap: 2 },
-  label: { ...Typography.bodyBold, color: Colors.text.primary },
-  range: { ...Typography.caption, color: Colors.muted },
-  activeBadge: {
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: Radius.pill,
-  },
-  activeText: { ...Typography.captionBold },
-});
+const BMI_COLOR = '#0EA5E9';
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
@@ -396,7 +202,7 @@ export default function BMIScreen() {
       {/* ════════ Categories Breakdown ════════ */}
       <GlassCard>
         <SectionHeader title="WHO BMI Categories" accentColor={BMI_COLOR} />
-        <CategoryCards currentCategory={bmiResult.category} />
+        <BMICategoryCards currentCategory={bmiResult.category} />
       </GlassCard>
 
       {/* ════════ BMI Calculator ════════ */}

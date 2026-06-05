@@ -4,7 +4,6 @@ import {
   Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Rect, Text as SvgText, G, Line, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import ProgressRing from '@/components/ui/ProgressRing';
@@ -18,144 +17,12 @@ import { router } from 'expo-router';
 import { useWorkoutEngine, useHydrationTracker, useBmiTracker, useProfileSettings } from '@/store/fitnessStore';
 import { stepsToCalories, stepsToDistanceKm, formatStepCount, getDayLabel } from '@/utils/steps';
 import { generateSuggestions, getBMIResult } from '@/utils/bmi';
+import WeekBars from '@/components/charts/WeekBars';
+import StreakDots from '@/components/charts/StreakDots';
+import MotionBreakdown from '@/components/charts/MotionBreakdown';
 
 const { width: W } = Dimensions.get('window');
 const STEPS_COLOR = '#6366F1';
-
-// ─── Dynamic Weekly Bars Chart ───────────────────────────────────────────────
-
-function WeekBars({ data, goal }: { data: { date: string; steps: number }[]; goal: number }) {
-  const { colors } = useTheme();
-  const barW = (W - 80) / 7;
-  const maxVal = Math.max(...data.map((d) => d.steps), goal);
-  const chartH = 110;
-
-  return (
-    <Svg width={W - 64} height={chartH + 28}>
-      {/* Goal line */}
-      <Line
-        x1={0} y1={chartH - (goal / maxVal) * chartH}
-        x2={W - 64} y2={chartH - (goal / maxVal) * chartH}
-        stroke={STEPS_COLOR + '30'} strokeWidth={1} strokeDasharray="4,4"
-      />
-      <SvgText
-        x={W - 68} y={chartH - (goal / maxVal) * chartH - 4}
-        fill={STEPS_COLOR + '60'} fontSize={8} textAnchor="end"
-      >
-        Goal
-      </SvgText>
-
-      {data.map((d, i) => {
-        const h = maxVal > 0 ? (d.steps / maxVal) * chartH : 0;
-        const x = i * barW + barW * 0.15;
-        const bw = barW * 0.7;
-        const isToday = i === data.length - 1;
-        const color =
-          d.steps === 0 ? 'rgba(0,0,0,0.06)'
-          : d.steps >= goal ? colors.amber
-          : isToday ? STEPS_COLOR
-          : colors.muted + '55';
-        
-        const label = getDayLabel(d.date);
-
-        return (
-          <G key={i}>
-            {/* Bar with gradient fill for today */}
-            <Defs>
-              <SvgGrad id={`barGrad_${i}`} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={isToday ? STEPS_COLOR : color} stopOpacity="1" />
-                <Stop offset="1" stopColor={isToday ? STEPS_COLOR : color} stopOpacity={isToday ? '0.6' : '1'} />
-              </SvgGrad>
-            </Defs>
-            <Rect
-              x={x} y={chartH - h}
-              width={bw} height={Math.max(h, 2)}
-              rx={5} fill={d.steps === 0 ? color : `url(#barGrad_${i})`}
-            />
-            {/* Day label */}
-            <SvgText
-              x={x + bw / 2} y={chartH + 18}
-              fill={isToday ? STEPS_COLOR : colors.muted}
-              fontSize={11} textAnchor="middle" fontWeight={isToday ? '700' : '400'}
-            >
-              {label.charAt(0)}
-            </SvgText>
-            {/* Value label */}
-            {d.steps > 0 && (
-              <SvgText
-                x={x + bw / 2} y={chartH - h - 5}
-                fill={color === colors.muted + '55' ? colors.muted : color}
-                fontSize={9} textAnchor="middle"
-              >
-                {formatStepCount(d.steps)}
-              </SvgText>
-            )}
-          </G>
-        );
-      })}
-    </Svg>
-  );
-}
-
-// ─── Streak Dots Component ───────────────────────────────────────────────────
-
-function StreakDots({ history, goal }: { history: { steps: number }[]; goal: number }) {
-  const { colors } = useTheme();
-  const days = history.slice(-14);
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {days.map((d, i) => {
-          const hit = d.steps >= goal;
-          const isLast = i === days.length - 1;
-          return (
-            <View
-              key={i}
-              style={[
-                streakS.dot,
-                hit ? { backgroundColor: STEPS_COLOR + '66' } : { backgroundColor: colors.danger + '44' },
-                isLast && { borderWidth: 2, borderColor: STEPS_COLOR, backgroundColor: STEPS_COLOR },
-              ]}
-            />
-          );
-        })}
-      </View>
-    </ScrollView>
-  );
-}
-
-const streakS = StyleSheet.create({
-  dot: { width: 20, height: 20, borderRadius: 10 },
-});
-
-// ─── Motion Breakdown ────────────────────────────────────────────────────────
-
-function MotionBreakdown({ stepsCount, styles }: { stepsCount: number; styles: any }) {
-  const { colors } = useTheme();
-  // Simulate walking/running/stationary distribution based on step count
-  const walkPct = stepsCount > 0 ? Math.min(0.7, stepsCount / 15000) : 0;
-  const runPct = stepsCount > 5000 ? Math.min(0.2, (stepsCount - 5000) / 20000) : 0;
-  const statPct = Math.max(0, 1 - walkPct - runPct);
-
-  const MOTION = [
-    { label: 'Walking', pct: walkPct, color: STEPS_COLOR },
-    { label: 'Running', pct: runPct, color: colors.amber },
-    { label: 'Stationary', pct: statPct, color: colors.muted + '55' },
-  ];
-
-  return (
-    <View style={styles.motionRow}>
-      {MOTION.map((m) => (
-        <View key={m.label} style={styles.motionItem}>
-          <ProgressRing size={70} strokeWidth={7} progress={m.pct} color={m.color}>
-            <Text style={[styles.motionPct, { color: m.color }]}>{Math.round(m.pct * 100)}%</Text>
-          </ProgressRing>
-          <Text style={styles.motionLabel}>{m.label}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
 
 // ─── Quick Add Pills ─────────────────────────────────────────────────────────
 

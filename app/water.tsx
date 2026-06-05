@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, TextInput, Modal, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Ellipse, Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import StatBadge from '@/components/ui/StatBadge';
@@ -16,77 +14,10 @@ import { router } from 'expo-router';
 import { useFitnessStore, useHydrationTracker } from '@/store/fitnessStore';
 import { mlToOz, ozToMl } from '@/utils/units';
 import { triggerHaptic } from '@/utils/haptics';
+import WaterCylinder from '@/components/charts/WaterCylinder';
+import { useWaterLogger } from '@/hooks';
 
 const { width: W } = Dimensions.get('window');
-const CYLINDER_W = 120;
-const CYLINDER_H = 220;
-
-interface LogEntry {
-  id: string;
-  time: string;
-  ml: number;
-}
-
-const initialLog: LogEntry[] = [
-  { id: '1', time: '07:15', ml: 250 },
-  { id: '2', time: '09:30', ml: 500 },
-  { id: '3', time: '11:00', ml: 250 },
-  { id: '4', time: '13:45', ml: 200 },
-];
-
-function WaterCylinder({ filled }: { filled: number }) {
-  const { colors } = useTheme();
-  const cyS = React.useMemo(() => getCyStyles(colors), [colors]);
-  const fillHeight = useSharedValue(0);
-
-  useEffect(() => {
-    fillHeight.value = withTiming(filled, {
-      duration: 1200,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [filled]);
-
-  const fillStyle = useAnimatedStyle(() => ({
-    height: fillHeight.value * CYLINDER_H,
-  }));
-
-  return (
-    <View style={{ alignItems: 'center', width: CYLINDER_W, height: CYLINDER_H }}>
-      {/* cylinder track */}
-      <View style={cyS.track}>
-        {/* fill */}
-        <Animated.View style={[cyS.fill, fillStyle]} />
-        {/* wave overlay */}
-        <View style={[cyS.waveRow, { bottom: filled * CYLINDER_H - 10 }]}>
-          <Text style={cyS.wave}>〰〰〰</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-const getCyStyles = (colors: ThemeColors) => StyleSheet.create({
-  track: {
-    width: CYLINDER_W,
-    height: CYLINDER_H,
-    borderRadius: 60,
-    backgroundColor: 'rgba(59,130,246,0.08)',
-    borderWidth: 1.5,
-    borderColor: colors.chart.water + '66',
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  fill: {
-    width: '100%',
-    backgroundColor: colors.chart.water + 'BB',
-  },
-  waveRow: {
-    position: 'absolute',
-    left: 0, right: 0,
-    alignItems: 'center',
-  },
-  wave: { color: colors.chart.water, opacity: 0.4, fontSize: 16, letterSpacing: -2 },
-});
 
 const QUICK_AMOUNTS = [150, 250, 500];
 
@@ -100,43 +31,28 @@ export default function WaterScreen() {
     waterLogs: log,
     addWaterLog: addWater,
     deleteWaterLog: handleDeleteLog,
-    setWaterGoal: handleSaveGoalStore,
     waterAvg: avgDay,
     waterBest: bestDay,
     waterStreak: streakVal,
   } = useHydrationTracker();
 
-  const isOz = user.volumeUnit === 'oz';
   const goalMl = user.waterGoal;
 
-  // Custom Amount Modal States
-  const [showCustom, setShowCustom] = useState(false);
-  const [customVal, setCustomVal] = useState('');
-  const [customError, setCustomError] = useState('');
-
-  // Edit Goal Modal States
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [tempGoalVal, setTempGoalVal] = useState(isOz ? mlToOz(goalMl) : goalMl);
-
-  // Sync temp goal when store goal changes
-  useEffect(() => {
-    setTempGoalVal(isOz ? mlToOz(goalMl) : goalMl);
-  }, [goalMl, isOz]);
+  const {
+    isOz,
+    showCustom, setShowCustom,
+    customVal, setCustomVal,
+    customError, setCustomError,
+    showGoalModal, setShowGoalModal,
+    tempGoalVal, setTempGoalVal,
+    handleAddCustom,
+    handleSaveGoal,
+  } = useWaterLogger();
 
   // Dynamic Portions Calculations
   const totalMl = log.reduce((s, e) => s + e.ml, 0);
   const filled = Math.min(totalMl / goalMl, 1);
   const goalMet = totalMl >= goalMl;
-
-  const handleSaveGoal = () => {
-    const targetMl = isOz ? ozToMl(tempGoalVal) : tempGoalVal;
-    if (targetMl < 500 || targetMl > 10000) {
-      return;
-    }
-    handleSaveGoalStore(targetMl);
-    triggerHaptic('success');
-    setShowGoalModal(false);
-  };
 
   return (
     <ScrollView
