@@ -2,6 +2,112 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.6] - 2026-06-05T02:00:00+05:30
+
+### Added — DB Schema: Create Missing Log Tables with RLS
+
+**Architectural Decision:** Five Supabase tables referenced by app log-write operations had never been provisioned. Every Supabase sync call for weights, water, meals, reminders, and steps had been silently failing since day one. All five tables are now created with column schemas matching the app's insert/select field names, `ON DELETE CASCADE` foreign keys from `auth.users → profiles → log tables`, and Row Level Security ALL policies enforcing `auth.uid() = user_id`.
+
+**Changes:**
+- **`weight_logs` table:** `id TEXT PK, user_id UUID FK→profiles CASCADE, weight FLOAT, date TEXT, time_of_day TEXT` — RLS ALL policy.
+- **`water_logs` table:** `id TEXT PK, user_id UUID FK→profiles CASCADE, time TEXT, ml INTEGER` — RLS ALL policy.
+- **`meals` table:** `id TEXT PK, user_id UUID FK→profiles CASCADE, label TEXT, items JSONB, date TEXT` — RLS ALL policy.
+- **`reminders` table:** `id TEXT PK, user_id UUID FK→profiles CASCADE, title TEXT, time TEXT, days TEXT[], enabled BOOLEAN` — RLS ALL policy.
+- **`step_logs` table:** Composite PK `(user_id, date)`, `steps INTEGER, calories_burned FLOAT, distance_km FLOAT` — RLS ALL policy.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.6.
+
+## [2.6.5] - 2026-06-05T01:45:00+05:30
+
+### Fixed — Security: RLS Tightening & Per-User Delete Scoping
+
+**Architectural Decision:** The `profiles` table had a dangerous public read policy (`qual: true`) that allowed any anonymous query to read all users' health data. Additionally, `deleteWeightLog` and `deleteWaterLog` in the fitness store were deleting by `id` alone — any user who knew another user's log ID could delete it. Both issues are fixed to enforce strict per-user data isolation.
+
+**Changes:**
+- **Supabase DB — Profiles RLS:** Dropped the "Public profiles are viewable by everyone" policy (`roles: {public}`, `qual: true`). Tightened INSERT policy to `auth.uid() = id`. Added missing UPDATE policy: `auth.uid() = id`.
+- **`src/store/fitnessStore.ts` — `deleteWeightLog`:** Delete now wrapped in `auth.getUser()` callback — `.delete().eq('id', id).eq('user_id', data.user.id)`. Operation scoped to the authenticated user's own rows.
+- **`src/store/fitnessStore.ts` — `deleteWaterLog`:** Same per-user scoping pattern applied.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.5.
+
+## [2.6.4] - 2026-06-05T01:30:00+05:30
+
+### Changed — Clear History Split: Local Device vs Cloud DB
+
+**Architectural Decision:** The original single "Clear History" button ran a mixed operation (local MMKV wipe + Supabase delete) without letting the user choose scope. Split into two distinct targets so users can clear only local cache or only cloud data independently. Requires typing `CLEAR` to confirm either action, preserving the safety friction.
+
+**Changes:**
+- **`app/settings.tsx` — State:** Added `clearTarget: 'local' | 'cloud' | null` state. Added `closeClearModal` helper that resets all three clear-modal states atomically.
+- **`app/settings.tsx` — `handleClearLocal`:** Clears Zustand weight logs, water logs, meals from MMKV only. Does not touch Supabase.
+- **`app/settings.tsx` — `handleClearCloud`:** Deletes rows from `weight_logs`, `water_logs`, `meals` on Supabase for the authenticated user. Does not touch the local store or the profile row. **Note: this deletes rows entirely — not reset to 0.**
+- **`app/settings.tsx` — Modal UI:** Replaced single confirm button with two-card selection step (Local Device / Cloud DB). User picks target first, then types `CLEAR`, then confirms. Added `clearTargetBtn`, `clearTargetLabel`, `clearTargetSub` styles.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.4.
+
+## [2.6.3] - 2026-06-05T01:15:00+05:30
+
+### Fixed — Navigation Gate: One-Shot Session Setup Check
+
+**Architectural Decision:** The `NavigationGate` effect only ran the `initializeFromSupabase` + setup check when `inAuthGroup === true`. After login, the router lands the user at `/(tabs)` — `inAuthGroup = false` — so the check was always skipped and the wizard never opened. Fixed with a `useRef` flag so the check fires exactly once per app session regardless of which route the user is on.
+
+**Changes:**
+- **`app/_layout.tsx`:** Added `setupCheckDone = useRef(false)`. Changed the guard condition from `isAuthenticated && inAuthGroup && !isSetup` to `isAuthenticated && !isSetup && !setupCheckDone.current`. The ref is set to `true` before the async Supabase call so concurrent effect firings don't double-execute. After `initializeFromSupabase` resolves, routing decision (setup vs tabs) is made from fresh store state.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.3.
+
+## [2.6.2] - 2026-06-05T01:00:00+05:30
+
+### Fixed — NaN: Null-Safe Supabase Profile Hydration
+
+**Architectural Decision:** When a Supabase profile row exists but has null numeric fields (e.g. a user who manually reset their row, or an auth-trigger bare row), `initializeFromSupabase` was writing those nulls directly into Zustand — causing `NaN` throughout all health calculations and UI displays. Every field now falls back to the existing store value via `?? state.user.xxx` so nulls never propagate. `setupCompleted` is derived from whether real metric data exists rather than just whether the profile row exists.
+
+**Changes:**
+- **`src/store/fitnessStore.ts` — `initializeFromSupabase`:** All nullable profile fields (`age`, `height`, `weight`, `calorieGoal`, `waterGoal`, `stepsGoal`, `workoutGoal`) now use `?? state.user.xxx` fallbacks.
+- **`src/store/fitnessStore.ts` — `setupCompleted` inference:** `const hasRealData = (profile.height ?? 0) > 0 && (profile.weight ?? 0) > 0`. `setupCompleted` is set to `hasRealData`, not `true` unconditionally. A bare auth-trigger row (all nulls) correctly evaluates to `setupCompleted: false`.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.2.
+
+## [2.6.1] - 2026-06-05T00:45:00+05:30
+
+### Added — Setup Wizard Gate: `setupCompleted` Flag
+
+**Architectural Decision:** New accounts were never shown the setup wizard. The root cause was a fragile heuristic in `NavigationGate` checking for exact developer demo values (`level === 1 && xp === 0 && weight === 70 && height === 170`) that could never match real accounts. Replaced with an explicit `setupCompleted` boolean on the `UserProfile` type, inferred from whether the Supabase profile contains real height/weight data. No new DB column needed — the flag lives only in local MMKV.
+
+**Changes:**
+- **`src/types/index.ts`:** Added `setupCompleted?: boolean` to `UserProfile` interface.
+- **`src/store/fitnessStore.ts` — `initialUserProfile`:** `setupCompleted: false` default.
+- **`src/store/fitnessStore.ts` — `setUser`:** `delete dbUpdate.setupCompleted` before Supabase write (local-only field, same pattern as `privateProfileEnabled`).
+- **`src/store/fitnessStore.ts` — `initializeFromSupabase`:** Sets `setupCompleted` based on `hasRealData` check (height > 0 && weight > 0).
+- **`app/(auth)/setup.tsx` — `handleFinish`:** Includes `setupCompleted: true` in the `setUser()` call.
+- **`app/_layout.tsx`:** Replaced heuristic `if (user.level === 1 && ...)` with `if (!user.setupCompleted)`.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.1.
+
+## [2.6.0] - 2026-06-05T00:00:00+05:30
+
+### Refactored — Code Reusability: Component & Hook Extraction
+
+**Architectural Decision:** Multiple screen files contained large inline component definitions and duplicated local state logic that belonged in shared modules. Extracted all reusable pieces into `src/components/` sub-folders and custom hooks, bringing the codebase to an industry-standard separation of concerns. Screen files now only contain layout/navigation logic; no inline component functions or duplicated state machines.
+
+**Changes:**
+- **`src/components/charts/` (new):** 10 chart components extracted from screen files (`WeightChart`, `WaterRingChart`, `MacroDonut`, `CalorieBar`, `StepsProgress`, `BMIGauge`, `BMIGaugeNeedle`, `BmiCategoryGrid`, `CalorieRing`, `StepsRing`) + barrel export `index.ts`.
+- **`src/components/setup/` (new):** `SetupThemeContext` (`ThemeCtx`, `useT`, `DARK_PALETTE`, `LIGHT_PALETTE`, `Palette`) + 5 wizard sub-components (`StepDots`, `ChoiceCard`, `MetricInput`, `StepHeader`, `PulseRing`) + barrel export `index.ts`.
+- **`src/components/ui/PressableRow.tsx` (new):** Extracted from inline definition in `app/settings.tsx`. Re-exported via `src/components/ui/index.ts`.
+- **`src/hooks/useWeightLogger.ts` (new):** Modal state and add/delete handlers extracted from `app/(tabs)/weight.tsx`.
+- **`src/hooks/useWaterLogger.ts` (new):** Custom/goal modal state and handlers extracted from `app/water.tsx`.
+- **`src/hooks/useSettingsForm.ts` (new):** All form state, unit conversion logic, and `handleSave` extracted from `app/settings.tsx`.
+- **Screen updates:** `app/water.tsx`, `app/settings.tsx`, `app/(auth)/setup.tsx` updated to import from new locations. All inline component definitions and duplicated state removed.
+- **TypeScript:** `npx tsc --noEmit` → 0 errors.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.0.
+
 ## [2.5.3] - 2026-06-04T18:51:00+05:30
 
 ### Added — Interactive Haptics Diagnostic Test Button

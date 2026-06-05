@@ -83,6 +83,7 @@ const initialUserProfile: UserProfile = {
   hapticsEnabled: true,
   privateProfileEnabled: false,
   appLockEnabled: false,
+  setupCompleted: false,
 };
 
 const initialMeals: Meal[] = [
@@ -255,6 +256,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
         if ('hapticsEnabled' in dbUpdate) { dbUpdate.haptics_enabled = dbUpdate.hapticsEnabled; delete dbUpdate.hapticsEnabled; }
         delete dbUpdate.privateProfileEnabled;
         delete dbUpdate.appLockEnabled;
+        delete dbUpdate.setupCompleted;
         
         supabase.from('profiles').update(dbUpdate).eq('id', data.user.id).then();
       }
@@ -334,7 +336,11 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
     if (deletedLog) {
       mmkvDeleteLog('weight', deletedLog.date, id);
-      supabase.from('weight_logs').delete().eq('id', id).then();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data.user) {
+          supabase.from('weight_logs').delete().eq('id', id).eq('user_id', data.user.id).then();
+        }
+      });
     }
   },
 
@@ -402,7 +408,11 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       waterLogs: state.waterLogs.filter((item) => item.id !== id),
     }));
     mmkvDeleteLog('water', getPastDateStr(0), id);
-    supabase.from('water_logs').delete().eq('id', id).then();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('water_logs').delete().eq('id', id).eq('user_id', data.user.id).then();
+      }
+    });
   },
 
   setWaterGoal: (goal) => {
@@ -542,29 +552,33 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     // Fetch Profile
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (profile) {
+      // Profile has meaningful data only when height + weight are set (filled in during setup).
+      // A bare auth-trigger row has nulls → setupCompleted stays false → wizard shows.
+      const hasRealData = (profile.height ?? 0) > 0 && (profile.weight ?? 0) > 0;
       set((state) => ({
         user: {
           ...state.user,
-          name: profile.name,
-          age: profile.age,
-          height: profile.height,
-          weight: profile.weight,
-          goal: profile.goal,
-          motto: profile.motto,
-          calorieGoal: profile.calorie_goal,
-          waterGoal: profile.water_goal,
-          stepsGoal: profile.steps_goal,
-          workoutGoal: profile.workout_goal,
-          level: profile.level,
-          xp: profile.xp,
-          streak: profile.streak,
-          profilePic: profile.profile_pic,
+          name:       profile.name    ?? state.user.name,
+          age:        profile.age     ?? state.user.age,
+          height:     profile.height  ?? state.user.height,
+          weight:     profile.weight  ?? state.user.weight,
+          goal:       profile.goal    || state.user.goal,
+          motto:      profile.motto   || state.user.motto,
+          calorieGoal:  profile.calorie_goal  ?? state.user.calorieGoal,
+          waterGoal:    profile.water_goal     ?? state.user.waterGoal,
+          stepsGoal:    profile.steps_goal     ?? state.user.stepsGoal,
+          workoutGoal:  profile.workout_goal   ?? state.user.workoutGoal,
+          level:   profile.level  ?? state.user.level,
+          xp:      profile.xp     ?? state.user.xp,
+          streak:  profile.streak ?? state.user.streak,
+          profilePic: profile.profile_pic ?? state.user.profilePic,
           weightUnit: profile.weight_unit || 'kg',
           volumeUnit: profile.volume_unit || 'ml',
-          notificationsEnabled: profile.notifications_enabled !== undefined ? profile.notifications_enabled : true,
-          hapticsEnabled: profile.haptics_enabled !== undefined ? profile.haptics_enabled : true,
+          notificationsEnabled: profile.notifications_enabled ?? true,
+          hapticsEnabled: profile.haptics_enabled ?? true,
           privateProfileEnabled: state.user.privateProfileEnabled,
           appLockEnabled: state.user.appLockEnabled,
+          setupCompleted: hasRealData,
         }
       }));
     }

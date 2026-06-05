@@ -169,6 +169,7 @@ export default function SetupWizardScreen() {
       age: parseInt(age) || 24, height: parseInt(height) || 170, weight: parseInt(weight) || 70,
       goal: goalMap[goal], calorieGoal: results.calorieGoal, waterGoal: results.waterGoalMl,
       stepsGoal: results.stepsGoal, workoutGoal: results.workoutGoal, level: 1, xp: 10,
+      setupCompleted: true,
     });
     router.replace('/(tabs)');
   };

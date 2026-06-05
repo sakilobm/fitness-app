@@ -64,6 +64,7 @@ export interface UserProfile {
   hapticsEnabled?: boolean;
   privateProfileEnabled?: boolean;
   appLockEnabled?: boolean;
+  setupCompleted?: boolean;
 }
 
 export interface WeightLog {

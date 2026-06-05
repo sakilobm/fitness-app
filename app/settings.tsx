@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch,
-  TextInput, KeyboardAvoidingView, Platform, Modal, Image, Share, Alert
+  TextInput, KeyboardAvoidingView, Platform, Modal, Image, Share, Alert, ActivityIndicator
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,7 +19,8 @@ import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 import { triggerHaptic } from '@/utils/haptics';
 import { kgToLbs, mlToOz, ozToMl } from '@/utils/units';
 import Animated, {
-  FadeInUp, FadeInDown,
+  FadeInUp, FadeInDown, FadeIn, ZoomIn,
+  useSharedValue, useAnimatedStyle, withSpring, interpolate,
 } from 'react-native-reanimated';
 import { useSettingsForm } from '@/hooks';
 
@@ -73,6 +74,7 @@ export default function SettingsScreen() {
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearConfirmText, setClearConfirmText] = useState('');
+  const [clearTarget, setClearTarget] = useState<'local' | 'cloud' | null>(null);
   const [showSplashPreview, setShowSplashPreview] = useState(false);
   const [showSyncing, setShowSyncing] = useState(false);
   const [showDocModal, setShowDocModal] = useState<{ visible: boolean; title: string; content: string }>({
@@ -80,6 +82,20 @@ export default function SettingsScreen() {
   });
 
   const [hapticTestIndex, setHapticTestIndex] = useState(0);
+  const [isClearing, setIsClearing] = useState(false);
+  const [clearResult, setClearResult] = useState<'success' | 'error' | null>(null);
+
+  const confirmBtnScale = useSharedValue(0.95);
+  const isReadyToConfirm = clearConfirmText === 'CLEAR';
+
+  useEffect(() => {
+    confirmBtnScale.value = withSpring(isReadyToConfirm ? 1 : 0.95, { damping: 12, stiffness: 200 });
+  }, [isReadyToConfirm]);
+
+  const confirmBtnAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: confirmBtnScale.value }],
+    opacity: interpolate(confirmBtnScale.value, [0.95, 1], [0.3, 1]),
+  }));
 
   const handleTestHaptic = () => {
     const patterns = ['light', 'medium', 'heavy', 'success', 'warning', 'error'] as const;
@@ -234,40 +250,59 @@ export default function SettingsScreen() {
     }
   };
 
-  // ─── Clear All History Database Purge ──────────────────────────────────────────
-  const handleClearHistory = () => {
-    if (clearConfirmText !== 'CLEAR') {
-      showToast('Please type CLEAR exactly to confirm deletion.', 'alert');
-      return;
-    }
+  const EMPTY_MEALS = [
+    { id: 'breakfast', label: 'Breakfast', icon: '🌅', expanded: true,  items: [] },
+    { id: 'lunch',     label: 'Lunch',     icon: '☀️',  expanded: false, items: [] },
+    { id: 'dinner',    label: 'Dinner',    icon: '🌙',  expanded: false, items: [] },
+    { id: 'snacks',    label: 'Snacks',    icon: '🍎',  expanded: false, items: [] },
+  ];
 
-    // Purge Zustand state logs & metadata
-    useFitnessStore.setState({
-      weightLogs: [],
-      waterLogs: [],
-      stepHistory: [],
-      stepsCount: 0,
-      activeMinutes: 0,
-      meals: [
-        { id: 'breakfast', label: 'Breakfast', icon: '🌅', expanded: true, items: [] },
-        { id: 'lunch', label: 'Lunch', icon: '☀️', expanded: false, items: [] },
-        { id: 'dinner', label: 'Dinner', icon: '🌙', expanded: false, items: [] },
-        { id: 'snacks', label: 'Snacks', icon: '🍎', expanded: false, items: [] },
-      ],
-    });
-
-    // Wipe Supabase cloud tables if logged in
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('weight_logs').delete().eq('profile_id', data.user.id).then();
-        supabase.from('water_logs').delete().eq('profile_id', data.user.id).then();
-        supabase.from('meals').delete().eq('profile_id', data.user.id).then();
-      }
-    });
-
+  const closeClearModal = () => {
     setShowClearModal(false);
     setClearConfirmText('');
-    showToast('All tracking records and history logs cleared.', 'success');
+    setClearTarget(null);
+    setClearResult(null);
+    setIsClearing(false);
+  };
+
+  const handleClearLocal = () => {
+    if (clearConfirmText !== 'CLEAR') return;
+    triggerHaptic('success');
+    useFitnessStore.setState({
+      weightLogs: [], waterLogs: [], stepHistory: [],
+      stepsCount: 0, activeMinutes: 0, meals: EMPTY_MEALS,
+    });
+    setClearResult('success');
+    setTimeout(() => {
+      closeClearModal();
+      showToast('Local device history cleared successfully.', 'success');
+    }, 1600);
+  };
+
+  const handleClearCloud = async () => {
+    if (clearConfirmText !== 'CLEAR') return;
+    triggerHaptic('warning');
+    setIsClearing(true);
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        await supabase.from('weight_logs').delete().eq('user_id', data.user.id);
+        await supabase.from('water_logs').delete().eq('user_id', data.user.id);
+        await supabase.from('meals').delete().eq('user_id', data.user.id);
+      }
+      triggerHaptic('success');
+      setClearResult('success');
+      setTimeout(() => {
+        closeClearModal();
+        showToast('Cloud database history cleared successfully.', 'success');
+      }, 1600);
+    } catch {
+      triggerHaptic('error');
+      setClearResult('error');
+      setTimeout(() => setClearResult(null), 2000);
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -945,43 +980,143 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* ─── Clear Database Warning Modal ─── */}
+      {/* ─── Clear History Modal ─── */}
       <Modal visible={showClearModal} transparent animationType="slide">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
-          <View style={[styles.actionSheet, { borderTopWidth: 2, borderColor: colors.danger + '40' }]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}>
+          <View style={[styles.actionSheet, { borderTopWidth: 2, borderColor: colors.danger + '40', paddingBottom: 0, maxHeight: '92%' }]}>
             <View style={[styles.actionSheetHandle, { backgroundColor: colors.danger + '40' }]} />
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              bounces={false}
+              contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 36 : 16 }}
+            >
             <View style={styles.dangerHeader}>
               <Ionicons name="warning" size={32} color={colors.danger} />
-              <Text style={styles.dangerTitle}>Permanently Clear History?</Text>
+              <Text style={styles.dangerTitle}>Clear History</Text>
             </View>
             <Text style={styles.dangerDesc}>
-              This action will permanently wipe your weight tracking logs, hydration counts, steps entries, and nutrition meals history. This database purge cannot be undone.
+              Choose what to clear. Local removes device cache only. Cloud wipes your Supabase records permanently.
             </Text>
 
-            <Text style={styles.confirmLabel}>Type CLEAR to confirm:</Text>
-            <View style={[styles.inputFieldWrap, { borderColor: colors.danger + '50', marginBottom: 20 }]}>
-              <TextInput
-                style={[styles.textInput, { color: colors.danger }]}
-                value={clearConfirmText}
-                onChangeText={setClearConfirmText}
-                placeholder="CLEAR"
-                placeholderTextColor={colors.danger + '40'}
-                autoCapitalize="characters"
-              />
+            {/* Target selector */}
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+              <TouchableOpacity
+                onPress={() => setClearTarget('local')}
+                style={[styles.clearTargetBtn, clearTarget === 'local' && { borderColor: colors.danger, backgroundColor: colors.danger + '12' }]}
+              >
+                <Ionicons name="phone-portrait-outline" size={20} color={clearTarget === 'local' ? colors.danger : colors.muted} />
+                <Text style={[styles.clearTargetLabel, clearTarget === 'local' && { color: colors.danger }]}>Local Device</Text>
+                <Text style={styles.clearTargetSub}>Cache only{'\n'}Cloud preserved</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setClearTarget('cloud')}
+                style={[styles.clearTargetBtn, clearTarget === 'cloud' && { borderColor: colors.danger, backgroundColor: colors.danger + '12' }]}
+              >
+                <Ionicons name="cloud-outline" size={20} color={clearTarget === 'cloud' ? colors.danger : colors.muted} />
+                <Text style={[styles.clearTargetLabel, clearTarget === 'cloud' && { color: colors.danger }]}>Cloud DB</Text>
+                <Text style={styles.clearTargetSub}>Supabase tables{'\n'}Local preserved</Text>
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.dangerConfirmBtn, clearConfirmText !== 'CLEAR' && { opacity: 0.35 }]}
-              disabled={clearConfirmText !== 'CLEAR'}
-              onPress={handleClearHistory}
-            >
-              <Ionicons name="trash" size={18} color={colors.white} />
-              <Text style={styles.dangerConfirmBtnText}>Purge All My Data</Text>
-            </TouchableOpacity>
+            {clearTarget && !clearResult && (
+              <>
+                {/* CLEAR character progress slots */}
+                <View style={styles.clearProgress}>
+                  {'CLEAR'.split('').map((char, i) => {
+                    const typedUpper = clearConfirmText.toUpperCase();
+                    const isCorrect = typedUpper.length > i && typedUpper[i] === char;
+                    return (
+                      <Animated.View
+                        key={i}
+                        entering={FadeIn.delay(i * 60).springify()}
+                        style={[styles.clearProgressChar, isCorrect && styles.clearProgressCharFilled]}
+                      >
+                        <Text style={[styles.clearProgressCharText, isCorrect && styles.clearProgressCharTextFilled]}>
+                          {char}
+                        </Text>
+                      </Animated.View>
+                    );
+                  })}
+                </View>
 
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowClearModal(false)}>
-              <Text style={styles.cancelBtnTxt}>Cancel</Text>
-            </TouchableOpacity>
+                <Text style={styles.confirmLabel}>Type CLEAR to confirm:</Text>
+                <View style={[
+                  styles.inputFieldWrap,
+                  {
+                    borderColor: isReadyToConfirm ? colors.lime : colors.danger + '50',
+                    marginBottom: 16,
+                    backgroundColor: isReadyToConfirm ? colors.lime + '08' : 'transparent',
+                  },
+                ]}>
+                  <TextInput
+                    style={[styles.textInput, {
+                      color: isReadyToConfirm ? colors.lime : colors.danger,
+                      letterSpacing: 4,
+                      fontWeight: '700',
+                    }]}
+                    value={clearConfirmText}
+                    onChangeText={setClearConfirmText}
+                    placeholder="CLEAR"
+                    placeholderTextColor={colors.danger + '30'}
+                    autoCapitalize="characters"
+                  />
+                  {isReadyToConfirm && (
+                    <Animated.View entering={ZoomIn.springify()}>
+                      <Ionicons name="checkmark-circle" size={20} color={colors.lime} />
+                    </Animated.View>
+                  )}
+                </View>
+
+                <Animated.View style={[confirmBtnAnimStyle, { marginBottom: 4 }]}>
+                  <TouchableOpacity
+                    style={[styles.dangerConfirmBtn, isReadyToConfirm && styles.dangerConfirmBtnReady]}
+                    disabled={!isReadyToConfirm || isClearing}
+                    onPress={clearTarget === 'local' ? handleClearLocal : handleClearCloud}
+                  >
+                    {isClearing ? (
+                      <>
+                        <ActivityIndicator size="small" color={colors.white} />
+                        <Text style={styles.dangerConfirmBtnText}>Clearing...</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Ionicons name="trash" size={18} color={colors.white} />
+                        <Text style={styles.dangerConfirmBtnText}>
+                          {clearTarget === 'local' ? 'Clear Local Cache' : 'Wipe Cloud Records'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
+              </>
+            )}
+
+            {/* Animated result feedback */}
+            {clearResult && (
+              <Animated.View entering={ZoomIn.springify().damping(14)} style={styles.resultContent}>
+                <Ionicons
+                  name={clearResult === 'success' ? 'checkmark-circle' : 'close-circle'}
+                  size={72}
+                  color={clearResult === 'success' ? colors.lime : colors.danger}
+                />
+                <Text style={[styles.resultTitle, { color: clearResult === 'success' ? colors.lime : colors.danger }]}>
+                  {clearResult === 'success' ? 'Cleared!' : 'Failed'}
+                </Text>
+                <Text style={styles.resultSub}>
+                  {clearResult === 'success'
+                    ? `${clearTarget === 'local' ? 'Local cache' : 'Cloud records'} removed successfully`
+                    : 'Something went wrong. Please try again.'}
+                </Text>
+              </Animated.View>
+            )}
+
+            {!clearResult && (
+              <TouchableOpacity style={styles.cancelBtn} onPress={closeClearModal}>
+                <Text style={styles.cancelBtnTxt}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -1155,6 +1290,68 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   dangerConfirmBtnText: { ...Typography.bodyBold, color: colors.white },
   cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 6 },
   cancelBtnTxt: { ...Typography.bodyBold, color: colors.text.secondary },
+  clearTargetBtn: {
+    flex: 1, alignItems: 'center', gap: 6, paddingVertical: 14, paddingHorizontal: 10,
+    borderRadius: Radius.lg, borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
+  },
+  clearTargetLabel: { ...Typography.captionBold, color: colors.text.primary },
+  clearTargetSub: { ...Typography.micro, color: colors.muted, textAlign: 'center', lineHeight: 15 },
+
+  clearProgress: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  clearProgressChar: {
+    width: 44,
+    height: 48,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearProgressCharFilled: {
+    borderColor: colors.danger,
+    backgroundColor: colors.danger + '15',
+  },
+  clearProgressCharText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.muted,
+    letterSpacing: 1,
+  },
+  clearProgressCharTextFilled: {
+    color: colors.danger,
+  },
+  dangerConfirmBtnReady: {
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  resultContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+    gap: 12,
+    minHeight: 180,
+  },
+  resultTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  resultSub: {
+    ...Typography.body,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
 
   // Docs
   modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

@@ -1,5 +1,54 @@
 # Cursor Test & Validation Log
 
+## [2026-06-05T00:00:00+05:30] - Refactor, Setup Gate, NaN Fix, Navigation Fix, Security Fixes, DB Tables (v2.6.0–v2.6.6)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors** (confirmed across multiple rounds of editing throughout the session — after each individual change to hooks, screens, store, types, and layout).
+
+### Manual Verification
+
+- **Code Reusability Refactor (v2.6.0):**
+  - `src/components/charts/` created — 10 chart components + barrel export.
+  - `src/components/setup/` created — ThemeCtx, Palette, StepDots, ChoiceCard, MetricInput, StepHeader, PulseRing + barrel.
+  - `src/components/ui/PressableRow.tsx` created and re-exported from ui barrel.
+  - `src/hooks/useWeightLogger.ts`, `useWaterLogger.ts`, `useSettingsForm.ts` created + barrel.
+  - `app/water.tsx`, `app/settings.tsx`, `app/(auth)/setup.tsx` import from new locations — no inline component functions remain.
+
+- **Setup Wizard Gate (v2.6.1):**
+  - New account with null DB profile row → wizard opens on launch.
+  - After completing wizard → routes to `/(tabs)`, `setupCompleted: true` in store.
+  - Kill + reopen app → routes directly to `/(tabs)`, wizard does not re-appear.
+  - Existing account login → routes directly to `/(tabs)`.
+
+- **NaN Fix (v2.6.2):**
+  - User manually reset DB row to `age: null, height: null, weight: null` → UI now shows `0` / fallback values. No `NaN` in health calculations or display fields.
+  - Bare auth-trigger profile (all nulls) → `setupCompleted: false`, wizard shown.
+  - Profile with real height + weight → `setupCompleted: true`, wizard skipped.
+
+- **Navigation Fix (v2.6.3):**
+  - `setupCheckDone` ref prevents duplicate `initializeFromSupabase` calls on segment changes.
+  - Check fires correctly when user lands at `/(tabs)` after login (not just when already in `/(auth)` group).
+
+- **Clear History Split (v2.6.4):**
+  - Clear modal shows two-card selection (Local Device / Cloud DB).
+  - Must pick a target before `CLEAR` confirm input appears.
+  - Local clear wipes Zustand/MMKV state only — Supabase logs unaffected.
+  - Cloud clear removes rows from `weight_logs`, `water_logs`, `meals` on Supabase — profile row untouched.
+  - Confirmed: cloud clear **deletes rows entirely**, does not reset to 0.
+
+- **Security Fixes (v2.6.5):**
+  - `deleteWeightLog` now calls `auth.getUser()` before delete — scoped to `eq('user_id', data.user.id)`.
+  - `deleteWaterLog` same pattern applied.
+  - Supabase profiles "public viewable" policy removed. Only authenticated owner can SELECT, INSERT, UPDATE their own row.
+
+- **DB Tables (v2.6.6):**
+  - `weight_logs`, `water_logs`, `meals`, `reminders`, `step_logs` created in Supabase with correct schemas.
+  - RLS ALL policies (`auth.uid() = user_id`) verified for all five tables.
+  - Foreign key CASCADE chains confirmed: `auth.users → profiles → log tables`.
+
+---
+
 ## [2026-06-04T18:51:00+05:30] - Interactive Haptic Diagnostic Button
 
 ### Automated Checks

@@ -1,5 +1,138 @@
 # Rollback Plan
 
+If version `2.6.6` (DB Schema — Create Missing Log Tables with RLS) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.5)
+
+1. **Drop the created tables via Supabase SQL editor:**
+   ```sql
+   DROP TABLE IF EXISTS public.step_logs CASCADE;
+   DROP TABLE IF EXISTS public.reminders CASCADE;
+   DROP TABLE IF EXISTS public.meals CASCADE;
+   DROP TABLE IF EXISTS public.water_logs CASCADE;
+   DROP TABLE IF EXISTS public.weight_logs CASCADE;
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.6.5` (Security — RLS Tightening & Per-User Delete Scoping) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.4)
+
+1. **Revert store file:**
+   ```powershell
+   git checkout v2.6.4 -- src/store/fitnessStore.ts
+   ```
+
+2. **Restore old profiles RLS (only if needed for testing — NOT recommended for production):**
+   ```sql
+   CREATE POLICY "Public profiles are viewable by everyone."
+   ON public.profiles FOR SELECT USING (true);
+   ```
+
+3. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.6.4` (Clear History Split — Local vs Cloud) needs to be reverted due to modal UX issues, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.3)
+
+1. **Revert settings screen:**
+   ```powershell
+   git checkout v2.6.3 -- app/settings.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.6.3` (Navigation Gate — One-Shot Session Setup Check) needs to be reverted due to routing regressions, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.2)
+
+1. **Revert layout file:**
+   ```powershell
+   git checkout v2.6.2 -- app/_layout.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.6.2` (NaN Fix — Null-Safe Supabase Profile Hydration) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.1)
+
+1. **Revert store file:**
+   ```powershell
+   git checkout v2.6.1 -- src/store/fitnessStore.ts
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.6.1` (Setup Wizard Gate — setupCompleted Flag) needs to be reverted due to routing conflicts, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.0)
+
+1. **Revert modified files:**
+   ```powershell
+   git checkout v2.6.0 -- src/types/index.ts src/store/fitnessStore.ts app/(auth)/setup.tsx app/_layout.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.6.0` (Code Reusability Refactor — Component & Hook Extraction) needs to be reverted due to import errors or component regressions, use this guide.
+
+## Rollback Procedure (Reverting to v2.5.3)
+
+1. **Revert screen files:**
+   ```powershell
+   git checkout v2.5.3 -- app/water.tsx app/settings.tsx "app/(auth)/setup.tsx"
+   ```
+
+2. **Remove new component/hook files:**
+   ```powershell
+   Remove-Item -Recurse -Force src/components/charts
+   Remove-Item -Recurse -Force src/components/setup
+   Remove-Item src/components/ui/PressableRow.tsx
+   Remove-Item src/hooks/useWeightLogger.ts
+   Remove-Item src/hooks/useWaterLogger.ts
+   Remove-Item src/hooks/useSettingsForm.ts
+   git checkout v2.5.3 -- src/components/ui/index.ts src/hooks/index.ts
+   ```
+
+3. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.5.3` (Interactive Haptics Diagnostic Test Button) needs to be reverted due to timing issues or state conflicts, use this guide.
 
 ## Rollback Procedure (Reverting to v2.5.2)

@@ -86,7 +86,7 @@ export default function AnimatedSplashScreen({ isAppReady, preview = false, onPr
   useEffect(() => {
     if (!isAppReady || preview) return;
     overlayOpacity.value = withDelay(
-      2500,
+      1500,
       withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) }, (finished) => {
         if (finished) runOnJS(setIsAnimationComplete)(true);
       }),
