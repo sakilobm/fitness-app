@@ -9,10 +9,11 @@ import {
 import { buildCalendarDays, todayISO } from '@/constants/calendar';
 
 export interface DayStatus {
-  hasWeight: boolean;
-  stepsPct:  number;   // 0–100
-  waterPct:  number;   // 0–100
-  mealsPct:  number;   // 0–100
+  hasWeight:  boolean;
+  stepsPct:   number;   // 0–100
+  waterPct:   number;   // 0–100
+  mealsPct:   number;   // 0–100
+  sleepScore: number | null;
 }
 
 export interface MonthStats {
@@ -59,6 +60,7 @@ export function useCalendarData(
   const { waterLogs }             = useHydrationTracker();
   const { meals }                 = useDietTracker();
   const dailyLogs    = useFitnessStore(s => s.dailyLogs   ?? []);
+  const sleepLogs    = useFitnessStore(s => s.sleepLogs   ?? []);
   const upsertDailyLog = useFitnessStore(s => s.upsertDailyLog);
   const user         = useFitnessStore(s => s.user);
 
@@ -113,13 +115,16 @@ export function useCalendarData(
       }
     }
 
+    const sleepLog = sleepLogs.find(l => l.date === dateStr);
+
     return {
       hasWeight,
       stepsPct,
-      waterPct: Math.min(100, Math.round(waterMl      / (user.waterGoal   || 2500) * 100)),
-      mealsPct: Math.min(100, Math.round(caloriesKcal / (user.calorieGoal || 2000) * 100)),
+      waterPct:   Math.min(100, Math.round(waterMl      / (user.waterGoal   || 2500) * 100)),
+      mealsPct:   Math.min(100, Math.round(caloriesKcal / (user.calorieGoal || 2000) * 100)),
+      sleepScore: sleepLog?.score ?? null,
     };
-  }, [weightLogs, stepHistory, dailyLogs, user, todayWater, todayCal, todayMeals]);
+  }, [weightLogs, stepHistory, dailyLogs, sleepLogs, user, todayWater, todayCal, todayMeals]);
 
   // ── Month summary stats ───────────────────────────────────────────────────
   const monthStats = useMemo((): MonthStats => {

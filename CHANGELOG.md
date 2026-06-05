@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.7] - 2026-06-05T18:10:00+05:30
+
+### Fixed — UI: Sleep History Card Margins
+
+**Architectural Decision:** On the Sleep tracking screen, history card elements (SleepLogCard) previously did not have horizontal margins set. This caused the card edges to touch the physical device screen bounds on both sides, which clashed with the clean, padded layouts of other card components like `SleepHeroCard` and `WeeklySleepChart`. Resolved this by introducing localized horizontal spacing matching the visual rhythm of the screen.
+
+**Changes:**
+- **`c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/components/sleep/SleepLogCard.tsx`:** Added `marginHorizontal: 16` to the root container (`st.card`) styles.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.7.
+
 ## [2.6.6] - 2026-06-05T02:00:00+05:30
 
 ### Added — DB Schema: Create Missing Log Tables with RLS

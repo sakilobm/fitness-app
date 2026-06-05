@@ -30,16 +30,18 @@ function DayCellBase({
   const isSel    = dateStr === selDate;
   const isFuture = dateStr > today;
 
-  const showWeight = !isFuture && status.hasWeight  && (filter === 'all' || filter === 'weight');
-  const showSteps  = !isFuture && status.stepsPct >= 40 && (filter === 'all' || filter === 'steps');
-  const showWater  = !isFuture && status.waterPct >= 25 && (filter === 'all' || filter === 'water');
-  const showMeals  = !isFuture && status.mealsPct >= 15 && (filter === 'all' || filter === 'meals');
+  const showWeight = !isFuture && status.hasWeight              && (filter === 'all' || filter === 'weight');
+  const showSteps  = !isFuture && status.stepsPct >= 40         && (filter === 'all' || filter === 'steps');
+  const showWater  = !isFuture && status.waterPct >= 25         && (filter === 'all' || filter === 'water');
+  const showMeals  = !isFuture && status.mealsPct >= 15         && (filter === 'all' || filter === 'meals');
+  const showSleep  = !isFuture && status.sleepScore !== null    && (filter === 'all' || filter === 'sleep');
 
   const tint = !isFuture && filter !== 'all' ? (() => {
-    if (filter === 'weight' && status.hasWeight)       return DOT_COLORS.weight + '22';
-    if (filter === 'steps'  && status.stepsPct >= 60)  return DOT_COLORS.steps  + '22';
-    if (filter === 'water'  && status.waterPct >= 60)  return DOT_COLORS.water  + '22';
-    if (filter === 'meals'  && status.mealsPct >= 50)  return DOT_COLORS.meals  + '22';
+    if (filter === 'weight' && status.hasWeight)            return DOT_COLORS.weight + '22';
+    if (filter === 'steps'  && status.stepsPct >= 60)       return DOT_COLORS.steps  + '22';
+    if (filter === 'water'  && status.waterPct >= 60)       return DOT_COLORS.water  + '22';
+    if (filter === 'meals'  && status.mealsPct >= 50)       return DOT_COLORS.meals  + '22';
+    if (filter === 'sleep'  && status.sleepScore !== null)  return DOT_COLORS.sleep  + '22';
     return undefined;
   })() : undefined;
 
@@ -70,6 +72,7 @@ function DayCellBase({
         {showSteps  && <View style={[st.dot, { backgroundColor: DOT_COLORS.steps  }]} />}
         {showWater  && <View style={[st.dot, { backgroundColor: DOT_COLORS.water  }]} />}
         {showMeals  && <View style={[st.dot, { backgroundColor: DOT_COLORS.meals  }]} />}
+        {showSleep  && <View style={[st.dot, { backgroundColor: DOT_COLORS.sleep  }]} />}
       </View>
     </Pressable>
   );

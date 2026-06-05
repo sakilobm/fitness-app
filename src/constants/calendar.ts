@@ -19,9 +19,10 @@ export const DOT_COLORS = {
   steps:  '#34D399',
   water:  '#38BDF8',
   meals:  '#FB923C',
+  sleep:  '#818CF8',
 } as const;
 
-export type Filter = 'all' | 'weight' | 'water' | 'meals' | 'steps';
+export type Filter = 'all' | 'weight' | 'water' | 'meals' | 'steps' | 'sleep';
 
 export interface FilterConfig {
   key: Filter;
@@ -35,6 +36,7 @@ export const FILTER_CONFIG: FilterConfig[] = [
   { key: 'water',  label: 'Water',  dotKey: 'water' },
   { key: 'meals',  label: 'Meals',  dotKey: 'meals' },
   { key: 'steps',  label: 'Steps',  dotKey: 'steps' },
+  { key: 'sleep',  label: 'Sleep',  dotKey: 'sleep' },
 ];
 
 // ── Date helpers ──────────────────────────────────────────────────────────────

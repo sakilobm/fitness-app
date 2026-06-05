@@ -1,5 +1,21 @@
 # Rollback Plan
 
+If version `2.6.7` (UI: Fix Sleep History Card Margins) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.6)
+
+1. **Revert SleepLogCard styling changes:**
+   ```powershell
+   git checkout v2.6.6 -- c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/components/sleep/SleepLogCard.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.6.6` (DB Schema — Create Missing Log Tables with RLS) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.6.5)

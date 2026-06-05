@@ -47,7 +47,7 @@ export function CalendarGrid({
                 const dateStr = day
                   ? `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                   : null;
-                const status = dateStr ? getDayStatus(dateStr) : { hasWeight: false, stepsPct: 0, waterPct: 0, mealsPct: 0 };
+                const status = dateStr ? getDayStatus(dateStr) : { hasWeight: false, stepsPct: 0, waterPct: 0, mealsPct: 0, sleepScore: null };
 
                 return (
                   <DayCell
