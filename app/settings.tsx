@@ -45,7 +45,6 @@ export default function SettingsScreen() {
 
   // Zustand stores
   const { user } = useProfileSettings();
-  const fitnessStore = useFitnessStore();
 
   const {
     formName, setFormName,
@@ -216,7 +215,7 @@ export default function SettingsScreen() {
     triggerHaptic('selection');
     setShowSyncing(true);
     try {
-      await fitnessStore.initializeFromSupabase();
+      await useFitnessStore.getState().initializeFromSupabase();
       const updatedUser = useFitnessStore.getState().user;
       // Reload states from store
       setFormName(updatedUser.name);
@@ -287,13 +286,16 @@ export default function SettingsScreen() {
           workoutGoal: user.workoutGoal,
           preferences: { weightUnit, volumeUnit, notifications, haptics }
         },
-        logs: {
-          weightLogs: fitnessStore.weightLogs,
-          waterLogs: fitnessStore.waterLogs,
-          stepHistory: fitnessStore.stepHistory,
-          meals: fitnessStore.meals,
-          reminders: fitnessStore.reminders,
-        }
+        logs: (() => {
+          const s = useFitnessStore.getState();
+          return {
+            weightLogs: s.weightLogs,
+            waterLogs: s.waterLogs,
+            stepHistory: s.stepHistory,
+            meals: s.meals,
+            reminders: s.reminders,
+          };
+        })(),
       };
 
       const prettyJson = JSON.stringify(exportPayload, null, 2);

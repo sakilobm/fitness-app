@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '@/constants/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
 import { ReminderItem } from '@/types';
@@ -24,7 +25,11 @@ export interface RemindersResult {
 
 export function useReminders(): RemindersResult {
   const { colors } = useTheme();
-  const { reminders, toggleReminder, deleteReminder } = useFitnessStore();
+  const { reminders, toggleReminder, deleteReminder } = useFitnessStore(useShallow((s) => ({
+    reminders: s.reminders,
+    toggleReminder: s.toggleReminder,
+    deleteReminder: s.deleteReminder,
+  })));
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
 
   const categoryColors = useMemo<Record<string, string>>(() => ({

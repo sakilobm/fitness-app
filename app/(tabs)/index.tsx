@@ -11,6 +11,7 @@ import AppIcon from '@/components/ui/AppIcon';
 import { Colors, Radius, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
+import { useShallow } from 'zustand/react/shallow';
 import { MetricCard, WidgetConfig, WidgetType } from '@/features/dashboard/components/WidgetRegistry';
 import { getBMIResult } from '@/utils/bmi';
 import { kgToLbs, mlToOz } from '@/utils/units';
@@ -42,7 +43,17 @@ export default function HomeScreen() {
     dashboardGrid,
     setDashboardGrid,
     toggleWidgetVisibility,
-  } = useFitnessStore();
+  } = useFitnessStore(useShallow((s) => ({
+    user: s.user,
+    meals: s.meals,
+    waterLogs: s.waterLogs,
+    weightLogs: s.weightLogs,
+    stepsCount: s.stepsCount,
+    activeMinutes: s.activeMinutes,
+    dashboardGrid: s.dashboardGrid,
+    setDashboardGrid: s.setDashboardGrid,
+    toggleWidgetVisibility: s.toggleWidgetVisibility,
+  })));
 
   const isLbs = user.weightUnit === 'lbs';
   const isOz = user.volumeUnit === 'oz';

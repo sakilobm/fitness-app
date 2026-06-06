@@ -26,7 +26,7 @@ export default function WaterScreen() {
   const styles = React.useMemo(() => getStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
-  const { user } = useFitnessStore();
+  const user = useFitnessStore((s) => s.user);
   const {
     waterLogs: log,
     addWaterLog: addWater,

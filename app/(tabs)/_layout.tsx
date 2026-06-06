@@ -12,7 +12,12 @@ export default function TabsLayout() {
     <>
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+          // Themed scene background prevents a white/wrong-color flash
+          // behind the screen during tab-switch transitions.
+          sceneStyle: { backgroundColor: colors.bg },
+        }}
       >
         {/* Explicit order: Home → Weight → Food → Calendar → Sleep → Vitals → Reminders → Profile */}
         <Tabs.Screen name="index" />

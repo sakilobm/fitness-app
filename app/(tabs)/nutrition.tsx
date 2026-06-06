@@ -21,6 +21,7 @@ import NutritionScore from '@/components/ui/NutritionScore';
 import { Typography, Radius, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
+import { useShallow } from 'zustand/react/shallow';
 import { FoodItem, Meal } from '@/types';
 
 const FOOD_LIBRARY: FoodItem[] = [
@@ -81,7 +82,15 @@ export default function NutritionScreen() {
     deleteFoodFromMeal,
     waterLogs,
     addWaterLog,
-  } = useFitnessStore();
+  } = useFitnessStore(useShallow((s) => ({
+    user: s.user,
+    meals: s.meals,
+    setMeals: s.setMeals,
+    addFoodToMeal: s.addFoodToMeal,
+    deleteFoodFromMeal: s.deleteFoodFromMeal,
+    waterLogs: s.waterLogs,
+    addWaterLog: s.addWaterLog,
+  })));
 
   const [showModal, setShowModal] = useState(false);
   const [activeMealId, setActiveMealId] = useState<string>('breakfast');

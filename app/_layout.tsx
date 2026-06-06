@@ -23,6 +23,12 @@ function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void
     setIsReady(true);
   }, []);
 
+  // Splash contract: stays up exactly as long as we're still resolving where to
+  // land the user (auth phase + initial route + first-run Supabase sync). The
+  // 100ms buffer lets the just-issued router.replace settle a frame before the
+  // splash overlay unmounts, so the destination screen is never visible mid-transition.
+  const markReady = () => setTimeout(() => setIsAppReady(true), 100);
+
   useEffect(() => {
     if (!isReady || !segments[0] || phase === 'BOOTING') return;
 
@@ -31,7 +37,7 @@ function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/onboarding');
-      setTimeout(() => setIsAppReady(true), 100);
+      markReady();
     } else if (isAuthenticated && !isSetup && !setupCheckDone.current) {
       // Run once per session — syncs DB, then gates on setupCompleted regardless
       // of whether user is in auth group or already at tabs.
@@ -43,10 +49,10 @@ function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void
         } else if (inAuthGroup) {
           router.replace('/(tabs)');
         }
-        setTimeout(() => setIsAppReady(true), 100);
+        markReady();
       });
     } else {
-      setTimeout(() => setIsAppReady(true), 100);
+      markReady();
     }
   }, [isAuthenticated, segments, isReady, phase]);
 

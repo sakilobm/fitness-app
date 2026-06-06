@@ -4,7 +4,7 @@ import { mlToOz, ozToMl } from '@/utils/units';
 import { triggerHaptic } from '@/utils/haptics';
 
 export function useWaterLogger() {
-  const { user } = useFitnessStore();
+  const user = useFitnessStore((s) => s.user);
   const { addWaterLog, setWaterGoal } = useHydrationTracker();
 
   const isOz = user.volumeUnit === 'oz';

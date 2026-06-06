@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '@/constants/theme';
 import { useFitnessStore } from '@/store/fitnessStore';
 import { ReminderItem } from '@/types';
@@ -47,7 +48,11 @@ interface Params {
 /** Owns all add/edit-reminder modal state: fields, validation, and save/delete handlers. */
 export function useReminderForm({ categoryColors, showToast }: Params): ReminderFormResult {
   const { colors } = useTheme();
-  const { addReminder, updateReminder, deleteReminder } = useFitnessStore();
+  const { addReminder, updateReminder, deleteReminder } = useFitnessStore(useShallow((s) => ({
+    addReminder: s.addReminder,
+    updateReminder: s.updateReminder,
+    deleteReminder: s.deleteReminder,
+  })));
 
   const [visible,   setVisible]   = useState(false);
   const [isEditing, setIsEditing] = useState(false);
