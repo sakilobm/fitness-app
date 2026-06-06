@@ -9,6 +9,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import PressableRow from '@/components/ui/PressableRow';
+import GoalDialRow from '@/components/ui/GoalDialRow';
 import { Typography, Radius, Shadows, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import * as ImagePicker from 'expo-image-picker';
@@ -576,150 +577,75 @@ export default function SettingsScreen() {
           </View>
 
           <GlassCard accentColor={colors.amber}>
-            {/* Calorie Goals Dial */}
-            <View style={styles.goalCard}>
-              <View style={styles.goalHeaderRow}>
-                <Ionicons name="flame" size={18} color={colors.amber} />
-                <Text style={styles.goalCardTitle}>Daily Calories Target</Text>
-                <Text style={styles.goalCardValue}>{formCalorieGoal} kcal</Text>
-              </View>
-              <View style={styles.adjustRow}>
-                <TouchableOpacity style={styles.adjustBtn} onPress={() => { setFormCalorieGoal(Math.max(1000, formCalorieGoal - 100)); triggerHaptic('selection'); }}>
-                  <Ionicons name="remove" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-                <View style={styles.quickPillRow}>
-                  {[1800, 2200, 2500, 3000].map((c) => (
-                    <TouchableOpacity key={c} style={[styles.quickGoalPill, formCalorieGoal === c && { backgroundColor: colors.amber + '20', borderColor: colors.amber }]} onPress={() => { setFormCalorieGoal(c); triggerHaptic('selection'); }}>
-                      <Text style={[styles.quickGoalPillText, formCalorieGoal === c && { color: colors.amber }]}>{c}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <TouchableOpacity style={styles.adjustBtn} onPress={() => { setFormCalorieGoal(Math.min(6000, formCalorieGoal + 100)); triggerHaptic('selection'); }}>
-                  <Ionicons name="add" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <GoalDialRow
+              icon="flame"
+              iconColor={colors.amber}
+              title="Daily Calories Target"
+              displayValue={`${formCalorieGoal} kcal`}
+              onDecrement={() => setFormCalorieGoal(Math.max(1000, formCalorieGoal - 100))}
+              onIncrement={() => setFormCalorieGoal(Math.min(6000, formCalorieGoal + 100))}
+              quickOptions={[1800, 2200, 2500, 3000].map((c) => ({
+                key: c, label: `${c}`, selected: formCalorieGoal === c, onPress: () => setFormCalorieGoal(c),
+              }))}
+            />
 
             <View style={styles.divider} />
 
-            {/* Water Goals Dial */}
-            <View style={styles.goalCard}>
-              <View style={styles.goalHeaderRow}>
-                <Ionicons name="water" size={18} color={colors.chart.water} />
-                <Text style={styles.goalCardTitle}>Daily Hydration Target</Text>
-                <Text style={styles.goalCardValue}>
-                  {volumeUnit === 'oz'
-                    ? `${mlToOz(formWaterGoal)} oz`
-                    : `${formWaterGoal} ml`}
-                </Text>
-              </View>
-              <View style={styles.adjustRow}>
-                <TouchableOpacity
-                  style={styles.adjustBtn}
-                  onPress={() => {
-                    if (volumeUnit === 'oz') {
-                      const currentOz = mlToOz(formWaterGoal);
-                      const newOz = Math.max(16, currentOz - 8); // min 16 oz
-                      setFormWaterGoal(ozToMl(newOz));
-                    } else {
-                      setFormWaterGoal(Math.max(500, formWaterGoal - 250));
-                    }
-                    triggerHaptic('selection');
-                  }}
-                >
-                  <Ionicons name="remove" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-                <View style={styles.quickPillRow}>
-                  {volumeUnit === 'oz'
-                    ? [50, 70, 90, 100].map((ozVal) => (
-                      <TouchableOpacity
-                        key={ozVal}
-                        style={[styles.quickGoalPill, mlToOz(formWaterGoal) === ozVal && { backgroundColor: colors.chart.water + '20', borderColor: colors.chart.water }]}
-                        onPress={() => { setFormWaterGoal(ozToMl(ozVal)); triggerHaptic('selection'); }}
-                      >
-                        <Text style={[styles.quickGoalPillText, mlToOz(formWaterGoal) === ozVal && { color: colors.chart.water }]}>{ozVal}oz</Text>
-                      </TouchableOpacity>
-                    ))
-                    : [1500, 2000, 2500, 3000].map((w) => (
-                      <TouchableOpacity
-                        key={w}
-                        style={[styles.quickGoalPill, formWaterGoal === w && { backgroundColor: colors.chart.water + '20', borderColor: colors.chart.water }]}
-                        onPress={() => { setFormWaterGoal(w); triggerHaptic('selection'); }}
-                      >
-                        <Text style={[styles.quickGoalPillText, formWaterGoal === w && { color: colors.chart.water }]}>{w}</Text>
-                      </TouchableOpacity>
-                    ))
-                  }
-                </View>
-                <TouchableOpacity
-                  style={styles.adjustBtn}
-                  onPress={() => {
-                    if (volumeUnit === 'oz') {
-                      const currentOz = mlToOz(formWaterGoal);
-                      const newOz = Math.min(340, currentOz + 8); // max ~10L (340 oz)
-                      setFormWaterGoal(ozToMl(newOz));
-                    } else {
-                      setFormWaterGoal(Math.min(10000, formWaterGoal + 250));
-                    }
-                    triggerHaptic('selection');
-                  }}
-                >
-                  <Ionicons name="add" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <GoalDialRow
+              icon="water"
+              iconColor={colors.chart.water}
+              title="Daily Hydration Target"
+              displayValue={volumeUnit === 'oz' ? `${mlToOz(formWaterGoal)} oz` : `${formWaterGoal} ml`}
+              onDecrement={() => {
+                if (volumeUnit === 'oz') {
+                  setFormWaterGoal(ozToMl(Math.max(16, mlToOz(formWaterGoal) - 8))); // min 16 oz
+                } else {
+                  setFormWaterGoal(Math.max(500, formWaterGoal - 250));
+                }
+              }}
+              onIncrement={() => {
+                if (volumeUnit === 'oz') {
+                  setFormWaterGoal(ozToMl(Math.min(340, mlToOz(formWaterGoal) + 8))); // max ~10L (340 oz)
+                } else {
+                  setFormWaterGoal(Math.min(10000, formWaterGoal + 250));
+                }
+              }}
+              quickOptions={volumeUnit === 'oz'
+                ? [50, 70, 90, 100].map((ozVal) => ({
+                  key: ozVal, label: `${ozVal}oz`, selected: mlToOz(formWaterGoal) === ozVal, onPress: () => setFormWaterGoal(ozToMl(ozVal)),
+                }))
+                : [1500, 2000, 2500, 3000].map((w) => ({
+                  key: w, label: `${w}`, selected: formWaterGoal === w, onPress: () => setFormWaterGoal(w),
+                }))}
+            />
 
             <View style={styles.divider} />
 
-            {/* Steps Goals Dial */}
-            <View style={styles.goalCard}>
-              <View style={styles.goalHeaderRow}>
-                <Ionicons name="footsteps" size={18} color={colors.lime} />
-                <Text style={styles.goalCardTitle}>Daily Steps Target</Text>
-                <Text style={styles.goalCardValue}>{formStepsGoal.toLocaleString()}</Text>
-              </View>
-              <View style={styles.adjustRow}>
-                <TouchableOpacity style={styles.adjustBtn} onPress={() => { setFormStepsGoal(Math.max(2000, formStepsGoal - 1000)); triggerHaptic('selection'); }}>
-                  <Ionicons name="remove" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-                <View style={styles.quickPillRow}>
-                  {[5000, 8000, 10000, 12000].map((s) => (
-                    <TouchableOpacity key={s} style={[styles.quickGoalPill, formStepsGoal === s && { backgroundColor: colors.lime + '20', borderColor: colors.lime }]} onPress={() => { setFormStepsGoal(s); triggerHaptic('selection'); }}>
-                      <Text style={[styles.quickGoalPillText, formStepsGoal === s && { color: colors.lime }]}>{(s / 1000)}k</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <TouchableOpacity style={styles.adjustBtn} onPress={() => { setFormStepsGoal(Math.min(50000, formStepsGoal + 1000)); triggerHaptic('selection'); }}>
-                  <Ionicons name="add" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <GoalDialRow
+              icon="footsteps"
+              iconColor={colors.lime}
+              title="Daily Steps Target"
+              displayValue={formStepsGoal.toLocaleString()}
+              onDecrement={() => setFormStepsGoal(Math.max(2000, formStepsGoal - 1000))}
+              onIncrement={() => setFormStepsGoal(Math.min(50000, formStepsGoal + 1000))}
+              quickOptions={[5000, 8000, 10000, 12000].map((s) => ({
+                key: s, label: `${s / 1000}k`, selected: formStepsGoal === s, onPress: () => setFormStepsGoal(s),
+              }))}
+            />
 
             <View style={styles.divider} />
 
-            {/* Weekly Workouts Dial */}
-            <View style={styles.goalCard}>
-              <View style={styles.goalHeaderRow}>
-                <Ionicons name="fitness" size={18} color={colors.amber} />
-                <Text style={styles.goalCardTitle}>Weekly Workouts Target</Text>
-                <Text style={styles.goalCardValue}>{formWorkoutGoal} days</Text>
-              </View>
-              <View style={styles.adjustRow}>
-                <TouchableOpacity style={styles.adjustBtn} onPress={() => { setFormWorkoutGoal(Math.max(1, formWorkoutGoal - 1)); triggerHaptic('selection'); }}>
-                  <Ionicons name="remove" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-                <View style={styles.quickPillRow}>
-                  {[3, 4, 5, 6].map((w) => (
-                    <TouchableOpacity key={w} style={[styles.quickGoalPill, formWorkoutGoal === w && { backgroundColor: colors.amber + '20', borderColor: colors.amber }]} onPress={() => { setFormWorkoutGoal(w); triggerHaptic('selection'); }}>
-                      <Text style={[styles.quickGoalPillText, formWorkoutGoal === w && { color: colors.amber }]}>{w}d</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <TouchableOpacity style={styles.adjustBtn} onPress={() => { setFormWorkoutGoal(Math.min(7, formWorkoutGoal + 1)); triggerHaptic('selection'); }}>
-                  <Ionicons name="add" size={16} color={colors.text.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <GoalDialRow
+              icon="fitness"
+              iconColor={colors.amber}
+              title="Weekly Workouts Target"
+              displayValue={`${formWorkoutGoal} days`}
+              onDecrement={() => setFormWorkoutGoal(Math.max(1, formWorkoutGoal - 1))}
+              onIncrement={() => setFormWorkoutGoal(Math.min(7, formWorkoutGoal + 1))}
+              quickOptions={[3, 4, 5, 6].map((w) => ({
+                key: w, label: `${w}d`, selected: formWorkoutGoal === w, onPress: () => setFormWorkoutGoal(w),
+              }))}
+            />
           </GlassCard>
         </Animated.View>
 

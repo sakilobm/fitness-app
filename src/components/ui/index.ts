@@ -12,3 +12,4 @@ export { default as ModalSheet } from './ModalSheet';
 export { default as PressableRow } from './PressableRow';
 export { default as NutritionScore } from './NutritionScore';
 export { default as ToastBanner } from './ToastBanner';
+export { default as GoalDialRow, GoalDialQuickOption } from './GoalDialRow';

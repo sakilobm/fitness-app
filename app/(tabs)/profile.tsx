@@ -21,6 +21,7 @@ import { kgToLbs, mlToOz } from '@/utils/units';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRewards } from '@/hooks/useRewards';
 import { TIER_META } from '@/constants/rewards';
+import { GoalsCalibrationAccordion, QuickPreferencesCard } from '@/components/profile';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -141,6 +142,13 @@ export default function ProfileScreen() {
             </View>
           </View>
         </GlassCard>
+
+        {/* Goals Calibration — collapsed by default (tap to expand), wired straight
+            to the live store so changes apply instantly, no trip to Settings needed. */}
+        <GoalsCalibrationAccordion />
+
+        {/* Everyday toggles, surfaced right here instead of buried in Settings */}
+        <QuickPreferencesCard />
 
         {/* Dynamic Stats Grid */}
         <GlassCard>
