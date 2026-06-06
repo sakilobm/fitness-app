@@ -1,5 +1,21 @@
 # Rollback Plan
 
+If version `2.6.8` (Type Compilation: Badge Import Path Suffix) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.7)
+
+1. **Revert rewards screen import change:**
+   ```powershell
+   git checkout v2.6.7 -- app/rewards.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.6.7` (UI: Fix Sleep History Card Margins) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.6.6)

@@ -76,8 +76,8 @@ export default function ScreenHeader({
 
           <View style={styles.detailTitleBlock}>
             {icon && (
-              <View style={[styles.detailIconBubble, { backgroundColor: activeAccent + '15' }]}>
-                <HeaderIcon icon={icon} color={activeAccent} size={18} />
+              <View style={[styles.detailIconBubble, { backgroundColor: activeAccent }]}>
+                <HeaderIcon icon={icon} color={colors.white} size={18} />
               </View>
             )}
             <View style={styles.detailTitleText}>
@@ -105,8 +105,8 @@ export default function ScreenHeader({
       <View style={styles.tabRow}>
         {/* Icon bubble */}
         {icon && (
-          <View style={[styles.tabIconBubble, { backgroundColor: activeAccent + '15', borderColor: activeAccent + '30' }]}>
-            <HeaderIcon icon={icon} color={activeAccent} size={22} />
+          <View style={[styles.tabIconBubble, { backgroundColor: activeAccent, shadowColor: activeAccent }]}>
+            <HeaderIcon icon={icon} color={colors.white} size={22} />
           </View>
         )}
 
@@ -213,14 +213,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 16,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1C1C1E',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
   },
   tabTitleBlock: {
     flex: 1,

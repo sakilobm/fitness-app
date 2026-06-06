@@ -238,7 +238,7 @@ export default function NutritionScreen() {
           title="Nutrition"
           subtitle="FOOD & MACROS"
           icon={{ lib: 'MCI', name: 'food-apple' }}
-          accentColor={colors.chart.calories}
+          accentColor="#FB7185"
         />
 
         {/* Dynamic Water Chip (Quick add +250ml) */}

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.8] - 2026-06-06T13:12:00+05:30
+
+### Fixed — Type Compilation: Badge Import Path Suffix
+
+**Architectural Decision:** Modified the import of `Badge` in the rewards screen. Because `Badge` is a pure TypeScript interface, importing it using a value import syntax `import { Badge } from '@/types'` caused local IDE cache and Metro bundler resolution warnings, as the bundler expects a runtime export at `@/types` if value import syntax is used. Changing it to an explicit type-only import `import type { Badge } from '@/types/index'` forces the TypeScript compiler to strip the import during emit, and specifies the explicit file suffix `/index` to resolve stale caching of the types directory map.
+
+**Changes:**
+- **`app/rewards.tsx`:** Changed the import from `import { Badge } from '@/types';` to `import type { Badge } from '@/types/index';`.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.8.
+
 ## [2.6.7] - 2026-06-05T18:10:00+05:30
 
 ### Fixed — UI: Sleep History Card Margins

@@ -160,3 +160,29 @@ export interface OxygenLog {
   notes?:  string;
 }
 
+// ── Rewards (XP, Levels & Badges) ─────────────────────────────────────────────
+
+export type BadgeTier     = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type BadgeCategory = 'consistency' | 'nutrition' | 'fitness' | 'vitals' | 'sleep' | 'milestone';
+
+export interface Badge {
+  id:          string;
+  label:       string;
+  description: string;
+  category:    BadgeCategory;
+  tier:        BadgeTier;
+  icon:        { lib: 'Ionicons' | 'MCI'; name: string };
+  xpReward:    number;
+  unlocked:    boolean;
+  unlockedAt:  string | null;  // ISO datetime when unlocked
+  progress:    number;         // 0–1, drives "almost there" UI on locked badges
+}
+
+export interface XPGainEvent {
+  id:     string;
+  date:   string;   // YYYY-MM-DD
+  time:   string;   // HH:mm
+  amount: number;
+  reason: string;
+  icon:   { lib: 'Ionicons' | 'MCI'; name: string };
+}

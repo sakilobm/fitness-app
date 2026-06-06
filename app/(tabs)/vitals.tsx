@@ -2,12 +2,13 @@ import { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme';
 import { useVitals } from '@/hooks/useVitals';
 import GlassCard from '@/components/ui/GlassCard';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import {
   VitalTypeSelector,
   VitalCard,
@@ -20,6 +21,7 @@ import { VitalType, VITAL_CONFIG } from '@/constants/vitals';
 
 export default function VitalsScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const vitals = useVitals();
 
   const [selected,     setSelected]     = useState<VitalType>('heartRate');
@@ -86,23 +88,29 @@ export default function VitalsScreen() {
   const chartLogs = useMemo(() => [...logs].reverse(), [logs]);
 
   return (
-    <SafeAreaView style={[st.safe, { backgroundColor: colors.bg }]} edges={['top']}>
-      {/* Header */}
-      <View style={st.header}>
-        <View>
-          <Text style={[st.headerTitle, { color: colors.text.primary }]}>Vitals</Text>
-          <Text style={[st.headerSub, { color: colors.muted }]}>Health metrics</Text>
+    <View style={[st.safe, { backgroundColor: colors.bg }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[st.scroll, { paddingTop: insets.top + 16 }]}
+      >
+        <View style={st.screenHeaderWrap}>
+          <ScreenHeader
+            title="Vitals"
+            subtitle="HEALTH METRICS"
+            icon={{ lib: 'Ionicons', name: 'pulse' }}
+            accentColor={cfg.color}
+            rightElement={
+              <TouchableOpacity
+                onPress={() => setSheetVisible(true)}
+                style={[st.addBtn, { backgroundColor: cfg.color }]}
+                activeOpacity={0.82}
+              >
+                <Ionicons name="add" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            }
+          />
         </View>
-        <TouchableOpacity
-          onPress={() => setSheetVisible(true)}
-          style={[st.addBtn, { backgroundColor: cfg.color }]}
-          activeOpacity={0.82}
-        >
-          <Ionicons name="add" size={22} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={st.scroll}>
         {/* Type selector */}
         <VitalTypeSelector selected={selected} onChange={setSelected} colors={colors} />
 
@@ -170,16 +178,14 @@ export default function VitalsScreen() {
         onSaveOxygen={vitals.addOxygen}
         colors={colors}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const st = StyleSheet.create({
   safe:         { flex: 1 },
-  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
-  headerTitle:  { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  headerSub:    { fontSize: 13, marginTop: 2 },
   addBtn:       { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  screenHeaderWrap: { paddingHorizontal: 16 },
 
   scroll:       { paddingBottom: 120 },
   section:      { marginTop: 12 },

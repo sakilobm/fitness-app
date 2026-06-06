@@ -1,5 +1,31 @@
 # Cursor Test & Validation Log
 
+## [2026-06-06T13:12:00+05:30] - Badge Import Fix (v2.6.8)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+- **Command:** `node testing/test_health_calculations.js`
+  - **Result:** Successfully completed with **0 errors**.
+  - **Output:**
+    ```
+    🧪 Starting Health Calculations Unit Tests...
+    Refactored Theme Engine baseline validation...
+    ✅ Passed: BMI for 78.4kg, 178cm should be 24.7, got 24.7
+    ✅ Passed: BMI for 0kg should be 0, got 0
+    ✅ Passed: BMR for Male (78.4kg, 178cm, 24y) should be 1782, got 1782
+    ✅ Passed: BMR for Female (78.4kg, 178cm, 24y) should be 1616, got 1616
+    ✅ Passed: TDEE for BMR 1782, moderately active should be 2762, got 2762
+    ✅ Passed: Active calories for 6240 steps, 48 active mins at 78.4kg should be 683, got 683
+    ✅ Passed: Macros for Fat Loss (2300 kcal) should be carbs: 201, protein: 230, fat: 64. Got: {"carbs":201,"protein":230,"fat":64}
+    ✅ Passed: Macros for Strength Training (2300 kcal) should be carbs: 230, protein: 173, fat: 77. Got: {"carbs":230,"protein":173,"fat":77}
+    🎉 All Health Calculations Tests Passed Successfully!
+    ```
+
+### Manual Verification
+- **Badge Type Import (`app/rewards.tsx`):**
+  - Confirmed changing the import from `import { Badge } from '@/types';` to `import type { Badge } from '@/types/index';` resolves the editor and compilation export member missing errors. Explicit type-safe imports let Babel strip the reference during runtime compilation and targets the index file directly to avoid directory mapping cache issues.
+
 ## [2026-06-05T18:10:00+05:30] - Sleep History Card Margins (v2.6.7)
 
 ### Automated Checks

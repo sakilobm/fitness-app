@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/constants/theme';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useCalendarNav } from '@/hooks/useCalendarNav';
 import { useCalendarData } from '@/hooks/useCalendarData';
 import {
@@ -34,7 +35,17 @@ export default function CalendarScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}
       >
-        {/* ── Header ──────────────────────────────────────────────────── */}
+        {/* ── Screen header ─────────────────────────────────────────────── */}
+        <View style={styles.screenHeaderWrap}>
+          <ScreenHeader
+            title="Calendar"
+            subtitle="ACTIVITY LOG"
+            icon={{ lib: 'Ionicons', name: 'calendar' }}
+            accentColor="#2DD4BF"
+          />
+        </View>
+
+        {/* ── Month navigator ───────────────────────────────────────────── */}
         <View style={styles.header}>
           <Pressable
             onPress={() => nav.navigateMonth('prev')}
@@ -115,6 +126,10 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  screenHeaderWrap: {
+    paddingHorizontal: CAL_H_PAD,
+    paddingTop: 16,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

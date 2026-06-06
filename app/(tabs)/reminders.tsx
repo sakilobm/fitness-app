@@ -21,11 +21,6 @@ const DAY_MAP: Record<string, string> = {
 const CATEGORIES = ['All', 'Water', 'Meals', 'Weigh-in', 'Body Photo', 'Workout', 'Supplements'];
 
 
-
-
-
-
-
 const getCategoryIcon = (cat: string, titleStr?: string): IconDef => {
   const t = (titleStr || '').toLowerCase();
   if (cat === 'Water') {

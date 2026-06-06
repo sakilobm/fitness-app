@@ -31,7 +31,7 @@ export function WeeklySleepChart({ weeklyLogs, colors }: Props) {
       {/* Header */}
       <View style={st.header}>
         <Text style={[st.title, { color: colors.text.primary }]}>7-Day Overview</Text>
-        <Text style={[st.goalLbl, { color: colors.lime }]}>
+        <Text style={[st.goalLbl, { color: '#818CF8' }]}>
           {SLEEP_GOAL_HOURS}h goal
         </Text>
       </View>
@@ -39,8 +39,8 @@ export function WeeklySleepChart({ weeklyLogs, colors }: Props) {
       {/* Chart area */}
       <View style={[st.chartArea, { height: CHART_H + 24 }]}>
         {/* Goal dashed line */}
-        <View style={[st.goalLine, { top: goalTop, borderColor: colors.lime + '60' }]}>
-          <Text style={[st.goalLineLabel, { color: colors.lime }]}>{SLEEP_GOAL_HOURS}h</Text>
+        <View style={[st.goalLine, { top: goalTop, borderColor: '#818CF8' + '60' }]}>
+          <Text style={[st.goalLineLabel, { color: '#818CF8' }]}>{SLEEP_GOAL_HOURS}h</Text>
         </View>
 
         {/* Bars */}
@@ -77,7 +77,7 @@ export function WeeklySleepChart({ weeklyLogs, colors }: Props) {
                 </View>
                 <Text style={[
                   st.dayLbl,
-                  { color: isToday ? colors.lime : colors.muted },
+                  { color: isToday ? '#818CF8' : colors.muted },
                   isToday && { fontWeight: '800' },
                 ]}>
                   {isToday ? 'Today' : dayLabel(daysAgo)}

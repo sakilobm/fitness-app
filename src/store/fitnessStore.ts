@@ -5,11 +5,15 @@ import {
   FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog,
   DailyLog, SleepLog,
   HeartRateLog, BloodPressureLog, BloodGlucoseLog, OxygenLog,
+  Badge, XPGainEvent,
 } from '../types';
 import { computeSleepScore, estimateStages } from '../constants/sleep';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
 import { zustandMMKVStorage, mmkvSaveLog, mmkvDeleteLog, mmkvHydrateLogs } from '../utils/mmkvStorage';
+import {
+  XP_TABLE, applyXPGain, createInitialBadges, computeRewardStats, checkBadge,
+} from '../constants/rewards';
 
 interface FitnessState {
   // User Profile
@@ -85,6 +89,12 @@ interface FitnessState {
   oxygenLogs:        OxygenLog[];
   addOxygen:         (log: Omit<OxygenLog, 'id'>) => void;
   deleteOxygen:      (id: string) => void;
+
+  // Rewards — XP, Levels & Badges
+  badges:    Badge[];
+  xpHistory: XPGainEvent[];
+  addXP:     (amount: number, reason: string, icon: Badge['icon']) => { leveledUp: boolean; newLevel: number };
+  checkAndUnlockBadges: () => Badge[];
 
   // Hydration state
   hydrateStore: () => Promise<void>;
@@ -353,6 +363,67 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   bloodGlucoseLogs:  generateInitialGlucoseLogs(),
   oxygenLogs:        generateInitialOxygenLogs(),
 
+  badges:    createInitialBadges(),
+  xpHistory: [],
+
+  addXP: (amount, reason, icon) => {
+    const state = get();
+    const result = applyXPGain(state.user.xp, state.user.level, amount);
+
+    const now = new Date();
+    const event: XPGainEvent = {
+      id:     `xp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      date:   getPastDateStr(0),
+      time:   now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+      amount,
+      reason,
+      icon,
+    };
+
+    set((s) => ({
+      user:      { ...s.user, xp: result.xp, level: result.level },
+      xpHistory: [event, ...s.xpHistory].slice(0, 40),
+    }));
+
+    return { leveledUp: result.leveledUp, newLevel: result.level };
+  },
+
+  checkAndUnlockBadges: () => {
+    const state = get();
+    const stats = computeRewardStats(state);
+    const nowIso = new Date().toISOString();
+    const newlyUnlocked: Badge[] = [];
+    let changed = false;
+
+    const updatedBadges = state.badges.map((badge) => {
+      if (badge.unlocked) return badge;
+      const result = checkBadge(badge.id, stats);
+      if (!result) return badge;
+
+      if (result.met) {
+        const unlocked: Badge = { ...badge, unlocked: true, unlockedAt: nowIso, progress: 1 };
+        newlyUnlocked.push(unlocked);
+        changed = true;
+        return unlocked;
+      }
+      if (result.progress !== badge.progress) {
+        changed = true;
+        return { ...badge, progress: result.progress };
+      }
+      return badge;
+    });
+
+    if (changed) {
+      set({ badges: updatedBadges });
+    }
+
+    newlyUnlocked.forEach((badge) => {
+      get().addXP(badge.xpReward, `Unlocked "${badge.label}"`, badge.icon);
+    });
+
+    return newlyUnlocked;
+  },
+
   setUser: (updatedUser) => {
     set((state) => ({ user: { ...state.user, ...updatedUser } }));
     supabase.auth.getUser().then(({ data }) => {
@@ -420,7 +491,10 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     });
 
     mmkvSaveLog('weight', targetDate, logEntry);
-    
+
+    get().addXP(XP_TABLE.weightLog, 'Logged your weight', { lib: 'MCI', name: 'scale-bathroom' });
+    get().checkAndUnlockBadges();
+
     // Supabase sync
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
@@ -474,6 +548,9 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     });
 
     mmkvSaveLog('nutrition', getPastDateStr(0), { id: `${mealId}_${Date.now()}`, mealId, item });
+
+    get().addXP(XP_TABLE.mealLog, 'Logged a meal', { lib: 'MCI', name: 'food-apple' });
+    get().checkAndUnlockBadges();
   },
 
   deleteFoodFromMeal: (mealId, itemIndex) => {
@@ -504,7 +581,10 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     }));
 
     mmkvSaveLog('water', getPastDateStr(0), logEntry);
-    
+
+    get().addXP(XP_TABLE.waterLog, 'Logged water intake', { lib: 'Ionicons', name: 'water' });
+    get().checkAndUnlockBadges();
+
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         supabase.from('water_logs').insert({
@@ -561,6 +641,9 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   },
 
   addSteps: (steps) => {
+    const prevSteps = get().stepsCount;
+    const stepsGoal = get().user.stepsGoal;
+
     set((state) => {
       const nextSteps = state.stepsCount + steps;
       const nextActiveMinutes = state.activeMinutes + Math.round(steps / 130);
@@ -591,10 +674,19 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     });
 
     mmkvSaveLog('steps', getPastDateStr(0), { id: `s_${Date.now()}`, steps, timestamp: Date.now() });
+
+    const nextSteps = get().stepsCount;
+    if (prevSteps < stepsGoal && nextSteps >= stepsGoal) {
+      get().addXP(XP_TABLE.stepGoalHit, 'Hit your daily step goal', { lib: 'Ionicons', name: 'walk' });
+    }
+    get().checkAndUnlockBadges();
   },
 
   addManualSteps: (steps) => {
     if (steps <= 0) return;
+    const prevSteps = get().stepsCount;
+    const stepsGoal = get().user.stepsGoal;
+
     set((state) => {
       const nextSteps = state.stepsCount + steps;
       const nextActiveMinutes = state.activeMinutes + Math.round(steps / 100);
@@ -622,6 +714,12 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
         stepHistory: updatedHistory.slice(-30),
       };
     });
+
+    const nextSteps = get().stepsCount;
+    if (prevSteps < stepsGoal && nextSteps >= stepsGoal) {
+      get().addXP(XP_TABLE.stepGoalHit, 'Hit your daily step goal', { lib: 'Ionicons', name: 'walk' });
+    }
+    get().checkAndUnlockBadges();
   },
 
   updateStepsGoal: (goal) => set((state) => ({ user: { ...state.user, stepsGoal: goal } })),
@@ -644,6 +742,9 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     set((state) => ({
       sleepLogs: [newLog, ...state.sleepLogs.filter((l) => l.date !== log.date)],
     }));
+
+    get().addXP(XP_TABLE.sleepLog, 'Logged a night of sleep', { lib: 'Ionicons', name: 'moon' });
+    get().checkAndUnlockBadges();
   },
 
   deleteSleepLog: (id) => {
@@ -658,30 +759,46 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
   // ── Vitals CRUD ─────────────────────────────────────────────────────────────
 
-  addHeartRate: (log) => set((state) => ({
-    heartRateLogs: [{ ...log, id: `hr_${Date.now()}` }, ...state.heartRateLogs],
-  })),
+  addHeartRate: (log) => {
+    set((state) => ({
+      heartRateLogs: [{ ...log, id: `hr_${Date.now()}` }, ...state.heartRateLogs],
+    }));
+    get().addXP(XP_TABLE.vitalsLog, 'Logged your heart rate', { lib: 'Ionicons', name: 'heart' });
+    get().checkAndUnlockBadges();
+  },
   deleteHeartRate: (id) => set((state) => ({
     heartRateLogs: state.heartRateLogs.filter((l) => l.id !== id),
   })),
 
-  addBloodPressure: (log) => set((state) => ({
-    bloodPressureLogs: [{ ...log, id: `bp_${Date.now()}` }, ...state.bloodPressureLogs],
-  })),
+  addBloodPressure: (log) => {
+    set((state) => ({
+      bloodPressureLogs: [{ ...log, id: `bp_${Date.now()}` }, ...state.bloodPressureLogs],
+    }));
+    get().addXP(XP_TABLE.vitalsLog, 'Logged your blood pressure', { lib: 'Ionicons', name: 'pulse' });
+    get().checkAndUnlockBadges();
+  },
   deleteBloodPressure: (id) => set((state) => ({
     bloodPressureLogs: state.bloodPressureLogs.filter((l) => l.id !== id),
   })),
 
-  addBloodGlucose: (log) => set((state) => ({
-    bloodGlucoseLogs: [{ ...log, id: `glc_${Date.now()}` }, ...state.bloodGlucoseLogs],
-  })),
+  addBloodGlucose: (log) => {
+    set((state) => ({
+      bloodGlucoseLogs: [{ ...log, id: `glc_${Date.now()}` }, ...state.bloodGlucoseLogs],
+    }));
+    get().addXP(XP_TABLE.vitalsLog, 'Logged your blood glucose', { lib: 'Ionicons', name: 'water' });
+    get().checkAndUnlockBadges();
+  },
   deleteBloodGlucose: (id) => set((state) => ({
     bloodGlucoseLogs: state.bloodGlucoseLogs.filter((l) => l.id !== id),
   })),
 
-  addOxygen: (log) => set((state) => ({
-    oxygenLogs: [{ ...log, id: `o2_${Date.now()}` }, ...state.oxygenLogs],
-  })),
+  addOxygen: (log) => {
+    set((state) => ({
+      oxygenLogs: [{ ...log, id: `o2_${Date.now()}` }, ...state.oxygenLogs],
+    }));
+    get().addXP(XP_TABLE.vitalsLog, 'Logged your oxygen level', { lib: 'Ionicons', name: 'fitness' });
+    get().checkAndUnlockBadges();
+  },
   deleteOxygen: (id) => set((state) => ({
     oxygenLogs: state.oxygenLogs.filter((l) => l.id !== id),
   })),
@@ -796,6 +913,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     bloodPressureLogs:  state.bloodPressureLogs,
     bloodGlucoseLogs:   state.bloodGlucoseLogs,
     oxygenLogs:         state.oxygenLogs,
+    badges:             state.badges,
+    xpHistory:          state.xpHistory,
   }),
 }));
 

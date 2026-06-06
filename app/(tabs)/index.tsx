@@ -227,14 +227,22 @@ export default function HomeScreen() {
           <View style={styles.metaRow}>
             <Text style={styles.date}>{dateStr}</Text>
             <View style={styles.dot} />
-            <View style={styles.streakChip}>
+            <TouchableOpacity
+              style={styles.streakChip}
+              onPress={() => router.push('/rewards')}
+              activeOpacity={0.7}
+            >
               <Ionicons name="flame" size={11} color={colors.amber} />
               <Text style={styles.streakTxt}>{user.streak}</Text>
-            </View>
-            <View style={styles.xpChip}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.xpChip}
+              onPress={() => router.push('/rewards')}
+              activeOpacity={0.7}
+            >
               <Ionicons name="flash" size={10} color={colors.lime} />
               <Text style={styles.xpTxt}>LVL {user.level}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 

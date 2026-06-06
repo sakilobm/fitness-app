@@ -19,6 +19,8 @@ import { useProfileSettings } from '@/store/fitnessStore';
 import { useRouter } from 'expo-router';
 import { kgToLbs, mlToOz } from '@/utils/units';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useRewards } from '@/hooks/useRewards';
+import { TIER_META } from '@/constants/rewards';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -32,32 +34,15 @@ function AppIcon({ icon, size, color }: { icon: IconDef; size: number; color: st
   return <Ionicons name={icon.name} size={size} color={color} />;
 }
 
-interface Badge {
-  id: string;
-  icon: IconDef;
-  label: string;
-  unlocked: boolean;
-  color: string;
-}
-
 export default function ProfileScreen() {
   const { colors, isDark: isDarkMode } = useTheme();
   const styles = React.useMemo(() => getStyles(colors, isDarkMode), [colors, isDarkMode]);
 
-  const BADGES = React.useMemo<Badge[]>(() => [
-    { id: 'b1', icon: { lib: 'Ionicons', name: 'flame' }, label: '7-Day Streak', unlocked: true, color: colors.amber },
-    { id: 'b2', icon: { lib: 'Ionicons', name: 'water' }, label: 'Hydration Pro', unlocked: true, color: colors.chart.water },
-    { id: 'b3', icon: { lib: 'MCI', name: 'scale-bathroom' }, label: '5kg Lost', unlocked: true, color: colors.lime },
-    { id: 'b4', icon: { lib: 'MCI', name: 'dumbbell' }, label: 'Iron Will', unlocked: true, color: colors.lime },
-    { id: 'b5', icon: { lib: 'MCI', name: 'food-apple' }, label: 'Macro Master', unlocked: false, color: colors.chart.carbs },
-    { id: 'b6', icon: { lib: 'Ionicons', name: 'camera' }, label: 'Photo Journey', unlocked: false, color: colors.lime },
-    { id: 'b7', icon: { lib: 'MCI', name: 'run' }, label: 'Step Crusher', unlocked: false, color: '#6366F1' },
-    { id: 'b8', icon: { lib: 'MCI', name: 'pill' }, label: 'Supplement King', unlocked: false, color: colors.chart.fibre },
-  ], [colors]);
-
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useProfileSettings();
+  const { badges, totalUnlocked, totalBadges } = useRewards();
+  const badgePreview = badges.slice(0, 8);
 
   // Safe fallbacks for store preferences
   const weightUnit = user.weightUnit || 'kg';
@@ -190,41 +175,47 @@ export default function ProfileScreen() {
         </GlassCard>
 
         {/* Achievements Achievements badge row */}
-        <GlassCard>
-          <SectionHeader
-            title="Achievements"
-            action={`${BADGES.filter((b) => b.unlocked).length}/${BADGES.length}`}
-            accentColor={colors.amber}
-          />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgeScroll}>
-            <View style={styles.badgeRow}>
-              {BADGES.map((badge) => (
-                <View key={badge.id} style={[styles.badgeItem, !badge.unlocked && styles.badgeLocked]}>
-                  <View style={[
-                    styles.badgeCircle,
-                    badge.unlocked && {
-                      backgroundColor: badge.color + '12',
-                      borderColor: badge.color + '55',
-                      shadowColor: badge.color,
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.4,
-                      shadowRadius: 8,
-                    },
-                  ]}>
-                    <AppIcon
-                      icon={badge.icon}
-                      size={24}
-                      color={badge.unlocked ? badge.color : colors.muted}
-                    />
-                  </View>
-                  <Text style={[styles.badgeLabel, !badge.unlocked && styles.badgeLabelLocked]}>
-                    {badge.label}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-        </GlassCard>
+        <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/rewards')}>
+          <GlassCard>
+            <SectionHeader
+              title="Achievements"
+              action={`${totalUnlocked}/${totalBadges} · View All →`}
+              onAction={() => router.push('/rewards')}
+              accentColor={colors.amber}
+            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgeScroll}>
+              <View style={styles.badgeRow}>
+                {badgePreview.map((badge) => {
+                  const tierColor = TIER_META[badge.tier].color;
+                  return (
+                    <View key={badge.id} style={[styles.badgeItem, !badge.unlocked && styles.badgeLocked]}>
+                      <View style={[
+                        styles.badgeCircle,
+                        badge.unlocked && {
+                          backgroundColor: tierColor + '12',
+                          borderColor: tierColor + '55',
+                          shadowColor: tierColor,
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.4,
+                          shadowRadius: 8,
+                        },
+                      ]}>
+                        <AppIcon
+                          icon={badge.icon as IconDef}
+                          size={24}
+                          color={badge.unlocked ? tierColor : colors.muted}
+                        />
+                      </View>
+                      <Text style={[styles.badgeLabel, !badge.unlocked && styles.badgeLabelLocked]}>
+                        {badge.label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </GlassCard>
+        </TouchableOpacity>
 
         {/* Dynamic Goal progress */}
         <GlassCard accentColor={colors.amber}>

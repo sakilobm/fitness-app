@@ -2,12 +2,13 @@ import { useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme';
 import { useSleepLogger } from '@/hooks/useSleepLogger';
 import GlassCard from '@/components/ui/GlassCard';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import {
   SleepHeroCard,
   SleepHypnogram,
@@ -19,6 +20,7 @@ import { formatDuration } from '@/constants/sleep';
 
 export default function SleepScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const {
     sleepLogs,
     addSleepLog,
@@ -33,26 +35,30 @@ export default function SleepScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
 
   return (
-    <SafeAreaView style={[st.safe, { backgroundColor: colors.bg }]} edges={['top']}>
-      {/* Header */}
-      <View style={st.header}>
-        <View>
-          <Text style={[st.headerTitle, { color: colors.text.primary }]}>Sleep</Text>
-          <Text style={[st.headerSub, { color: colors.muted }]}>Track your rest</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => setSheetVisible(true)}
-          style={[st.addBtn, { backgroundColor: colors.lime }]}
-          activeOpacity={0.82}
-        >
-          <Ionicons name="add" size={22} color={colors.white} />
-        </TouchableOpacity>
-      </View>
-
+    <View style={[st.safe, { backgroundColor: colors.bg }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={st.scroll}
+        contentContainerStyle={[st.scroll, { paddingTop: insets.top + 16 }]}
       >
+
+        <View style={st.screenHeaderWrap}>
+          <ScreenHeader
+            title="Sleep"
+            subtitle="TRACK YOUR REST"
+            icon={{ lib: 'Ionicons', name: 'moon' }}
+            accentColor="#818CF8"
+            rightElement={
+              <TouchableOpacity
+                onPress={() => setSheetVisible(true)}
+                style={[st.addBtn, { backgroundColor: '#818CF8' }]}
+                activeOpacity={0.82}
+              >
+                <Ionicons name="add" size={22} color={colors.white} />
+              </TouchableOpacity>
+            }
+          />
+        </View>
+
         {/* Hero card */}
         <SleepHeroCard
           log={lastNight}
@@ -128,7 +134,7 @@ export default function SleepScreen() {
         onSave={addSleepLog}
         colors={colors}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -145,10 +151,9 @@ function StatPill({
 
 const st = StyleSheet.create({
   safe: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
-  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  headerSub: { fontSize: 13, marginTop: 2 },
   addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  screenHeaderWrap: { paddingHorizontal: 16, paddingBottom: 10, },
+
 
   scroll: { paddingBottom: 120 },
   card: { marginHorizontal: 16, marginTop: 12, marginBottom: 24 },
