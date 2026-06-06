@@ -24,7 +24,7 @@ export default function VitalsScreen() {
   const insets = useSafeAreaInsets();
   const vitals = useVitals();
 
-  const [selected,     setSelected]     = useState<VitalType>('heartRate');
+  const [selected, setSelected] = useState<VitalType>('heartRate');
   const [sheetVisible, setSheetVisible] = useState(false);
 
   const cfg = VITAL_CONFIG[selected];
@@ -34,53 +34,53 @@ export default function VitalsScreen() {
     switch (selected) {
       case 'heartRate':
         return {
-          logs:        vitals.hrLogs,
-          latest:      vitals.latestHR,
-          weekValues:  vitals.weeklyHR.map(l => l.bpm),
-          avg:         vitals.avgHR,
-          min:         vitals.minHR,
-          max:         vitals.maxHR,
-          rangeValue:  vitals.latestHR?.bpm ?? 72,
+          logs: vitals.hrLogs,
+          latest: vitals.latestHR,
+          weekValues: vitals.weeklyHR.map(l => l.bpm),
+          avg: vitals.avgHR,
+          min: vitals.minHR,
+          max: vitals.maxHR,
+          rangeValue: vitals.latestHR?.bpm ?? 72,
         };
       case 'bloodPressure':
         return {
-          logs:        vitals.bpLogs,
-          latest:      vitals.latestBP,
-          weekValues:  vitals.weeklyBP.map(l => l.systolic),
-          avg:         vitals.avgSys,
-          min:         vitals.weeklyBP.length ? Math.min(...vitals.weeklyBP.map(l => l.systolic)) : 0,
-          max:         vitals.weeklyBP.length ? Math.max(...vitals.weeklyBP.map(l => l.systolic)) : 0,
-          rangeValue:  vitals.latestBP?.systolic ?? 120,
+          logs: vitals.bpLogs,
+          latest: vitals.latestBP,
+          weekValues: vitals.weeklyBP.map(l => l.systolic),
+          avg: vitals.avgSys,
+          min: vitals.weeklyBP.length ? Math.min(...vitals.weeklyBP.map(l => l.systolic)) : 0,
+          max: vitals.weeklyBP.length ? Math.max(...vitals.weeklyBP.map(l => l.systolic)) : 0,
+          rangeValue: vitals.latestBP?.systolic ?? 120,
         };
       case 'bloodGlucose':
         return {
-          logs:        vitals.glucoseLogs,
-          latest:      vitals.latestGlucose,
-          weekValues:  vitals.weeklyGlucose.map(l => l.value),
-          avg:         vitals.avgGlucose,
-          min:         vitals.weeklyGlucose.length ? Math.min(...vitals.weeklyGlucose.map(l => l.value)) : 0,
-          max:         vitals.weeklyGlucose.length ? Math.max(...vitals.weeklyGlucose.map(l => l.value)) : 0,
-          rangeValue:  vitals.latestGlucose?.value ?? 90,
+          logs: vitals.glucoseLogs,
+          latest: vitals.latestGlucose,
+          weekValues: vitals.weeklyGlucose.map(l => l.value),
+          avg: vitals.avgGlucose,
+          min: vitals.weeklyGlucose.length ? Math.min(...vitals.weeklyGlucose.map(l => l.value)) : 0,
+          max: vitals.weeklyGlucose.length ? Math.max(...vitals.weeklyGlucose.map(l => l.value)) : 0,
+          rangeValue: vitals.latestGlucose?.value ?? 90,
         };
       case 'oxygen':
         return {
-          logs:        vitals.oxygenLogs,
-          latest:      vitals.latestOxygen,
-          weekValues:  vitals.weeklyOxygen.map(l => l.spo2),
-          avg:         vitals.avgSpo2,
-          min:         vitals.weeklyOxygen.length ? Math.min(...vitals.weeklyOxygen.map(l => l.spo2)) : 0,
-          max:         vitals.weeklyOxygen.length ? Math.max(...vitals.weeklyOxygen.map(l => l.spo2)) : 0,
-          rangeValue:  vitals.latestOxygen?.spo2 ?? 98,
+          logs: vitals.oxygenLogs,
+          latest: vitals.latestOxygen,
+          weekValues: vitals.weeklyOxygen.map(l => l.spo2),
+          avg: vitals.avgSpo2,
+          min: vitals.weeklyOxygen.length ? Math.min(...vitals.weeklyOxygen.map(l => l.spo2)) : 0,
+          max: vitals.weeklyOxygen.length ? Math.max(...vitals.weeklyOxygen.map(l => l.spo2)) : 0,
+          rangeValue: vitals.latestOxygen?.spo2 ?? 98,
         };
     }
   }, [selected, vitals]);
 
   function handleDelete(id: string) {
     switch (selected) {
-      case 'heartRate':     vitals.deleteHeartRate(id);    break;
+      case 'heartRate': vitals.deleteHeartRate(id); break;
       case 'bloodPressure': vitals.deleteBloodPressure(id); break;
-      case 'bloodGlucose':  vitals.deleteBloodGlucose(id); break;
-      case 'oxygen':        vitals.deleteOxygen(id);        break;
+      case 'bloodGlucose': vitals.deleteBloodGlucose(id); break;
+      case 'oxygen': vitals.deleteOxygen(id); break;
     }
   }
 
@@ -183,15 +183,15 @@ export default function VitalsScreen() {
 }
 
 const st = StyleSheet.create({
-  safe:         { flex: 1 },
-  addBtn:       { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  screenHeaderWrap: { paddingHorizontal: 16 },
+  safe: { flex: 1 },
+  addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  screenHeaderWrap: { paddingHorizontal: 16, paddingBottom: 16 },
 
-  scroll:       { paddingBottom: 120 },
-  section:      { marginTop: 12 },
-  card:         { marginHorizontal: 16, marginTop: 12 },
+  scroll: { paddingBottom: 120 },
+  section: { marginTop: 12 },
+  card: { marginHorizontal: 16, marginTop: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  sectionSub:   { fontSize: 11, marginBottom: 10, fontStyle: 'italic' },
+  sectionSub: { fontSize: 11, marginBottom: 10, fontStyle: 'italic' },
   historyTitle: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginTop: 12, marginBottom: 10 },
-  bottomPad:    { height: 20 },
+  bottomPad: { height: 20 },
 });

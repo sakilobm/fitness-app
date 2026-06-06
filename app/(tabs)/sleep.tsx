@@ -152,7 +152,7 @@ function StatPill({
 const st = StyleSheet.create({
   safe: { flex: 1 },
   addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  screenHeaderWrap: { paddingHorizontal: 16, paddingBottom: 10, },
+  screenHeaderWrap: { paddingHorizontal: 16, paddingBottom: 16, },
 
 
   scroll: { paddingBottom: 120 },
