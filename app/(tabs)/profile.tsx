@@ -248,40 +248,23 @@ export default function ProfileScreen() {
           </View>
         </GlassCard>
 
-        {/* Settings Navigation Card at the Bottom */}
-        <View style={styles.bottomNavRow}>
-          <Animated.View entering={FadeInUp.delay(100).springify().damping(18)} style={{ flex: 1 }}>
-            <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/cycle')} style={{ flex: 1 }}>
-              <GlassCard accentColor="#F87171" style={{ flex: 1 }}>
-                <View style={styles.settingsNavRow}>
-                  <View style={[styles.settingsNavIconWrap, { backgroundColor: '#F87171' + '15' }]}>
-                    <Ionicons name="flower" size={20} color="#F87171" />
-                  </View>
-                  <View style={styles.settingsNavTextWrap}>
-                    <Text style={styles.settingsNavTitle}>Cycle Tracking</Text>
-                    <Text style={styles.settingsNavSub}>Period, ovulation & symptoms</Text>
-                  </View>
+        {/* Preferences Navigation */}
+        <Animated.View entering={FadeInUp.delay(100).springify().damping(18)}>
+          <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/settings')}>
+            <GlassCard accentColor={colors.lime}>
+              <View style={styles.settingsNavRow}>
+                <View style={[styles.settingsNavIconWrap, { backgroundColor: colors.lime + '15' }]}>
+                  <Ionicons name="settings" size={20} color={colors.lime} />
                 </View>
-              </GlassCard>
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View entering={FadeInUp.delay(120).springify().damping(18)} style={{ flex: 1 }}>
-            <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/settings')} style={{ flex: 1 }}>
-              <GlassCard accentColor={colors.lime} style={{ flex: 1 }}>
-                <View style={styles.settingsNavRow}>
-                  <View style={[styles.settingsNavIconWrap, { backgroundColor: colors.lime + '15' }]}>
-                    <Ionicons name="settings" size={20} color={colors.lime} />
-                  </View>
-                  <View style={styles.settingsNavTextWrap}>
-                    <Text style={styles.settingsNavTitle}>Preferences</Text>
-                    <Text style={styles.settingsNavSub}>Units, backups & privacy</Text>
-                  </View>
+                <View style={styles.settingsNavTextWrap}>
+                  <Text style={styles.settingsNavTitle}>Preferences & Settings</Text>
+                  <Text style={styles.settingsNavSub}>Units, privacy, backups & more</Text>
                 </View>
-              </GlassCard>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+              </View>
+            </GlassCard>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
     </View>
   );

@@ -65,6 +65,7 @@ export interface UserProfile {
   privateProfileEnabled?: boolean;
   appLockEnabled?: boolean;
   setupCompleted?: boolean;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
 }
 
 export interface WeightLog {
@@ -208,7 +209,8 @@ export interface CycleLog {
 }
 
 export interface CycleSettings {
-  cycleLength:     number;        // average cycle length in days, default 28
-  periodLength:    number;        // average period duration in days, default 5
-  lastPeriodStart: string | null; // YYYY-MM-DD
+  cycleLength:           number;        // average cycle length in days, default 28
+  periodLength:          number;        // average period duration in days, default 5
+  lastPeriodStart:       string | null; // YYYY-MM-DD
+  cycleTrackingEnabled:  boolean;       // show cycle in tab bar
 }

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useFitnessStore } from '@/store/fitnessStore';
-import { CycleLog, CyclePhase } from '@/types';
+import { CycleLog, CyclePhase, CycleSettings } from '@/types';
 import {
   getDayOfCycle, getCurrentPhase, getNextPeriodDate, getOvulationDate,
   getFertileWindow, daysUntil, getTodayStr, PHASE_META,
@@ -9,7 +9,7 @@ import {
 
 export interface CycleResult {
   cycleLogs:     CycleLog[];
-  cycleSettings: { cycleLength: number; periodLength: number; lastPeriodStart: string | null };
+  cycleSettings: CycleSettings;
 
   // Computed predictions
   todayStr:         string;
@@ -31,7 +31,7 @@ export interface CycleResult {
   addCycleLog:         (log: Omit<CycleLog, 'id'>) => void;
   updateCycleLog:      (id: string, patch: Partial<CycleLog>) => void;
   deleteCycleLog:      (id: string) => void;
-  updateCycleSettings: (patch: Partial<{ cycleLength: number; periodLength: number; lastPeriodStart: string | null }>) => void;
+  updateCycleSettings: (patch: Partial<CycleSettings>) => void;
   markPeriodStart:     (date?: string) => void;
 }
 

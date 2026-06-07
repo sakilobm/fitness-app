@@ -19,7 +19,6 @@ export default function TabsLayout() {
           sceneStyle: { backgroundColor: colors.bg },
         }}
       >
-        {/* Explicit order: Home → Weight → Food → Calendar → Sleep → Vitals → Reminders → Profile */}
         <Tabs.Screen name="index" />
         <Tabs.Screen name="weight" />
         <Tabs.Screen name="nutrition" />
@@ -28,6 +27,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="vitals" />
         <Tabs.Screen name="reminders" />
         <Tabs.Screen name="profile" />
+        <Tabs.Screen name="cycle" />
       </Tabs>
 
       <RewardCelebrationOverlay event={pending} onDismiss={dismiss} colors={colors} />

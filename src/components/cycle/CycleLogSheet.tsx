@@ -4,7 +4,7 @@ import {
   KeyboardAvoidingView, Platform, StyleSheet,
 } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withTiming,
+  useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,9 +22,10 @@ interface Props {
   existing?: CycleLog | null;
   onSave:    (log: Omit<CycleLog, 'id'>) => void;
   onClose:   () => void;
+  onDelete?: () => void;
 }
 
-export default function CycleLogSheet({ visible, date, existing, onSave, onClose }: Props) {
+export default function CycleLogSheet({ visible, date, existing, onSave, onClose, onDelete }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
@@ -46,8 +47,8 @@ export default function CycleLogSheet({ visible, date, existing, onSave, onClose
       setSymptoms(existing?.symptoms ?? []);
       setMood(existing?.mood ?? null);
       setNote(existing?.note ?? '');
-      translateY.value = withSpring(0,  { damping: 18, stiffness: 180 });
-      opacity.value    = withTiming(1,  { duration: 200 });
+      translateY.value = withTiming(0,  { duration: 320, easing: Easing.out(Easing.cubic) });
+      opacity.value    = withTiming(1,  { duration: 240 });
     } else {
       translateY.value = withTiming(420, { duration: 220 });
       opacity.value    = withTiming(0,   { duration: 200 });
@@ -95,12 +96,22 @@ export default function CycleLogSheet({ visible, date, existing, onSave, onClose
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>Log Day</Text>
+              <Text style={styles.headerTitle}>{existing ? 'Edit Log' : 'Log Day'}</Text>
               <Text style={styles.headerDate}>{displayDate}</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={colors.text.primary} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {existing && onDelete && (
+                <TouchableOpacity
+                  onPress={() => { triggerHaptic('medium'); onDelete(); }}
+                  style={[styles.closeBtn, { backgroundColor: '#F8717118' }]}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#F87171" />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <Ionicons name="close" size={20} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingBottom: 8 }}>
@@ -216,7 +227,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.cardBorder,
     alignSelf: 'center', marginBottom: 4,
   },
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  header:        { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { ...Typography.h4, color: colors.text.primary },
   headerDate:  { ...Typography.caption, color: colors.muted, marginTop: 2 },
   closeBtn: {

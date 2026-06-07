@@ -14,6 +14,7 @@ import { TabName, ALL_TABS, TAB_LABELS, TAB_META } from '@/constants/tabs';
 import { TabIcon } from './TabIcon';
 import { useTabLayoutStore } from '@/store/tabLayoutStore';
 import { CustomizeTabSheet } from './CustomizeTabSheet';
+import { useFitnessStore } from '@/store/fitnessStore';
 
 const { width: W } = Dimensions.get('window');
 const BAR_H  = 64;
@@ -123,8 +124,10 @@ function MoreSheet({
   insets:      { bottom: number };
   colors:      ThemeColors;
 }) {
-  const primaryTabs  = useTabLayoutStore(s => s.primaryTabs);
-  const secondaryTabs = ALL_TABS.filter(t => !primaryTabs.includes(t));
+  const primaryTabs    = useTabLayoutStore(s => s.primaryTabs);
+  const cycleEnabled   = useFitnessStore(s => s.cycleSettings.cycleTrackingEnabled);
+  const visibleAll     = ALL_TABS.filter(t => t !== 'cycle' || cycleEnabled);
+  const secondaryTabs  = visibleAll.filter(t => !primaryTabs.includes(t));
 
   const [rendered, setRendered] = useState(visible);
   const translateY  = useSharedValue(visible ? 0 : SHEET_H);
@@ -227,19 +230,24 @@ export default function CustomTabBar({ state, navigation }: TabBarProps) {
   const [moreOpen,       setMoreOpen]       = useState(false);
   const [customizeOpen,  setCustomizeOpen]  = useState(false);
 
-  const primaryTabs  = useTabLayoutStore(s => s.primaryTabs);
-  const setPrimary   = useTabLayoutStore(s => s.setPrimaryTabs);
+  const primaryTabs   = useTabLayoutStore(s => s.primaryTabs);
+  const setPrimary    = useTabLayoutStore(s => s.setPrimaryTabs);
+  const cycleEnabled  = useFitnessStore(s => s.cycleSettings.cycleTrackingEnabled);
+  // Always render whatever the user added to primary — no cycleEnabled gate here.
+  // That gate only belongs in secondaryTabs (More sheet).
+  const visiblePrimary = primaryTabs;
 
   const barWidth  = W - 32;
-  const tabWidth  = barWidth / 5;   // always 5 slots: 4 primary + More
+  const tabWidth  = barWidth / (visiblePrimary.length + 1); // +1 for the More button
   const PILL_W    = tabWidth - 16;
 
   const currentRouteName = (state.routes[state.index]?.name ?? 'index') as TabName;
-  const secondaryTabs    = ALL_TABS.filter(t => !primaryTabs.includes(t));
-  const isPrimary        = primaryTabs.includes(currentRouteName);
-  const isSecondary      = secondaryTabs.includes(currentRouteName);
+  const visibleSecondary = (ALL_TABS.filter(t => t !== 'cycle' || cycleEnabled)).filter(t => !visiblePrimary.includes(t));
+  const isPrimary        = visiblePrimary.includes(currentRouteName);
+  const isSecondary      = visibleSecondary.includes(currentRouteName);
 
-  const visibleIndex = isPrimary ? primaryTabs.indexOf(currentRouteName) : 4;
+  // More button sits at index visiblePrimary.length (dynamic, not hardcoded 4)
+  const visibleIndex = isPrimary ? visiblePrimary.indexOf(currentRouteName) : visiblePrimary.length;
 
   const pillX = useSharedValue(visibleIndex * tabWidth + (tabWidth - PILL_W) / 2);
 
@@ -295,7 +303,7 @@ export default function CustomTabBar({ state, navigation }: TabBarProps) {
           ]} />
 
           <View style={st.row}>
-            {primaryTabs.map(name => {
+            {visiblePrimary.map(name => {
               const route = state.routes.find(r => r.name === name);
               if (!route) return null;
               return (

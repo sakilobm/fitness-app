@@ -1,10 +1,10 @@
 export type TabName =
   | 'index' | 'weight' | 'nutrition' | 'calendar'
-  | 'sleep' | 'vitals'  | 'reminders' | 'profile';
+  | 'sleep' | 'vitals'  | 'reminders' | 'profile' | 'cycle';
 
 export const ALL_TABS: TabName[] = [
   'index', 'weight', 'nutrition', 'calendar',
-  'sleep', 'vitals', 'reminders', 'profile',
+  'sleep', 'vitals', 'reminders', 'profile', 'cycle',
 ];
 
 export const DEFAULT_PRIMARY: TabName[] = ['index', 'sleep', 'vitals', 'calendar'];
@@ -18,6 +18,7 @@ export const TAB_LABELS: Record<TabName, string> = {
   vitals:    'Vitals',
   reminders: 'Remind',
   profile:   'Profile',
+  cycle:     'Cycle',
 };
 
 export type TabMeta = {
@@ -38,4 +39,5 @@ export const TAB_META: Record<TabName, TabMeta> = {
   vitals:    { label: 'Vitals',    color: '#F472B6', desc: 'Heart rate, BP & more',    lib: 'ION', icon: 'heart-outline',         iconFill: 'heart'          },
   reminders: { label: 'Reminders', color: '#FBBF24', desc: 'Health & activity alerts', lib: 'ION', icon: 'notifications-outline', iconFill: 'notifications'  },
   profile:   { label: 'Profile',   color: '#38BDF8', desc: 'Profile & app settings',   lib: 'ION', icon: 'person-outline',        iconFill: 'person'         },
+  cycle:     { label: 'Cycle',     color: '#F87171', desc: 'Period & cycle tracking',   lib: 'ION', icon: 'flower-outline',        iconFill: 'flower'         },
 };

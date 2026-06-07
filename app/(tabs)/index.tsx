@@ -15,12 +15,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { MetricCard, WidgetConfig, WidgetType } from '@/features/dashboard/components/WidgetRegistry';
 import { getBMIResult } from '@/utils/bmi';
 import { kgToLbs, mlToOz } from '@/utils/units';
+import { useCycle } from '@/hooks/useCycle';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type MCIName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-const DAY_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const _now = new Date();
 const greetingStr = _now.getHours() < 12 ? 'Good morning' : _now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
@@ -31,7 +32,10 @@ export default function HomeScreen() {
   const styles = React.useMemo(() => getStyles(colors, isDarkMode), [colors, isDarkMode]);
   const insets = useSafeAreaInsets();
   const [isCustomizeVisible, setIsCustomizeVisible] = useState(false);
-  
+  const [cycleBannerDismissed, setCycleBannerDismissed] = useState(false);
+
+  const cycle = useCycle();
+
   // Zustand State hooks
   const {
     user,
@@ -63,9 +67,9 @@ export default function HomeScreen() {
   const totalProtein = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.protein, 0), 0);
   const totalCarbs = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.carbs, 0), 0);
   const totalFat = meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.fat, 0), 0);
-  
+
   const totalWaterMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
-  
+
   const currentWeight = weightLogs.length > 0 ? weightLogs[weightLogs.length - 1].weight : 78.4;
   const previousWeight = weightLogs.length > 1 ? weightLogs[weightLogs.length - 2].weight : 78.4;
   const weightTrend = currentWeight < previousWeight ? 'losing' as const : currentWeight > previousWeight ? 'gaining' as const : 'stable' as const;
@@ -168,16 +172,16 @@ export default function HomeScreen() {
   };
 
   const ACTIVITY_METRICS = [
-    { lib: 'Ionicons' as const, icon: 'flame',         color: colors.amber,       value: activeKcal.toLocaleString(), unit: 'kcal',  label: 'Burned', route: '/steps' },
-    { lib: 'Ionicons' as const, icon: 'footsteps',     color: colors.lime,        value: stepsCount.toLocaleString(), unit: 'steps', label: 'Steps',    route: '/steps'  },
-    { lib: 'Ionicons' as const, icon: 'timer-outline', color: '#6366F1',          value: activeMinutes.toString(),    unit: 'min',   label: 'Active',   route: '/steps'  },
+    { lib: 'Ionicons' as const, icon: 'flame', color: colors.amber, value: activeKcal.toLocaleString(), unit: 'kcal', label: 'Burned', route: '/steps' },
+    { lib: 'Ionicons' as const, icon: 'footsteps', color: colors.lime, value: stepsCount.toLocaleString(), unit: 'steps', label: 'Steps', route: '/steps' },
+    { lib: 'Ionicons' as const, icon: 'timer-outline', color: '#6366F1', value: activeMinutes.toString(), unit: 'min', label: 'Active', route: '/steps' },
   ];
 
   const QUICK_LOGS = [
-    { lib: 'Ionicons' as const, icon: 'water',         color: colors.chart.water, label: 'Water',  value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water'            },
-    { lib: 'MCI' as const,      icon: 'food-apple',    color: colors.lime,        label: 'Food',   value: `${totalKcal.toLocaleString()} kcal`,     route: '/(tabs)/nutrition' },
-    { lib: 'MCI' as const,      icon: 'scale-bathroom',color: colors.amber,       label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`,         route: '/(tabs)/weight'    },
-    { lib: 'Ionicons' as const, icon: 'footsteps',     color: '#6366F1',          label: 'Steps',  value: stepsCount.toLocaleString(),               route: '/steps'            },
+    { lib: 'Ionicons' as const, icon: 'water', color: colors.chart.water, label: 'Water', value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water' },
+    { lib: 'MCI' as const, icon: 'food-apple', color: colors.lime, label: 'Food', value: `${totalKcal.toLocaleString()} kcal`, route: '/(tabs)/nutrition' },
+    { lib: 'MCI' as const, icon: 'scale-bathroom', color: colors.amber, label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`, route: '/(tabs)/weight' },
+    { lib: 'Ionicons' as const, icon: 'footsteps', color: '#6366F1', label: 'Steps', value: stepsCount.toLocaleString(), route: '/steps' },
   ];
 
   const getTimeline = () => {
@@ -290,6 +294,34 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* ════════════════════ CYCLE FEATURE ANNOUNCEMENT (female) ════════════════════ */}
+      {user.gender === 'female' && !cycle.cycleSettings.cycleTrackingEnabled && !cycleBannerDismissed && (
+        <View style={styles.cycleBanner}>
+          <View style={styles.cycleBannerLeft}>
+            <View style={[styles.cycleBannerIcon, { backgroundColor: '#F87171' + '18' }]}>
+              <Ionicons name="flower" size={22} color="#F87171" />
+            </View>
+            <View style={styles.cycleBannerText}>
+              <Text style={styles.cycleBannerTitle}>Cycle Tracking Available 🌸</Text>
+              <Text style={styles.cycleBannerSub}>
+                Track your period, ovulation & symptoms. Enable it to add Cycle to your tab bar, or find it in Profile → Preferences.
+              </Text>
+              <TouchableOpacity
+                style={styles.cycleBannerBtn}
+                onPress={() => cycle.updateCycleSettings({ cycleTrackingEnabled: true })}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="checkmark-circle" size={13} color="#fff" />
+                <Text style={styles.cycleBannerBtnTxt}>Enable Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => setCycleBannerDismissed(true)} style={styles.cycleBannerClose}>
+            <Ionicons name="close" size={16} color={colors.muted} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ════════════════════ DYNAMIC METRICS GRID ════════════════════ */}
       <View style={styles.sectionHeader}>
@@ -404,6 +436,36 @@ export default function HomeScreen() {
         </View>
         <Ionicons name="chevron-forward" size={16} color={colors.muted} />
       </TouchableOpacity>
+
+      {/* ════════════════════ CYCLE QUICK ACCESS (when enabled) ════════════════════ */}
+      {cycle.cycleSettings.cycleTrackingEnabled && (
+        <TouchableOpacity
+          style={[styles.waterChip, { borderLeftWidth: 3, borderLeftColor: '#F87171' }]}
+          onPress={() => router.push('/(tabs)/cycle' as any)}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.waterIconBox, { backgroundColor: '#F87171' + '18' }]}>
+            <Ionicons name="flower" size={18} color="#F87171" />
+          </View>
+          <View style={styles.waterText}>
+            <Text style={styles.waterTitle}>
+              {cycle.currentPhase && cycle.dayOfCycle
+                ? `${cycle.phaseMeta?.label} · Day ${cycle.dayOfCycle}`
+                : 'Cycle Tracking'}
+            </Text>
+            <Text style={styles.waterSub}>
+              {cycle.daysUntilPeriod != null
+                ? cycle.daysUntilPeriod === 0
+                  ? 'Period expected today — tap to log'
+                  : cycle.daysUntilPeriod > 0
+                    ? `Next period in ${cycle.daysUntilPeriod} days`
+                    : `Period ${Math.abs(cycle.daysUntilPeriod)}d overdue`
+                : 'Tap to log today'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </TouchableOpacity>
+      )}
 
       {/* ════════════════════ CUSTOMIZER MODAL ════════════════════ */}
       <Modal visible={isCustomizeVisible} animationType="slide" transparent>
@@ -562,7 +624,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     gap: 3,
   },
   actCellFirst: { borderTopLeftRadius: Radius.lg },
-  actCellLast:  { borderTopRightRadius: Radius.lg },
+  actCellLast: { borderTopRightRadius: Radius.lg },
   actCellBorder: {
     borderLeftWidth: 1,
     borderLeftColor: colors.cardBorder,
@@ -829,4 +891,27 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     fontWeight: '700',
     color: colors.bg,
   },
+
+  // Cycle feature announcement banner
+  cycleBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
+    backgroundColor: '#F87171' + '10',
+    borderRadius: Radius.lg, borderWidth: 1, borderColor: '#F87171' + '35',
+    padding: 14, gap: 8,
+  },
+  cycleBannerLeft: { flexDirection: 'row', gap: 12, flex: 1 },
+  cycleBannerIcon: {
+    width: 40, height: 40, borderRadius: 13,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  cycleBannerText: { flex: 1, gap: 4 },
+  cycleBannerTitle: { fontSize: 14, fontWeight: '700', color: colors.text.primary },
+  cycleBannerSub: { fontSize: 12, fontWeight: '400', color: colors.text.secondary, lineHeight: 17 },
+  cycleBannerBtn: {
+    alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5,
+    marginTop: 8, backgroundColor: '#F87171',
+    borderRadius: Radius.pill, paddingHorizontal: 14, paddingVertical: 7,
+  },
+  cycleBannerBtnTxt: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  cycleBannerClose: { padding: 2 },
 });

@@ -380,7 +380,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   xpHistory: [],
 
   cycleLogs: [],
-  cycleSettings: { cycleLength: 28, periodLength: 5, lastPeriodStart: null },
+  cycleSettings: { cycleLength: 28, periodLength: 5, lastPeriodStart: null, cycleTrackingEnabled: false },
 
   addCycleLog: (log) => {
     const entry: CycleLog = { ...log, id: `cycle_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
