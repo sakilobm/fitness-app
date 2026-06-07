@@ -27,10 +27,21 @@ export function useRewardWatcher(): RewardWatcherResult {
   useEffect(() => {
     const currentUnlocked = new Set(badges.filter(b => b.unlocked).map(b => b.id));
 
-    // First run: capture baseline without celebrating already-unlocked badges/levels
+    // First run: silently prime any badges earned by pre-existing/setup data so
+    // they appear in the baseline as already-seen — only genuinely NEW unlocks
+    // (actions taken this session) will trigger a celebration after this point.
     if (seenUnlocked.current === null) {
       seenUnlocked.current = currentUnlocked;
       lastLevel.current = level;
+
+      useFitnessStore.getState().silentPrimeBadges();
+      // Pull the synchronously-updated badge state into baseline so the watcher
+      // never celebrates retroactively unlocked badges.
+      useFitnessStore.getState().badges
+        .filter(b => b.unlocked)
+        .forEach(b => seenUnlocked.current!.add(b.id));
+      lastLevel.current = useFitnessStore.getState().user.level;
+
       return;
     }
 

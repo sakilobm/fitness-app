@@ -65,7 +65,7 @@ export function RewardCelebrationOverlay({ event, onDismiss, colors }: Props) {
       </Animated.View>
 
       <View style={st.center} pointerEvents="box-none">
-        <Animated.View style={[st.card, cardStyle]}>
+        <Animated.View style={[st.card, { backgroundColor: colors.card }, cardStyle]}>
           <View style={st.badgeStage}>
             <GlowRing color={glow} size={180} delay={0} />
             <GlowRing color={glow} size={180} delay={500} />
@@ -74,25 +74,25 @@ export function RewardCelebrationOverlay({ event, onDismiss, colors }: Props) {
             {isBadge ? (
               <BadgeReveal icon={content.badge.icon} color={accent} />
             ) : (
-              <LevelReveal fromLevel={content.fromLevel} toLevel={content.toLevel} color={accent} />
+              <LevelReveal fromLevel={content.fromLevel} toLevel={content.toLevel} color={accent} mutedColor={colors.text.secondary} />
             )}
           </View>
 
           <Text style={[st.kicker, { color: accent }]}>
             {isBadge ? 'BADGE UNLOCKED' : 'LEVEL UP!'}
           </Text>
-          <Text style={[st.title, { color: '#FFFFFF' }]}>
+          <Text style={[st.title, { color: colors.text.primary }]}>
             {isBadge ? content.badge.label : `You reached Level ${content.toLevel}`}
           </Text>
           {isBadge && (
-            <Text style={st.subtitle}>{content.badge.description}</Text>
+            <Text style={[st.subtitle, { color: colors.text.secondary }]}>{content.badge.description}</Text>
           )}
 
           {isBadge && (
             <View style={st.xpRow}>
-              <Text style={st.xpPlus}>+</Text>
-              <AnimatedNumber value={content.badge.xpReward} style={st.xpNum} duration={900} />
-              <Text style={st.xpLabel}>XP</Text>
+              <Text style={[st.xpPlus, { color: colors.lime }]}>+</Text>
+              <AnimatedNumber value={content.badge.xpReward} style={{ ...st.xpNum, color: colors.lime }} duration={900} />
+              <Text style={[st.xpLabel, { color: colors.lime }]}>XP</Text>
             </View>
           )}
 
@@ -126,7 +126,7 @@ function BadgeReveal({ icon, color }: { icon: { lib: 'Ionicons' | 'MCI'; name: s
 }
 
 // ── Level-up reveal: old level fades out, new level springs in ───────────────
-function LevelReveal({ fromLevel, toLevel, color }: { fromLevel: number; toLevel: number; color: string }) {
+function LevelReveal({ fromLevel, toLevel, color, mutedColor }: { fromLevel: number; toLevel: number; color: string; mutedColor: string }) {
   const reveal = useSharedValue(0);
   useEffect(() => {
     reveal.value = withDelay(120, withSpring(1, { damping: 12, stiffness: 160 }));
@@ -141,7 +141,7 @@ function LevelReveal({ fromLevel, toLevel, color }: { fromLevel: number; toLevel
   }));
   return (
     <View style={[st.badgeRing, { borderColor: color, backgroundColor: color + '22' }]}>
-      <Animated.Text style={[st.levelOld, oldStyle]}>{fromLevel}</Animated.Text>
+      <Animated.Text style={[st.levelOld, { color: mutedColor }, oldStyle]}>{fromLevel}</Animated.Text>
       <Animated.Text style={[st.levelNew, { color }, newStyle]}>{toLevel}</Animated.Text>
     </View>
   );
@@ -222,7 +222,7 @@ const st = StyleSheet.create({
     borderRadius: 28,
     paddingVertical: 28, paddingHorizontal: 24,
     alignItems: 'center',
-    backgroundColor: 'rgba(20,20,26,0.92)',
+    // backgroundColor supplied inline — adapts to light / dark theme
   },
 
   badgeStage: {
@@ -243,7 +243,8 @@ const st = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   levelOld: {
-    position: 'absolute', fontSize: 30, fontWeight: '800', color: 'rgba(255,255,255,0.6)',
+    position: 'absolute', fontSize: 30, fontWeight: '800',
+    // color supplied inline — adapts to theme
   },
   levelNew: {
     fontSize: 38, fontWeight: '800', letterSpacing: -1,
@@ -251,12 +252,14 @@ const st = StyleSheet.create({
 
   kicker:   { fontSize: 12, fontWeight: '800', letterSpacing: 2 },
   title:    { fontSize: 20, fontWeight: '800', marginTop: 4, textAlign: 'center', letterSpacing: -0.3 },
-  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 6, textAlign: 'center', lineHeight: 18 },
+  subtitle: { fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 18 },
+  // subtitle color supplied inline — adapts to theme
 
   xpRow:   { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: 16 },
-  xpPlus:  { fontSize: 22, fontWeight: '800', color: '#A7F3D0' },
-  xpNum:   { fontSize: 28, fontWeight: '800', color: '#A7F3D0', letterSpacing: -0.5 },
-  xpLabel: { fontSize: 14, fontWeight: '700', color: '#A7F3D0', marginBottom: 4 },
+  xpPlus:  { fontSize: 22, fontWeight: '800' },
+  xpNum:   { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  xpLabel: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  // xpPlus/xpNum/xpLabel colors supplied inline via colors.lime — adapts to theme
 
   cta:    { marginTop: 22, paddingHorizontal: 36, paddingVertical: 13, borderRadius: 24 },
   ctaTxt: { fontSize: 15, fontWeight: '800', color: '#0B0B0F' },

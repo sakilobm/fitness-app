@@ -95,6 +95,10 @@ interface FitnessState {
   xpHistory: XPGainEvent[];
   addXP:     (amount: number, reason: string, icon: Badge['icon']) => { leveledUp: boolean; newLevel: number };
   checkAndUnlockBadges: () => Badge[];
+  /** Same as checkAndUnlockBadges but with NO XP awards and NO celebration return —
+   * called once on startup to silently mark badges already earned by pre-existing data,
+   * preventing retroactive celebrations when the user takes their first new action. */
+  silentPrimeBadges: () => void;
 
   // Hydration state
   hydrateStore: () => Promise<void>;
@@ -422,6 +426,30 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     });
 
     return newlyUnlocked;
+  },
+
+  silentPrimeBadges: () => {
+    const state = get();
+    const stats = computeRewardStats(state);
+    const nowIso = new Date().toISOString();
+    let changed = false;
+
+    const updatedBadges = state.badges.map((badge) => {
+      if (badge.unlocked) return badge;
+      const result = checkBadge(badge.id, stats);
+      if (!result) return badge;
+      if (result.met) {
+        changed = true;
+        return { ...badge, unlocked: true, unlockedAt: nowIso, progress: 1 };
+      }
+      if (result.progress !== badge.progress) {
+        changed = true;
+        return { ...badge, progress: result.progress };
+      }
+      return badge;
+    });
+
+    if (changed) set({ badges: updatedBadges });
   },
 
   setUser: (updatedUser) => {
