@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown, FadeInUp, FadeIn,
+  useSharedValue, useAnimatedStyle,
+  withRepeat, withSequence, withTiming, Easing, cancelAnimation,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Typography, Radius, useTheme } from '@/constants/theme';
@@ -27,13 +31,166 @@ interface CycleBodyProps {
   showBack?: boolean;
 }
 
+// ─── Period Late Card ─────────────────────────────────────────────────────────
+function PeriodLateCard({
+  daysLate, onMarkStarted, onLogSymptoms, colors,
+}: {
+  daysLate:       number;
+  onMarkStarted:  () => void;
+  onLogSymptoms:  () => void;
+  colors:         ThemeColors;
+}) {
+  const s = lateStyles(colors);
+
+  const { accent, headline, message } =
+    daysLate <= 3 ? {
+      accent:   '#FBBF24',
+      headline: `${daysLate} day${daysLate > 1 ? 's' : ''} late`,
+      message:  'Small variations are completely normal — stress, travel, or minor routine changes can shift your cycle by a few days.',
+    } : daysLate <= 7 ? {
+      accent:   '#FB923C',
+      headline: `${daysLate} days late`,
+      message:  'Common causes include stress, changes in diet or exercise, illness, or hormonal fluctuations. Your body has its own rhythm.',
+    } : daysLate <= 14 ? {
+      accent:   '#F87171',
+      headline: `${daysLate} days late`,
+      message:  "If you've been sexually active, consider taking a pregnancy test. Otherwise, tracking stress and recent lifestyle changes may help explain the delay.",
+    } : {
+      accent:   '#EF4444',
+      headline: `${daysLate} days late`,
+      message:  'Your period is significantly late. Speaking with a healthcare provider is a good idea to understand what may be going on.',
+    };
+
+  return (
+    <Animated.View entering={FadeInDown.springify().damping(18)}>
+      <GlassCard accentColor={accent}>
+        <View style={s.header}>
+          <View style={[s.iconBubble, { backgroundColor: accent + '20' }]}>
+            <Ionicons name="time" size={20} color={accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.badge, { color: accent }]}>PERIOD LATE</Text>
+            <Text style={[s.headline, { color: colors.text.primary }]}>{headline}</Text>
+          </View>
+        </View>
+        <Text style={[s.message, { color: colors.text.secondary }]}>{message}</Text>
+        <View style={s.actions}>
+          <TouchableOpacity
+            style={[s.btn, { backgroundColor: accent, flex: 2 }]}
+            onPress={onMarkStarted}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="flag" size={14} color="#fff" />
+            <Text style={s.btnTxt}>Period Started</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.btnOutline, { borderColor: accent, flex: 1 }]}
+            onPress={onLogSymptoms}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="pencil" size={14} color={accent} />
+            <Text style={[s.btnTxt, { color: accent }]}>Log</Text>
+          </TouchableOpacity>
+        </View>
+      </GlassCard>
+    </Animated.View>
+  );
+}
+
+const lateStyles = (_colors: ThemeColors) => StyleSheet.create({
+  header:     { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  iconBubble: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  badge:      { ...Typography.micro, fontWeight: '800' as const, letterSpacing: 0.8 },
+  headline:   { ...Typography.bodyBold, marginTop: 2 },
+  message:    { ...Typography.caption, lineHeight: 19, marginBottom: 14 },
+  actions:    { flexDirection: 'row', gap: 8 },
+  btn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 5, paddingVertical: 10, borderRadius: Radius.pill,
+  },
+  btnOutline: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 5, paddingVertical: 10, borderRadius: Radius.pill,
+    backgroundColor: 'transparent', borderWidth: 1.5,
+  },
+  btnTxt: { ...Typography.captionBold, color: '#fff' },
+});
+
+// ─── Hand Pointer Tutorial ────────────────────────────────────────────────────
+function HandPointer({ colors }: { colors: ThemeColors }) {
+  const bounce   = useSharedValue(0);
+  const ripple   = useSharedValue(1);
+  const rippleOp = useSharedValue(0.5);
+
+  useEffect(() => {
+    bounce.value = withRepeat(
+      withSequence(
+        withTiming(10, { duration: 550, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0,  { duration: 550, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      false,
+    );
+    ripple.value = withRepeat(
+      withSequence(
+        withTiming(1,   { duration: 0 }),
+        withTiming(2.6, { duration: 1100, easing: Easing.out(Easing.quad) }),
+      ),
+      -1,
+      false,
+    );
+    rippleOp.value = withRepeat(
+      withSequence(
+        withTiming(0.55, { duration: 0 }),
+        withTiming(0,    { duration: 1100, easing: Easing.out(Easing.quad) }),
+      ),
+      -1,
+      false,
+    );
+    return () => {
+      cancelAnimation(bounce);
+      cancelAnimation(ripple);
+      cancelAnimation(rippleOp);
+    };
+  }, []);
+
+  const bounceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: bounce.value }] }));
+  const rippleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ripple.value }],
+    opacity:   rippleOp.value,
+  }));
+
+  return (
+    <Animated.View entering={FadeIn.duration(220)} style={hp.wrap}>
+      <View style={hp.iconArea}>
+        <Animated.View style={[hp.ripple, { backgroundColor: '#F87171' + '38' }, rippleStyle]} />
+        <Animated.View style={bounceStyle}>
+          <View style={[hp.circle, { backgroundColor: '#F87171' }]}>
+            <Ionicons name="chevron-down" size={16} color="#fff" />
+          </View>
+        </Animated.View>
+      </View>
+      <Text style={[hp.label, { color: colors.muted }]}>tap any date on the calendar</Text>
+    </Animated.View>
+  );
+}
+
+const hp = StyleSheet.create({
+  wrap:     { alignItems: 'center', paddingVertical: 10, gap: 6 },
+  iconArea: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  ripple:   { position: 'absolute', width: 36, height: 36, borderRadius: 18 },
+  circle:   { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  label:    { fontSize: 11, fontWeight: '600' as const, letterSpacing: 0.4, opacity: 0.75 },
+});
+
 // ─── Inline Date Detail Panel ─────────────────────────────────────────────────
 function DateDetailPanel({
-  date, cycle, onEditLog, onClose, colors,
+  date, cycle, onEditLog, onSetPeriodStart, onClose, colors,
 }: {
   date: string;
   cycle: ReturnType<typeof useCycle>;
   onEditLog: () => void;
+  onSetPeriodStart: () => void;
   onClose: () => void;
   colors: ThemeColors;
 }) {
@@ -143,6 +300,12 @@ function DateDetailPanel({
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Period start anchor — subtle secondary link */}
+        <TouchableOpacity onPress={onSetPeriodStart} style={s.setPeriodRow} activeOpacity={0.65}>
+          <Ionicons name="flag" size={11} color={colors.muted} />
+          <Text style={s.setPeriodTxt}>Set as new period start</Text>
+        </TouchableOpacity>
       </GlassCard>
     </Animated.View>
   );
@@ -178,6 +341,12 @@ const detailStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 9, borderRadius: Radius.pill, borderWidth: 1,
   },
   actionText: { ...Typography.captionBold },
+  setPeriodRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+    paddingTop: 10, marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.cardBorder,
+  },
+  setPeriodTxt: { ...Typography.micro, color: colors.muted },
 });
 
 // ─── Main CycleBody Component ─────────────────────────────────────────────────
@@ -189,17 +358,30 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
 
   const cycle = useCycle();
 
+  const scrollRef = useRef<ScrollView>(null);
+  const [calendarY, setCalendarY] = useState(0);
+
   const [sheetVisible, setSheetVisible] = useState(false);
   const [sheetDate, setSheetDate] = useState(getTodayStr());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [periodStartMode, setPeriodStartMode] = useState(false);
 
   const openLog = (date = getTodayStr()) => {
+    setPeriodStartMode(false);
     setSelectedDate(null);
     setSheetDate(date);
     setSheetVisible(true);
   };
 
   const onCalendarDayPress = (date: string) => {
+    // Period-start selection mode — any tap anchors the cycle to that date
+    if (periodStartMode) {
+      triggerHaptic('medium');
+      cycle.markPeriodStart(date);
+      setPeriodStartMode(false);
+      setSelectedDate(null);
+      return;
+    }
     if (selectedDate === date) { setSelectedDate(null); return; }
     const hasPhase = cycle.cycleSettings.lastPeriodStart !== null;
     const hasLog = cycle.cycleLogs.some((l) => l.date === date);
@@ -265,6 +447,7 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
       >
@@ -333,6 +516,16 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
           </Animated.View>
         )}
 
+        {/* Period late alert — shown when period is overdue */}
+        {cycle.daysUntilPeriod !== null && cycle.daysUntilPeriod < 0 && (
+          <PeriodLateCard
+            daysLate={Math.abs(cycle.daysUntilPeriod)}
+            onMarkStarted={() => { triggerHaptic('medium'); cycle.markPeriodStart(); }}
+            onLogSymptoms={() => openLog()}
+            colors={colors}
+          />
+        )}
+
         {/* Phase description */}
         {cycle.phaseMeta && (
           <Animated.View entering={FadeInDown.delay(160).springify().damping(18)}>
@@ -344,9 +537,32 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
         )}
 
         {/* Calendar */}
-        <Animated.View entering={FadeInDown.delay(200).springify().damping(18)}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify().damping(18)}
+          onLayout={(e) => setCalendarY(e.nativeEvent.layout.y)}
+        >
           <GlassCard>
             <SectionHeader title="Cycle Calendar" accentColor="#F87171" />
+
+            {/* Period-start selection mode banner + tutorial hand */}
+            {periodStartMode && (
+              <>
+                <Animated.View
+                  entering={FadeIn.duration(180)}
+                  style={[styles.periodBanner, { backgroundColor: '#F87171' + '12', borderColor: '#F87171' + '35' }]}
+                >
+                  <Ionicons name="flag" size={14} color="#F87171" />
+                  <Text style={[styles.periodBannerTxt, { color: '#F87171' }]}>
+                    Tap any date to set as period start
+                  </Text>
+                  <TouchableOpacity onPress={() => setPeriodStartMode(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="close-circle" size={17} color={colors.muted} />
+                  </TouchableOpacity>
+                </Animated.View>
+                <HandPointer colors={colors} />
+              </>
+            )}
+
             <CycleCalendar
               cycleLogs={cycle.cycleLogs}
               cycleSettings={cycle.cycleSettings}
@@ -364,6 +580,10 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
             date={selectedDate}
             cycle={cycle}
             onEditLog={() => openLog(selectedDate)}
+            onSetPeriodStart={() => {
+              cycle.markPeriodStart(selectedDate);
+              setSelectedDate(null);
+            }}
             onClose={() => setSelectedDate(null)}
             colors={colors}
           />
@@ -469,6 +689,44 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Period Start anchor — change or reset */}
+            <View style={[styles.settingRow, styles.settingBorder]}>
+              <View style={styles.settingInfo}>
+                <Ionicons name="flag" size={18} color="#F87171" />
+                <View>
+                  <Text style={styles.settingLabel}>Period Start</Text>
+                  <Text style={styles.settingSub}>
+                    {cycle.cycleSettings.lastPeriodStart
+                      ? new Date(cycle.cycleSettings.lastPeriodStart + 'T00:00:00')
+                          .toLocaleDateString('default', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : 'Not set — tap calendar or "Start Period"'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.periodActions}>
+                <TouchableOpacity
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setPeriodStartMode(true);
+                    setTimeout(() => scrollRef.current?.scrollTo({ y: calendarY - 60, animated: true }), 80);
+                  }}
+                  style={[styles.periodBtn, { backgroundColor: '#F87171' + '15', borderColor: '#F87171' + '40' }]}
+                >
+                  <Ionicons name="calendar-outline" size={13} color="#F87171" />
+                  <Text style={[styles.periodBtnTxt, { color: '#F87171' }]}>Change</Text>
+                </TouchableOpacity>
+                {cycle.cycleSettings.lastPeriodStart && (
+                  <TouchableOpacity
+                    onPress={() => { triggerHaptic('medium'); cycle.updateCycleSettings({ lastPeriodStart: null }); }}
+                    style={[styles.periodBtn, { backgroundColor: colors.bg, borderColor: colors.cardBorder }]}
+                  >
+                    <Ionicons name="trash-outline" size={13} color={colors.muted} />
+                    <Text style={[styles.periodBtnTxt, { color: colors.muted }]}>Reset</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
           </GlassCard>
         </Animated.View>
 
@@ -497,7 +755,22 @@ export default function CycleBody({ showBack = false }: CycleBodyProps) {
                           {log.symptoms.length > 0 && <Text style={styles.logMetaText}>{log.symptoms.length} symptom{log.symptoms.length > 1 ? 's' : ''}</Text>}
                         </View>
                       </View>
-                      <Ionicons name="chevron-forward" size={14} color={colors.muted} />
+                      <View style={styles.logActions}>
+                        <TouchableOpacity
+                          onPress={() => openLog(log.date)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="pencil" size={15} color={colors.muted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => { triggerHaptic('medium'); cycle.deleteCycleLog(log.id); }}
+                          hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={15} color="#EF4444" />
+                        </TouchableOpacity>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -591,6 +864,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   nudgeVal: { ...Typography.bodyBold, width: 34, textAlign: 'center' },
 
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   logDot: { width: 10, height: 10, borderRadius: 5 },
   logDate: { ...Typography.captionBold, color: colors.text.primary },
   logMeta: { flexDirection: 'row', gap: 8, marginTop: 2 },
@@ -599,4 +873,18 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   emptyState: { alignItems: 'center', gap: 10, paddingVertical: 16 },
   emptyTitle: { ...Typography.h4, color: colors.text.primary },
   emptySub: { ...Typography.caption, color: colors.text.secondary, textAlign: 'center', lineHeight: 20 },
+
+  periodBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 10, paddingHorizontal: 12,
+    borderRadius: Radius.md, borderWidth: 1, marginBottom: 10,
+  },
+  periodBannerTxt: { ...Typography.captionBold, flex: 1 },
+  periodActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  periodBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingVertical: 6, paddingHorizontal: 10,
+    borderRadius: Radius.pill, borderWidth: 1,
+  },
+  periodBtnTxt: { ...Typography.micro, fontWeight: '700' as const },
 });

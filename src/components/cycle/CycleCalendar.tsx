@@ -92,6 +92,9 @@ export default function CycleCalendar({
           }
 
           const phaseColor = phase ? PHASE_META[phase].color : null;
+          // Past dates: only tint if there is an actual log (deleting a log clears its colour).
+          // Today / future: always show prediction tint.
+          const showPhase = !!phaseColor && (date >= today || !!log);
 
           return (
             <TouchableOpacity
@@ -101,7 +104,7 @@ export default function CycleCalendar({
               onPress={() => onDayPress?.(date)}
             >
               {/* Phase background blob */}
-              {phaseColor && (
+              {showPhase && (
                 <View style={[styles.phaseDot, { backgroundColor: phaseColor + '22' }]} />
               )}
               {/* Period indicator */}
@@ -123,7 +126,7 @@ export default function CycleCalendar({
               <Text style={[
                 styles.dayText,
                 isToday && { color: colors.lime, fontWeight: '700' },
-                phaseColor && !isToday && { color: phaseColor },
+                showPhase && !isToday && { color: phaseColor },
               ]}>
                 {new Date(date).getUTCDate()}
               </Text>

@@ -438,34 +438,47 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {/* ════════════════════ CYCLE QUICK ACCESS (when enabled) ════════════════════ */}
-      {cycle.cycleSettings.cycleTrackingEnabled && (
-        <TouchableOpacity
-          style={[styles.waterChip, { borderLeftWidth: 3, borderLeftColor: '#F87171' }]}
-          onPress={() => router.push('/(tabs)/cycle' as any)}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.waterIconBox, { backgroundColor: '#F87171' + '18' }]}>
-            <Ionicons name="flower" size={18} color="#F87171" />
-          </View>
-          <View style={styles.waterText}>
-            <Text style={styles.waterTitle}>
-              {cycle.currentPhase && cycle.dayOfCycle
-                ? `${cycle.phaseMeta?.label} · Day ${cycle.dayOfCycle}`
-                : 'Cycle Tracking'}
-            </Text>
-            <Text style={styles.waterSub}>
-              {cycle.daysUntilPeriod != null
-                ? cycle.daysUntilPeriod === 0
-                  ? 'Period expected today — tap to log'
-                  : cycle.daysUntilPeriod > 0
-                    ? `Next period in ${cycle.daysUntilPeriod} days`
-                    : `Period ${Math.abs(cycle.daysUntilPeriod)}d overdue`
-                : 'Tap to log today'}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
-        </TouchableOpacity>
-      )}
+      {cycle.cycleSettings.cycleTrackingEnabled && (() => {
+        const daysLate   = (cycle.daysUntilPeriod !== null && cycle.daysUntilPeriod < 0)
+          ? Math.abs(cycle.daysUntilPeriod) : 0;
+        const lateAccent = daysLate <= 3 ? '#FBBF24' : daysLate <= 7 ? '#FB923C' : '#EF4444';
+        const accent     = daysLate > 0 ? lateAccent : '#F87171';
+        const lateSub    = daysLate <= 3
+          ? 'Small delays are normal — tap to check in'
+          : daysLate <= 7
+          ? 'Common causes: stress, diet or illness'
+          : 'Consider speaking with a healthcare provider';
+        return (
+          <TouchableOpacity
+            style={[styles.waterChip, { borderLeftWidth: 3, borderLeftColor: accent }]}
+            onPress={() => router.push('/(tabs)/cycle' as any)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.waterIconBox, { backgroundColor: accent + '18' }]}>
+              <Ionicons name={daysLate > 0 ? 'time' : 'flower'} size={18} color={accent} />
+            </View>
+            <View style={styles.waterText}>
+              <Text style={styles.waterTitle}>
+                {daysLate > 0
+                  ? `Period ${daysLate}d late`
+                  : cycle.currentPhase && cycle.dayOfCycle
+                    ? `${cycle.phaseMeta?.label} · Day ${cycle.dayOfCycle}`
+                    : 'Cycle Tracking'}
+              </Text>
+              <Text style={[styles.waterSub, daysLate > 0 && { color: accent }]}>
+                {cycle.daysUntilPeriod != null
+                  ? cycle.daysUntilPeriod === 0
+                    ? 'Period expected today — tap to log'
+                    : cycle.daysUntilPeriod > 0
+                      ? `Next period in ${cycle.daysUntilPeriod} days`
+                      : lateSub
+                  : 'Tap to log today'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+          </TouchableOpacity>
+        );
+      })()}
 
       {/* ════════════════════ CUSTOMIZER MODAL ════════════════════ */}
       <Modal visible={isCustomizeVisible} animationType="slide" transparent>
