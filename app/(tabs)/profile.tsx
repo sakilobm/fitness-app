@@ -249,25 +249,39 @@ export default function ProfileScreen() {
         </GlassCard>
 
         {/* Settings Navigation Card at the Bottom */}
-        <Animated.View entering={FadeInUp.delay(100).springify().damping(18)}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/settings')}
-          >
-            <GlassCard accentColor={colors.lime}>
-              <View style={styles.settingsNavRow}>
-                <View style={[styles.settingsNavIconWrap, { backgroundColor: colors.lime + '15' }]}>
-                  <Ionicons name="settings" size={20} color={colors.lime} />
+        <View style={styles.bottomNavRow}>
+          <Animated.View entering={FadeInUp.delay(100).springify().damping(18)} style={{ flex: 1 }}>
+            <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/cycle')} style={{ flex: 1 }}>
+              <GlassCard accentColor="#F87171" style={{ flex: 1 }}>
+                <View style={styles.settingsNavRow}>
+                  <View style={[styles.settingsNavIconWrap, { backgroundColor: '#F87171' + '15' }]}>
+                    <Ionicons name="flower" size={20} color="#F87171" />
+                  </View>
+                  <View style={styles.settingsNavTextWrap}>
+                    <Text style={styles.settingsNavTitle}>Cycle Tracking</Text>
+                    <Text style={styles.settingsNavSub}>Period, ovulation & symptoms</Text>
+                  </View>
                 </View>
-                <View style={styles.settingsNavTextWrap}>
-                  <Text style={styles.settingsNavTitle}>Preferences & Calibration</Text>
-                  <Text style={styles.settingsNavSub}>Units, goals calibration, cloud backups & privacy</Text>
+              </GlassCard>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(120).springify().damping(18)} style={{ flex: 1 }}>
+            <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/settings')} style={{ flex: 1 }}>
+              <GlassCard accentColor={colors.lime} style={{ flex: 1 }}>
+                <View style={styles.settingsNavRow}>
+                  <View style={[styles.settingsNavIconWrap, { backgroundColor: colors.lime + '15' }]}>
+                    <Ionicons name="settings" size={20} color={colors.lime} />
+                  </View>
+                  <View style={styles.settingsNavTextWrap}>
+                    <Text style={styles.settingsNavTitle}>Preferences</Text>
+                    <Text style={styles.settingsNavSub}>Units, backups & privacy</Text>
+                  </View>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.lime} />
-              </View>
-            </GlassCard>
-          </TouchableOpacity>
-        </Animated.View>
+              </GlassCard>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -407,7 +421,9 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   },
   goalBadgeText: { ...Typography.captionBold, color: colors.amber },
 
-  // Settings navigation card layout
+  bottomNavRow: { flexDirection: 'row', gap: 10 },
+
+  // Settings / cycle navigation card layout
   settingsNavRow: {
     flexDirection: 'row',
     alignItems: 'center',

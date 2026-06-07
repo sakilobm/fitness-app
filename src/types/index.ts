@@ -186,3 +186,29 @@ export interface XPGainEvent {
   reason: string;
   icon:   { lib: 'Ionicons' | 'MCI'; name: string };
 }
+
+// ─── Cycle Tracking ──────────────────────────────────────────────────────────
+
+export type FlowLevel    = 'spotting' | 'light' | 'medium' | 'heavy';
+export type CyclePhase   = 'menstrual' | 'follicular' | 'ovulation' | 'luteal';
+export type CycleMood    = 'great' | 'good' | 'ok' | 'low' | 'bad';
+export type CycleSymptom =
+  | 'cramps' | 'headache' | 'bloating' | 'mood_swings'
+  | 'fatigue' | 'breast_tenderness' | 'acne' | 'nausea'
+  | 'back_pain' | 'insomnia' | 'irritability' | 'energy_high';
+
+export interface CycleLog {
+  id:       string;
+  date:     string;          // YYYY-MM-DD
+  flow:     FlowLevel | null;
+  symptoms: CycleSymptom[];
+  mood:     CycleMood | null;
+  note:     string;
+  bbt:      number | null;   // basal body temperature °C
+}
+
+export interface CycleSettings {
+  cycleLength:     number;        // average cycle length in days, default 28
+  periodLength:    number;        // average period duration in days, default 5
+  lastPeriodStart: string | null; // YYYY-MM-DD
+}

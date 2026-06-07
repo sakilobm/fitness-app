@@ -6,6 +6,7 @@ import {
   DailyLog, SleepLog,
   HeartRateLog, BloodPressureLog, BloodGlucoseLog, OxygenLog,
   Badge, XPGainEvent,
+  CycleLog, CycleSettings,
 } from '../types';
 import { computeSleepScore, estimateStages } from '../constants/sleep';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
@@ -94,6 +95,14 @@ interface FitnessState {
   badges:    Badge[];
   xpHistory: XPGainEvent[];
   addXP:     (amount: number, reason: string, icon: Badge['icon']) => { leveledUp: boolean; newLevel: number };
+
+  // Cycle Tracking
+  cycleLogs:    CycleLog[];
+  cycleSettings: CycleSettings;
+  addCycleLog:      (log: Omit<CycleLog, 'id'>) => void;
+  updateCycleLog:   (id: string, patch: Partial<CycleLog>) => void;
+  deleteCycleLog:   (id: string) => void;
+  updateCycleSettings: (patch: Partial<CycleSettings>) => void;
   checkAndUnlockBadges: () => Badge[];
   /** Same as checkAndUnlockBadges but with NO XP awards and NO celebration return —
    * called once on startup to silently mark badges already earned by pre-existing data,
@@ -369,6 +378,23 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
   badges:    createInitialBadges(),
   xpHistory: [],
+
+  cycleLogs: [],
+  cycleSettings: { cycleLength: 28, periodLength: 5, lastPeriodStart: null },
+
+  addCycleLog: (log) => {
+    const entry: CycleLog = { ...log, id: `cycle_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
+    set((s) => ({ cycleLogs: [entry, ...s.cycleLogs].sort((a, b) => b.date.localeCompare(a.date)) }));
+  },
+  updateCycleLog: (id, patch) => {
+    set((s) => ({ cycleLogs: s.cycleLogs.map((l) => (l.id === id ? { ...l, ...patch } : l)) }));
+  },
+  deleteCycleLog: (id) => {
+    set((s) => ({ cycleLogs: s.cycleLogs.filter((l) => l.id !== id) }));
+  },
+  updateCycleSettings: (patch) => {
+    set((s) => ({ cycleSettings: { ...s.cycleSettings, ...patch } }));
+  },
 
   addXP: (amount, reason, icon) => {
     const state = get();
@@ -943,6 +969,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     oxygenLogs:         state.oxygenLogs,
     badges:             state.badges,
     xpHistory:          state.xpHistory,
+    cycleLogs:          state.cycleLogs,
+    cycleSettings:      state.cycleSettings,
   }),
 }));
 

@@ -71,6 +71,7 @@ function NavigationGate({ setIsAppReady }: { setIsAppReady: (r: boolean) => void
       <Stack.Screen name="metabolism" options={{ headerShown: false }} />
       <Stack.Screen name="bmi" options={{ headerShown: false }} />
       <Stack.Screen name="rewards" options={{ headerShown: false }} />
+      <Stack.Screen name="cycle"   options={{ headerShown: false }} />
     </Stack>
   );
 }
