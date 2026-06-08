@@ -32,6 +32,8 @@ interface FitnessState {
   meals: Meal[];
   setMeals: (updater: Meal[] | ((meals: Meal[]) => Meal[])) => void;
   addFoodToMeal: (mealId: string, item: FoodItem) => void;
+  customFoods:   FoodItem[];
+  addCustomFood: (food: FoodItem) => void;
   deleteFoodFromMeal: (mealId: string, itemIndex: number) => void;
 
   // Water Hydration
@@ -357,6 +359,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   user: initialUserProfile,
   weightLogs: generateInitialWeightLogs(),
   meals: initialMeals,
+  customFoods: [],
   waterLogs: [
     { id: '1', time: '07:15', ml: 250 },
     { id: '2', time: '09:30', ml: 500 },
@@ -605,6 +608,10 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
     get().addXP(XP_TABLE.mealLog, 'Logged a meal', { lib: 'MCI', name: 'food-apple' });
     get().checkAndUnlockBadges();
+  },
+
+  addCustomFood: (food) => {
+    set((state) => ({ customFoods: [food, ...state.customFoods] }));
   },
 
   deleteFoodFromMeal: (mealId, itemIndex) => {
@@ -955,6 +962,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     weightLogs:    state.weightLogs,
     waterLogs:     state.waterLogs,
     meals:         state.meals,
+    customFoods:   state.customFoods,
     reminders:     state.reminders,
     stepsCount:    state.stepsCount,
     activeMinutes: state.activeMinutes,

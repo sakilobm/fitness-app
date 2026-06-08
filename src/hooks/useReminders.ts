@@ -33,13 +33,17 @@ export function useReminders(): RemindersResult {
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
 
   const categoryColors = useMemo<Record<string, string>>(() => ({
-    All: colors.lime,
-    Water: colors.chart.water,
-    Meals: colors.amber,
-    'Weigh-in': colors.lime,
+    All:          colors.lime,
+    Water:        colors.chart.water,
+    Meals:        colors.amber,
+    'Weigh-in':   colors.lime,
     'Body Photo': colors.lime,
-    Workout: colors.lime,
-    Supplements: colors.chart.fibre,
+    Workout:      colors.lime,
+    Supplements:  colors.chart.fibre,
+    Sleep:        '#6366F1',
+    Vitals:       '#EC4899',
+    Cycle:        '#F87171',
+    Steps:        '#10B981',
   }), [colors]);
 
   const accentColorOptions = useMemo(() => [
@@ -47,15 +51,21 @@ export function useReminders(): RemindersResult {
     colors.amber,
     colors.lime,
     colors.chart.fibre,
+    '#6366F1', // Indigo (Sleep)
     '#A78BFA', // Purple
-    '#EC4899', // Pink
+    '#EC4899', // Pink (Vitals)
+    '#F87171', // Rose (Cycle)
+    '#10B981', // Emerald (Steps)
   ], [colors]);
 
-  const suggestionColors = useMemo(() => [colors.chart.water, colors.amber, colors.chart.calories], [colors]);
-  const smartSuggestions = useMemo<SmartSuggestion[]>(
-    () => SUGGESTION_BLUEPRINTS.map((s, i) => ({ ...s, color: suggestionColors[i] })),
-    [suggestionColors],
-  );
+  // Only show suggestions for categories the user hasn't set up yet (max 5).
+  const smartSuggestions = useMemo<SmartSuggestion[]>(() => {
+    const usedCategories = new Set(reminders.map((r) => r.category));
+    return SUGGESTION_BLUEPRINTS
+      .filter((s) => !usedCategories.has(s.category))
+      .slice(0, 5)
+      .map((s) => ({ ...s, color: categoryColors[s.category] ?? colors.lime }));
+  }, [reminders, categoryColors, colors.lime]);
 
   const filtered = useMemo(
     () => (category === 'All' ? reminders : reminders.filter((r) => r.category === category)),

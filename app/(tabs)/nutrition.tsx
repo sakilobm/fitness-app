@@ -25,18 +25,89 @@ import { useShallow } from 'zustand/react/shallow';
 import { FoodItem, Meal } from '@/types';
 
 const FOOD_LIBRARY: FoodItem[] = [
-  { name: 'Oats with banana', grams: 100, kcal: 113, protein: 4, carbs: 19, fat: 2 },
-  { name: 'Greek yoghurt', grams: 100, kcal: 93, protein: 9, carbs: 5, fat: 3 },
-  { name: 'Chicken breast', grams: 100, kcal: 165, protein: 31, carbs: 0, fat: 3.6 },
-  { name: 'Brown rice', grams: 100, kcal: 111, protein: 2.6, carbs: 23, fat: 0.9 },
-  { name: 'Salmon fillet', grams: 100, kcal: 208, protein: 20, carbs: 0, fat: 13 },
-  { name: 'Boiled Egg', grams: 50, kcal: 78, protein: 6.3, carbs: 0.6, fat: 5.3 },
-  { name: 'Banana', grams: 120, kcal: 105, protein: 1.3, carbs: 27, fat: 0.3 },
-  { name: 'Avocado', grams: 100, kcal: 160, protein: 2, carbs: 9, fat: 15 },
-  { name: 'Almonds', grams: 30, kcal: 173, protein: 6, carbs: 6, fat: 15 },
-  { name: 'Protein shake', grams: 300, kcal: 220, protein: 30, carbs: 10, fat: 2 },
-  { name: 'Apple', grams: 150, kcal: 78, protein: 0.5, carbs: 20, fat: 0.3 },
-  { name: 'Whole wheat bread', grams: 50, kcal: 120, protein: 5, carbs: 22, fat: 1.5 },
+  // ── International ──────────────────────────────────────────────
+  { name: 'Oats with banana',    grams: 100, kcal: 113, protein: 4,   carbs: 19,  fat: 2   },
+  { name: 'Greek yoghurt',       grams: 100, kcal: 93,  protein: 9,   carbs: 5,   fat: 3   },
+  { name: 'Chicken breast',      grams: 100, kcal: 165, protein: 31,  carbs: 0,   fat: 3.6 },
+  { name: 'Brown rice',          grams: 100, kcal: 111, protein: 2.6, carbs: 23,  fat: 0.9 },
+  { name: 'Salmon fillet',       grams: 100, kcal: 208, protein: 20,  carbs: 0,   fat: 13  },
+  { name: 'Boiled Egg',          grams: 50,  kcal: 78,  protein: 6.3, carbs: 0.6, fat: 5.3 },
+  { name: 'Banana',              grams: 120, kcal: 105, protein: 1.3, carbs: 27,  fat: 0.3 },
+  { name: 'Avocado',             grams: 100, kcal: 160, protein: 2,   carbs: 9,   fat: 15  },
+  { name: 'Almonds',             grams: 30,  kcal: 173, protein: 6,   carbs: 6,   fat: 15  },
+  { name: 'Protein shake',       grams: 300, kcal: 220, protein: 30,  carbs: 10,  fat: 2   },
+  { name: 'Apple',               grams: 150, kcal: 78,  protein: 0.5, carbs: 20,  fat: 0.3 },
+  { name: 'Whole wheat bread',   grams: 50,  kcal: 120, protein: 5,   carbs: 22,  fat: 1.5 },
+
+  // ── Indian — Breads & Breakfast ────────────────────────────────
+  { name: 'Chapati / Roti',      grams: 30,  kcal: 90,  protein: 2.5, carbs: 17,  fat: 1.5 },
+  { name: 'Plain Paratha',       grams: 80,  kcal: 240, protein: 5,   carbs: 32,  fat: 10  },
+  { name: 'Aloo Paratha',        grams: 120, kcal: 310, protein: 6,   carbs: 42,  fat: 12  },
+  { name: 'Naan',                grams: 90,  kcal: 270, protein: 8,   carbs: 46,  fat: 5   },
+  { name: 'Puri',                grams: 30,  kcal: 120, protein: 2,   carbs: 14,  fat: 6   },
+  { name: 'Bhatura',             grams: 90,  kcal: 300, protein: 7,   carbs: 42,  fat: 12  },
+  { name: 'Idli (1 piece)',      grams: 40,  kcal: 58,  protein: 2,   carbs: 12,  fat: 0.3 },
+  { name: 'Plain Dosa',          grams: 100, kcal: 168, protein: 4,   carbs: 32,  fat: 3   },
+  { name: 'Masala Dosa',         grams: 150, kcal: 220, protein: 5,   carbs: 36,  fat: 7   },
+  { name: 'Upma',                grams: 100, kcal: 120, protein: 3.5, carbs: 18,  fat: 4   },
+  { name: 'Poha',                grams: 100, kcal: 130, protein: 3,   carbs: 26,  fat: 2   },
+  { name: 'Vada (1 piece)',      grams: 50,  kcal: 130, protein: 3.5, carbs: 14,  fat: 7   },
+  { name: 'Dhokla',              grams: 50,  kcal: 70,  protein: 3,   carbs: 10,  fat: 1.5 },
+
+  // ── Indian — Rice & Dal ────────────────────────────────────────
+  { name: 'Basmati Rice (cooked)', grams: 100, kcal: 130, protein: 2.7, carbs: 28, fat: 0.3 },
+  { name: 'Chicken Biryani',     grams: 100, kcal: 180, protein: 10,  carbs: 22,  fat: 6   },
+  { name: 'Veg Biryani',         grams: 100, kcal: 145, protein: 4,   carbs: 25,  fat: 4   },
+  { name: 'Khichdi',             grams: 100, kcal: 102, protein: 4,   carbs: 18,  fat: 2   },
+  { name: 'Dal Tadka',           grams: 100, kcal: 85,  protein: 5,   carbs: 11,  fat: 3   },
+  { name: 'Dal Makhani',         grams: 100, kcal: 125, protein: 6,   carbs: 14,  fat: 5   },
+  { name: 'Sambar',              grams: 100, kcal: 55,  protein: 3,   carbs: 8,   fat: 1.5 },
+  { name: 'Rasam',               grams: 150, kcal: 35,  protein: 1,   carbs: 6,   fat: 0.5 },
+  { name: 'Rajma',               grams: 100, kcal: 127, protein: 8,   carbs: 20,  fat: 1   },
+  { name: 'Chana Masala',        grams: 100, kcal: 140, protein: 7,   carbs: 20,  fat: 4   },
+  { name: 'Chole Bhature',       grams: 200, kcal: 490, protein: 14,  carbs: 60,  fat: 21  },
+
+  // ── Indian — Paneer & Dairy ────────────────────────────────────
+  { name: 'Paneer (plain)',      grams: 100, kcal: 265, protein: 18,  carbs: 2,   fat: 20  },
+  { name: 'Paneer Butter Masala',grams: 100, kcal: 155, protein: 9,   carbs: 8,   fat: 11  },
+  { name: 'Palak Paneer',        grams: 100, kcal: 125, protein: 8,   carbs: 6,   fat: 8   },
+  { name: 'Shahi Paneer',        grams: 100, kcal: 190, protein: 10,  carbs: 10,  fat: 13  },
+  { name: 'Dahi / Curd',         grams: 100, kcal: 65,  protein: 4,   carbs: 5,   fat: 3   },
+  { name: 'Sweet Lassi',         grams: 200, kcal: 160, protein: 5,   carbs: 28,  fat: 3   },
+  { name: 'Masala Chai',         grams: 150, kcal: 55,  protein: 2,   carbs: 8,   fat: 2   },
+
+  // ── Indian — Meat ─────────────────────────────────────────────
+  { name: 'Butter Chicken',      grams: 100, kcal: 165, protein: 14,  carbs: 6,   fat: 10  },
+  { name: 'Chicken Curry',       grams: 100, kcal: 150, protein: 15,  carbs: 5,   fat: 8   },
+  { name: 'Mutton Curry',        grams: 100, kcal: 225, protein: 18,  carbs: 4,   fat: 15  },
+  { name: 'Egg Curry',           grams: 100, kcal: 140, protein: 9,   carbs: 5,   fat: 10  },
+  { name: 'Fish Curry',          grams: 100, kcal: 130, protein: 14,  carbs: 4,   fat: 7   },
+
+  // ── Indian — Snacks ────────────────────────────────────────────
+  { name: 'Samosa (1 piece)',    grams: 70,  kcal: 150, protein: 3,   carbs: 18,  fat: 7   },
+  { name: 'Pakora (veg)',        grams: 50,  kcal: 130, protein: 3,   carbs: 13,  fat: 7   },
+  { name: 'Bhel Puri',           grams: 100, kcal: 160, protein: 4,   carbs: 28,  fat: 4   },
+  { name: 'Pani Puri (6 pcs)',   grams: 90,  kcal: 150, protein: 3,   carbs: 26,  fat: 4   },
+  { name: 'Aloo Tikki',          grams: 80,  kcal: 170, protein: 3,   carbs: 24,  fat: 7   },
+  { name: 'Kachori',             grams: 60,  kcal: 200, protein: 4,   carbs: 22,  fat: 11  },
+
+  // ── Indian — Sweets ────────────────────────────────────────────
+  { name: 'Gulab Jamun (1 pc)',  grams: 50,  kcal: 175, protein: 2,   carbs: 30,  fat: 6   },
+  { name: 'Kheer',               grams: 100, kcal: 180, protein: 5,   carbs: 28,  fat: 6   },
+  { name: 'Sooji Halwa',         grams: 100, kcal: 250, protein: 4,   carbs: 40,  fat: 9   },
+  { name: 'Rasgulla (1 pc)',     grams: 50,  kcal: 105, protein: 2,   carbs: 23,  fat: 0.5 },
+
+  // ── Indian — Raita & Sides ─────────────────────────────────────
+  { name: 'Boondi Raita',        grams: 100, kcal: 80,  protein: 4,   carbs: 9,   fat: 3   },
+  { name: 'Cucumber Raita',      grams: 100, kcal: 55,  protein: 3,   carbs: 6,   fat: 2   },
+  { name: 'Green Chutney',       grams: 20,  kcal: 18,  protein: 0.5, carbs: 2,   fat: 1   },
+
+  // ── Indian — Fruits (local) ────────────────────────────────────
+  { name: 'Mango',               grams: 100, kcal: 60,  protein: 0.8, carbs: 15,  fat: 0.4 },
+  { name: 'Guava',               grams: 100, kcal: 68,  protein: 2.5, carbs: 14,  fat: 1   },
+  { name: 'Pomegranate',         grams: 100, kcal: 83,  protein: 1.7, carbs: 19,  fat: 1.2 },
+  { name: 'Papaya',              grams: 100, kcal: 43,  protein: 0.5, carbs: 11,  fat: 0.3 },
+  { name: 'Jackfruit',           grams: 100, kcal: 95,  protein: 1.7, carbs: 23,  fat: 0.6 },
 ];
 
 const initialMeals: Meal[] = [
@@ -82,6 +153,8 @@ export default function NutritionScreen() {
     deleteFoodFromMeal,
     waterLogs,
     addWaterLog,
+    customFoods,
+    addCustomFood,
   } = useFitnessStore(useShallow((s) => ({
     user: s.user,
     meals: s.meals,
@@ -90,6 +163,8 @@ export default function NutritionScreen() {
     deleteFoodFromMeal: s.deleteFoodFromMeal,
     waterLogs: s.waterLogs,
     addWaterLog: s.addWaterLog,
+    customFoods: s.customFoods,
+    addCustomFood: s.addCustomFood,
   })));
 
   const [showModal, setShowModal] = useState(false);
@@ -223,19 +298,20 @@ export default function NutritionScreen() {
       fat: isNaN(ft) ? 0 : ft,
     };
 
+    // Save to My Foods so the user can reuse it from the library
+    addCustomFood(foodToLog);
+
     addFoodToMeal(activeMealId, foodToLog);
-    
-    // Autoexpand log group locally
     setMeals((prev) =>
       prev.map((m) => (m.id === activeMealId ? { ...m, expanded: true } : m))
     );
     setShowModal(false);
   };
 
-  // Live filtering of library list
-  const filteredLibrary = FOOD_LIBRARY.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Library search: match against built-in list; My Foods shown separately above
+  const q = searchQuery.toLowerCase();
+  const filteredLibrary  = FOOD_LIBRARY.filter((item) => item.name.toLowerCase().includes(q));
+  const filteredMyFoods  = customFoods.filter((item) => item.name.toLowerCase().includes(q || 'a'));
 
   return (
     <View style={styles.container}>
@@ -508,8 +584,41 @@ export default function NutritionScreen() {
                           )}
                         </View>
 
-                        {/* Search Results list */}
+                        {/* My Foods section (user-created) */}
+                        {filteredMyFoods.length > 0 && (
+                          <View style={styles.searchResultsContainer}>
+                            <View style={styles.librarySectionHeader}>
+                              <Ionicons name="person-circle-outline" size={13} color={colors.lime} />
+                              <Text style={[styles.librarySectionLabel, { color: colors.lime }]}>My Foods</Text>
+                            </View>
+                            {filteredMyFoods.map((food, idx) => (
+                              <TouchableOpacity
+                                key={`my_${idx}`}
+                                style={styles.searchResultRow}
+                                onPress={() => { setSelectedFood(food); setPortionGrams(food.grams.toString()); }}
+                                activeOpacity={0.7}
+                              >
+                                <View style={styles.searchResultLeft}>
+                                  <Text style={styles.searchResultName}>{food.name}</Text>
+                                  <Text style={styles.searchResultBase}>{food.grams}g · custom</Text>
+                                </View>
+                                <View style={styles.searchResultRight}>
+                                  <Text style={styles.searchResultKcal}>{food.kcal} kcal</Text>
+                                  <Ionicons name="chevron-forward" size={14} color={colors.lime} />
+                                </View>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+
+                        {/* Built-in library results */}
                         <View style={styles.searchResultsContainer}>
+                          {filteredLibrary.length > 0 && (
+                            <View style={styles.librarySectionHeader}>
+                              <Ionicons name="library-outline" size={13} color={colors.muted} />
+                              <Text style={styles.librarySectionLabel}>Food Library</Text>
+                            </View>
+                          )}
                           {filteredLibrary.length > 0 ? (
                             filteredLibrary.map((food) => (
                               <TouchableOpacity
@@ -849,6 +958,8 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   },
   modalInput: { flex: 1, color: colors.text.primary, ...Typography.body, padding: 0 },
   searchResultsContainer: { gap: 10 },
+  librarySectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingBottom: 6, marginTop: 4 },
+  librarySectionLabel: { ...Typography.micro, fontWeight: '700' as const, color: colors.muted, letterSpacing: 0.5, textTransform: 'uppercase' as const },
   searchResultRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.cardBorder,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Modal,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Modal, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -47,6 +47,8 @@ export default function HomeScreen() {
     dashboardGrid,
     setDashboardGrid,
     toggleWidgetVisibility,
+    sleepLogs,
+    heartRateLogs,
   } = useFitnessStore(useShallow((s) => ({
     user: s.user,
     meals: s.meals,
@@ -57,6 +59,8 @@ export default function HomeScreen() {
     dashboardGrid: s.dashboardGrid,
     setDashboardGrid: s.setDashboardGrid,
     toggleWidgetVisibility: s.toggleWidgetVisibility,
+    sleepLogs: s.sleepLogs,
+    heartRateLogs: s.heartRateLogs,
   })));
 
   const isLbs = user.weightUnit === 'lbs';
@@ -76,6 +80,13 @@ export default function HomeScreen() {
 
   const bmiResult = getBMIResult(currentWeight, user.height);
   const activeKcal = Math.round(stepsCount * 0.045 + activeMinutes * 7.5);
+
+  // Sleep — last log (most recent date)
+  const lastSleep = sleepLogs.length > 0 ? sleepLogs[0] : null;
+  const sleepHrs  = lastSleep ? (lastSleep.totalMin / 60).toFixed(1) : '--';
+
+  // Vitals — latest heart rate reading
+  const lastHR = heartRateLogs.length > 0 ? heartRateLogs[0] : null;
 
   // Define configurations dynamically for Registry matching
   const widgetConfigs: Record<string, WidgetConfig<any>> = {
@@ -178,14 +189,23 @@ export default function HomeScreen() {
   ];
 
   const QUICK_LOGS = [
-    { lib: 'Ionicons' as const, icon: 'water', color: colors.chart.water, label: 'Water', value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water' },
-    { lib: 'MCI' as const, icon: 'food-apple', color: colors.lime, label: 'Food', value: `${totalKcal.toLocaleString()} kcal`, route: '/(tabs)/nutrition' },
-    { lib: 'MCI' as const, icon: 'scale-bathroom', color: colors.amber, label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`, route: '/(tabs)/weight' },
-    { lib: 'Ionicons' as const, icon: 'footsteps', color: '#6366F1', label: 'Steps', value: stepsCount.toLocaleString(), route: '/steps' },
+    { lib: 'Ionicons' as const, icon: 'water',          color: colors.chart.water, label: 'Water',  value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water' },
+    { lib: 'MCI'     as const, icon: 'food-apple',      color: colors.lime,        label: 'Food',   value: `${totalKcal.toLocaleString()} kcal`, route: '/(tabs)/nutrition' },
+    { lib: 'MCI'     as const, icon: 'scale-bathroom',  color: colors.amber,       label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`, route: '/(tabs)/weight' },
+    { lib: 'Ionicons' as const, icon: 'footsteps',      color: '#6366F1',          label: 'Steps',  value: stepsCount.toLocaleString(), route: '/steps' },
+    { lib: 'Ionicons' as const, icon: 'moon',           color: '#818CF8',          label: 'Sleep',  value: lastSleep ? `${sleepHrs} hr` : '--', route: '/(tabs)/sleep' },
+    { lib: 'MCI'     as const, icon: 'heart-pulse',     color: '#EC4899',          label: 'Vitals', value: lastHR ? `${lastHR.bpm} bpm` : '--', route: '/(tabs)/vitals' },
   ];
 
   const getTimeline = () => {
     const feed = [];
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Sleep (last night's log)
+    if (lastSleep) {
+      feed.push({ time: lastSleep.wakeTime, label: `Slept ${sleepHrs} hr`, kcal: lastSleep.score, lib: 'Ionicons' as const, icon: 'moon', color: '#818CF8' });
+    }
+    // Meals
     const bfMeal = meals.find((m) => m.id === 'breakfast');
     const bfKcal = bfMeal ? bfMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
     if (bfKcal > 0) {
@@ -206,12 +226,24 @@ export default function HomeScreen() {
     }
     if (waterLogs.length > 0) {
       const latestWater = waterLogs[waterLogs.length - 1];
-      feed.push({ time: latestWater.time, label: `Logged Hydration`, kcal: latestWater.ml, lib: 'Ionicons' as const, icon: 'water', color: colors.chart.water });
+      feed.push({ time: latestWater.time, label: 'Logged Hydration', kcal: latestWater.ml, lib: 'Ionicons' as const, icon: 'water', color: colors.chart.water });
     }
     const dnMeal = meals.find((m) => m.id === 'dinner');
     const dnKcal = dnMeal ? dnMeal.items.reduce((s, i) => s + i.kcal, 0) : 0;
     if (dnKcal > 0) {
       feed.push({ time: '19:30', label: 'Dinner', kcal: dnKcal, lib: 'MCI' as const, icon: 'silverware-fork-knife', color: colors.amber });
+    }
+    // Latest heart rate today
+    const todayHR = heartRateLogs.find((l) => l.date === todayStr);
+    if (todayHR) {
+      feed.push({ time: todayHR.time, label: `Heart Rate`, kcal: todayHR.bpm, lib: 'MCI' as const, icon: 'heart-pulse', color: '#EC4899' });
+    }
+    // Cycle log today
+    if (cycle.cycleSettings.cycleTrackingEnabled) {
+      const todayCycleLog = cycle.cycleLogs.find((l) => l.date === todayStr);
+      if (todayCycleLog) {
+        feed.push({ time: '20:00', label: 'Cycle Logged', kcal: 0, lib: 'Ionicons' as const, icon: 'flower', color: '#F87171' });
+      }
     }
     if (feed.length === 0) {
       feed.push({ time: '08:00', label: 'Start your journey!', kcal: 0, lib: 'Ionicons' as const, icon: 'rocket-outline', color: colors.lime });
@@ -753,10 +785,10 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   },
   editBtnTxt: { fontSize: 12, fontWeight: '600', color: colors.lime },
 
-  // Quick log
-  quickLogRow: { flexDirection: 'row', gap: 10 },
+  // Quick log — 3-column grid
+  quickLogRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   quickLogCard: {
-    flex: 1,
+    width: (Dimensions.get('window').width - 40 - 20) / 3,
     backgroundColor: colors.card,
     borderRadius: Radius.md,
     borderWidth: 1,

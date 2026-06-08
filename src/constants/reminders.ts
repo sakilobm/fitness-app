@@ -6,7 +6,10 @@ export const DAY_MAP: Record<string, string> = {
   M: 'Mon', T: 'Tue', W: 'Wed', F: 'Fri', S: 'Sat',
 };
 
-export const CATEGORIES = ['All', 'Water', 'Meals', 'Weigh-in', 'Body Photo', 'Workout', 'Supplements'];
+export const CATEGORIES = [
+  'All', 'Water', 'Meals', 'Weigh-in', 'Body Photo',
+  'Workout', 'Supplements', 'Sleep', 'Vitals', 'Cycle', 'Steps',
+];
 
 export const FREQUENCIES = ['Daily', 'Weekdays', 'Weekends', 'Custom'] as const;
 export type ReminderFrequency = typeof FREQUENCIES[number];
@@ -20,9 +23,22 @@ export interface SmartSuggestionBlueprint {
 }
 
 export const SUGGESTION_BLUEPRINTS: SmartSuggestionBlueprint[] = [
-  { category: 'Water',     title: 'Late Afternoon Hydration', time: '16:30', frequency: 'Daily',    text: 'You usually forget water after 4 PM' },
-  { category: 'Weigh-in',  title: 'Weekend Weigh-in check',   time: '08:00', frequency: 'Weekends', text: 'Weigh-in consistency drops on weekends' },
-  { category: 'Meals',     title: 'Log Lunch Tracker',        time: '13:00', frequency: 'Weekdays', text: 'Lunch log is often skipped on Tuesdays' },
+  // Existing
+  { category: 'Water',    title: 'Late Afternoon Hydration', time: '16:30', frequency: 'Daily',    text: 'You usually forget water after 4 PM' },
+  { category: 'Weigh-in', title: 'Weekend Weigh-in',         time: '08:00', frequency: 'Weekends', text: 'Weigh-in consistency drops on weekends' },
+  { category: 'Meals',    title: 'Log Lunch',                time: '13:00', frequency: 'Weekdays', text: 'Lunch log is often skipped on busy days' },
+  // Sleep
+  { category: 'Sleep', title: 'Bedtime Wind-Down',  time: '22:00', frequency: 'Daily', text: 'Log your sleep for consistent bedtime insights' },
+  { category: 'Sleep', title: 'Morning Sleep Log',  time: '07:30', frequency: 'Daily', text: 'Log last night\'s sleep while it\'s fresh' },
+  // Vitals
+  { category: 'Vitals', title: 'Morning BP Check',   time: '08:00', frequency: 'Daily', text: 'Morning is the best time for consistent BP readings' },
+  { category: 'Vitals', title: 'Evening Vitals Log', time: '20:00', frequency: 'Daily', text: 'Track heart rate and vitals before bed' },
+  // Cycle
+  { category: 'Cycle', title: 'Daily Symptom Log',   time: '20:30', frequency: 'Daily', text: 'Log symptoms daily to spot cycle patterns' },
+  { category: 'Cycle', title: 'Period Start Check',  time: '09:00', frequency: 'Daily', text: 'Check in and mark your cycle start when it arrives' },
+  // Steps
+  { category: 'Steps', title: 'Midday Walk Reminder', time: '12:30', frequency: 'Weekdays', text: 'A lunchtime walk can hit half your step goal' },
+  { category: 'Steps', title: 'Evening Step Check',   time: '17:30', frequency: 'Daily',    text: 'Check progress — there\'s still time to top up' },
 ];
 
 export interface SmartSuggestion extends SmartSuggestionBlueprint {
@@ -46,6 +62,18 @@ export function getCategoryIcon(category: string, titleStr?: string): IconDef {
   }
   if (category === 'Workout') {
     return { lib: 'MCI', name: 'dumbbell' };
+  }
+  if (category === 'Sleep') {
+    return { lib: 'Ionicons', name: t.includes('morning') ? 'sunny-outline' : 'moon' };
+  }
+  if (category === 'Vitals') {
+    return { lib: 'MCI', name: 'heart-pulse' };
+  }
+  if (category === 'Cycle') {
+    return { lib: 'Ionicons', name: 'flower-outline' };
+  }
+  if (category === 'Steps') {
+    return { lib: 'MCI', name: 'walk' };
   }
   return { lib: 'MCI', name: 'pill' };
 }
