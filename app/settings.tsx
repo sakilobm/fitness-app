@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch,
-  TextInput, KeyboardAvoidingView, Platform, Modal, Image, Share, Alert, ActivityIndicator
+  TextInput, KeyboardAvoidingView, Platform, Modal, Image, Share, Alert, ActivityIndicator,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
@@ -25,7 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSettingsForm, useHealthConnect } from '@/hooks';
 
-// ─── Preset Avatars for Fast Selection ─────────────────────────────────────────
+// â”€â”€â”€ Preset Avatars for Fast Selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const AVATAR_PRESETS = [
   { id: 'av1', label: 'Strength', url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150&auto=format&fit=crop&q=80' },
   { id: 'av2', label: 'Runner', url: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=150&auto=format&fit=crop&q=80' },
@@ -35,7 +36,7 @@ const AVATAR_PRESETS = [
   { id: 'av6', label: 'Cyclist', url: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=150&auto=format&fit=crop&q=80' },
 ];
 
-// ─── Main Settings Screen ─────────────────────────────────────────────────────
+// â”€â”€â”€ Main Settings Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function SettingsScreen() {
   const handleHealthConnect = async () => {
     triggerHaptic('medium');
     const ok = await hc.connect();
-    if (ok) showToast('Health Connect linked — tap Sync Now to import data.', 'success');
+    if (ok) showToast('Health Connect linked â€” tap Sync Now to import data.', 'success');
     else showToast('Permission denied or Health Connect unavailable.', 'alert');
   };
 
@@ -85,9 +86,9 @@ export default function SettingsScreen() {
     const result = await hc.syncAll();
     const total = result.steps + result.weightLogs + result.waterLogs;
     if (total > 0) {
-      showToast(`Synced ${result.steps.toLocaleString()} steps · ${result.weightLogs} weight · ${result.waterLogs} water records.`, 'success');
+      showToast(`Synced ${result.steps.toLocaleString()} steps Â· ${result.weightLogs} weight Â· ${result.waterLogs} water records.`, 'success');
     } else {
-      showToast('Synced — no new records found since last import.', 'info');
+      showToast('Synced â€” no new records found since last import.', 'info');
     }
   };
 
@@ -125,7 +126,7 @@ export default function SettingsScreen() {
     opacity: interpolate(confirmBtnScale.value, [0.95, 1], [0.3, 1]),
   }));
 
-  // ── Result animation ──────────────────────────────────────────────────────
+  // â”€â”€ Result animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const resultIconScale = useSharedValue(0);
   const resultGlowScale = useSharedValue(0);
 
@@ -157,11 +158,11 @@ export default function SettingsScreen() {
     const patterns = ['light', 'medium', 'heavy', 'success', 'warning', 'error'] as const;
     const type = patterns[hapticTestIndex % patterns.length];
     triggerHaptic(type);
-    showToast(`Triggered ${type.toUpperCase()} haptic pattern ⚡`, 'info');
+    showToast(`Triggered ${type.toUpperCase()} haptic pattern âš¡`, 'info');
     setHapticTestIndex(hapticTestIndex + 1);
   };
 
-  // ─── Native Image Picker ──────────────────────────────────────────────────────
+  // â”€â”€â”€ Native Image Picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const pickImageFromGallery = async () => {
     setActionSheetVisible(false);
     try {
@@ -211,7 +212,7 @@ export default function SettingsScreen() {
     }
   };
 
-  // ─── Sync Supabase manually ───────────────────────────────────────────────
+  // â”€â”€â”€ Sync Supabase manually â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleManualSync = async () => {
     triggerHaptic('selection');
     setShowSyncing(true);
@@ -247,7 +248,7 @@ export default function SettingsScreen() {
     }
   };
 
-  // ─── Change Account Password ───────────────────────────────────────────────
+  // â”€â”€â”€ Change Account Password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleChangePassword = async () => {
     triggerHaptic('selection');
     const { data: authData } = await supabase.auth.getUser();
@@ -267,7 +268,7 @@ export default function SettingsScreen() {
     }
   };
 
-  // ─── Native JSON Data Export ───────────────────────────────────────────────
+  // â”€â”€â”€ Native JSON Data Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleExportData = async () => {
     triggerHaptic('selection');
     try {
@@ -310,10 +311,10 @@ export default function SettingsScreen() {
   };
 
   const EMPTY_MEALS = [
-    { id: 'breakfast', label: 'Breakfast', icon: '🌅', expanded: true,  items: [] },
-    { id: 'lunch',     label: 'Lunch',     icon: '☀️',  expanded: false, items: [] },
-    { id: 'dinner',    label: 'Dinner',    icon: '🌙',  expanded: false, items: [] },
-    { id: 'snacks',    label: 'Snacks',    icon: '🍎',  expanded: false, items: [] },
+    { id: 'breakfast', label: 'Breakfast', icon: 'ðŸŒ…', expanded: true,  items: [] },
+    { id: 'lunch',     label: 'Lunch',     icon: 'â˜€ï¸',  expanded: false, items: [] },
+    { id: 'dinner',    label: 'Dinner',    icon: 'ðŸŒ™',  expanded: false, items: [] },
+    { id: 'snacks',    label: 'Snacks',    icon: 'ðŸŽ',  expanded: false, items: [] },
   ];
 
   const closeClearModal = () => {
@@ -422,7 +423,7 @@ export default function SettingsScreen() {
           onBack={() => router.back()}
         />
 
-        {/* ─── Profile Overview Card ─── */}
+        {/* â”€â”€â”€ Profile Overview Card â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(50).springify().damping(18)}>
           <GlassCard accentColor={colors.lime}>
             <View style={styles.profileHeader}>
@@ -453,7 +454,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Profile Basic Metrics ─── */}
+        {/* â”€â”€â”€ Profile Basic Metrics â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(100).springify().damping(18)}>
           <View style={styles.groupLabel}>
             <View style={[styles.groupDot, { backgroundColor: colors.lime }]} />
@@ -569,7 +570,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Advanced Goal Calibrators ─── */}
+        {/* â”€â”€â”€ Advanced Goal Calibrators â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(150).springify().damping(18)}>
           <View style={styles.groupLabel}>
             <View style={[styles.groupDot, { backgroundColor: colors.amber }]} />
@@ -649,7 +650,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Preferences Switches ─── */}
+        {/* â”€â”€â”€ Preferences Switches â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(200).springify().damping(18)}>
           <View style={styles.groupLabel}>
             <View style={[styles.groupDot, { backgroundColor: '#6366F1' }]} />
@@ -768,7 +769,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Privacy & Security Preferences ─── */}
+        {/* â”€â”€â”€ Privacy & Security Preferences â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(220).springify().damping(18)}>
           <View style={styles.groupLabel}>
             <View style={[styles.groupDot, { backgroundColor: colors.danger }]} />
@@ -828,7 +829,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Health & Fitness Apps ─── */}
+        {/* â”€â”€â”€ Health & Fitness Apps â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(235).springify().damping(18)}>
           <View style={styles.groupLabel}>
             <View style={[styles.groupDot, { backgroundColor: '#EF4444' }]} />
@@ -846,7 +847,7 @@ export default function SettingsScreen() {
                 <Text style={styles.rowSub}>
                   {hc.isAvailable === false
                     ? 'Not available on this device'
-                    : 'Steps · Weight · Hydration · Heart Rate'}
+                    : 'Steps Â· Weight Â· Hydration Â· Heart Rate'}
                 </Text>
               </View>
               <View style={[
@@ -929,7 +930,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Privacy, Data & Actions ─── */}
+        {/* â”€â”€â”€ Privacy, Data & Actions â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(250).springify().damping(18)}>
           <View style={styles.groupLabel}>
             <View style={[styles.groupDot, { backgroundColor: colors.danger }]} />
@@ -995,7 +996,7 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* ─── Legal / Privacy Policy ─── */}
+        {/* â”€â”€â”€ Legal / Privacy Policy â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(300).springify().damping(18)}>
           <GlassCard>
             <PressableRow style={styles.row} onPress={() => setShowDocModal({ visible: true, title: 'Privacy Policy', content: 'Your health and workout logs are stored locally on your device using encrypted sandbox directories. FitForge does not sell, distribute, or trace your personal telemetry logs. Backups are stored in Supabase with standard TLS encryption protocols.' })}>
@@ -1041,11 +1042,11 @@ export default function SettingsScreen() {
         {/* Version */}
         <View style={styles.versionBlock}>
           <Text style={styles.versionText}>FitForge Premium v1.0.0</Text>
-          <Text style={styles.versionSub}>Made with 💚 and spring physics</Text>
+          <Text style={styles.versionSub}>Made with ðŸ’š and spring physics</Text>
         </View>
       </ScrollView>
 
-      {/* ─── Camera / Gallery Action Sheet DP ─── */}
+      {/* â”€â”€â”€ Camera / Gallery Action Sheet DP â”€â”€â”€ */}
       <Modal visible={actionSheetVisible} transparent animationType="fade">
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setActionSheetVisible(false)}>
           <View style={styles.actionSheet}>
@@ -1070,10 +1071,10 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* ─── Clear History Modal ─── */}
+      {/* â”€â”€â”€ Clear History Modal â”€â”€â”€ */}
       <Modal visible={showClearModal} transparent animationType="slide">
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}>
-          <View style={[styles.actionSheet, { borderTopWidth: 2, borderColor: colors.danger + '40', paddingBottom: 0, maxHeight: '92%' }]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
+          <KeyboardSlideView style={[styles.actionSheet, { borderTopWidth: 2, borderColor: colors.danger + '40', paddingBottom: 0, maxHeight: '92%' }]}>
             <View style={[styles.actionSheetHandle, { backgroundColor: colors.danger + '40' }]} />
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -1231,11 +1232,11 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             )}
             </ScrollView>
-          </View>
+          </KeyboardSlideView>
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ─── Legal Documents Viewer Modal ─── */}
+      {/* â”€â”€â”€ Legal Documents Viewer Modal â”€â”€â”€ */}
       <Modal visible={showDocModal.visible} transparent animationType="slide">
         <View style={styles.backdrop}>
           <View style={styles.actionSheet}>
@@ -1254,7 +1255,7 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* ─── Fullscreen Animated Splash Preview ─── */}
+      {/* â”€â”€â”€ Fullscreen Animated Splash Preview â”€â”€â”€ */}
       {showSplashPreview && (
         <Modal visible={true} transparent={false} animationType="none" statusBarTranslucent>
           <AnimatedSplashScreen
@@ -1268,7 +1269,7 @@ export default function SettingsScreen() {
   );
 }
 
-// ─── Styles Stylesheet Factory ────────────────────────────────────────────────
+// â”€â”€â”€ Styles Stylesheet Factory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   scrollView: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 16 },

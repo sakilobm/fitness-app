@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.9] - 2026-06-08T21:47:00+05:30
+
+### Fixed — UI: Today's Activity Horizontal Scroll Spacing
+
+**Architectural Decision:** React Native ignores `paddingRight` set directly on the `style` prop of a horizontal `ScrollView` (only `paddingLeft` works). When users scroll to the end of the activity timeline, the timeline card would touch the right screen bounds. Moving `paddingLeft` and `paddingRight` spacing properties to the `contentContainerStyle` prop of the `ScrollView` ensures the scrollable container window correctly includes trailing/leading margins.
+
+**Changes:**
+- **`app/(tabs)/index.tsx`:** Moved timeline layout scroll paddings from static style `timelineScroll` to content styling `timelineScrollContent` bound to the ScrollView `contentContainerStyle` prop.
+
+#### Rollback
+See ROLLBACK.md section for v2.6.9.
+
 ## [2.6.8] - 2026-06-06T13:12:00+05:30
 
 ### Fixed — Type Compilation: Badge Import Path Suffix

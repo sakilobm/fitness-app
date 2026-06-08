@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
@@ -26,88 +27,88 @@ import { FoodItem, Meal } from '@/types';
 
 const FOOD_LIBRARY: FoodItem[] = [
   // ── International ──────────────────────────────────────────────
-  { name: 'Oats with banana',    grams: 100, kcal: 113, protein: 4,   carbs: 19,  fat: 2   },
-  { name: 'Greek yoghurt',       grams: 100, kcal: 93,  protein: 9,   carbs: 5,   fat: 3   },
-  { name: 'Chicken breast',      grams: 100, kcal: 165, protein: 31,  carbs: 0,   fat: 3.6 },
-  { name: 'Brown rice',          grams: 100, kcal: 111, protein: 2.6, carbs: 23,  fat: 0.9 },
-  { name: 'Salmon fillet',       grams: 100, kcal: 208, protein: 20,  carbs: 0,   fat: 13  },
-  { name: 'Boiled Egg',          grams: 50,  kcal: 78,  protein: 6.3, carbs: 0.6, fat: 5.3 },
-  { name: 'Banana',              grams: 120, kcal: 105, protein: 1.3, carbs: 27,  fat: 0.3 },
-  { name: 'Avocado',             grams: 100, kcal: 160, protein: 2,   carbs: 9,   fat: 15  },
-  { name: 'Almonds',             grams: 30,  kcal: 173, protein: 6,   carbs: 6,   fat: 15  },
-  { name: 'Protein shake',       grams: 300, kcal: 220, protein: 30,  carbs: 10,  fat: 2   },
-  { name: 'Apple',               grams: 150, kcal: 78,  protein: 0.5, carbs: 20,  fat: 0.3 },
-  { name: 'Whole wheat bread',   grams: 50,  kcal: 120, protein: 5,   carbs: 22,  fat: 1.5 },
+  { name: 'Oats with banana', grams: 100, kcal: 113, protein: 4, carbs: 19, fat: 2 },
+  { name: 'Greek yoghurt', grams: 100, kcal: 93, protein: 9, carbs: 5, fat: 3 },
+  { name: 'Chicken breast', grams: 100, kcal: 165, protein: 31, carbs: 0, fat: 3.6 },
+  { name: 'Brown rice', grams: 100, kcal: 111, protein: 2.6, carbs: 23, fat: 0.9 },
+  { name: 'Salmon fillet', grams: 100, kcal: 208, protein: 20, carbs: 0, fat: 13 },
+  { name: 'Boiled Egg', grams: 50, kcal: 78, protein: 6.3, carbs: 0.6, fat: 5.3 },
+  { name: 'Banana', grams: 120, kcal: 105, protein: 1.3, carbs: 27, fat: 0.3 },
+  { name: 'Avocado', grams: 100, kcal: 160, protein: 2, carbs: 9, fat: 15 },
+  { name: 'Almonds', grams: 30, kcal: 173, protein: 6, carbs: 6, fat: 15 },
+  { name: 'Protein shake', grams: 300, kcal: 220, protein: 30, carbs: 10, fat: 2 },
+  { name: 'Apple', grams: 150, kcal: 78, protein: 0.5, carbs: 20, fat: 0.3 },
+  { name: 'Whole wheat bread', grams: 50, kcal: 120, protein: 5, carbs: 22, fat: 1.5 },
 
   // ── Indian — Breads & Breakfast ────────────────────────────────
-  { name: 'Chapati / Roti',      grams: 30,  kcal: 90,  protein: 2.5, carbs: 17,  fat: 1.5 },
-  { name: 'Plain Paratha',       grams: 80,  kcal: 240, protein: 5,   carbs: 32,  fat: 10  },
-  { name: 'Aloo Paratha',        grams: 120, kcal: 310, protein: 6,   carbs: 42,  fat: 12  },
-  { name: 'Naan',                grams: 90,  kcal: 270, protein: 8,   carbs: 46,  fat: 5   },
-  { name: 'Puri',                grams: 30,  kcal: 120, protein: 2,   carbs: 14,  fat: 6   },
-  { name: 'Bhatura',             grams: 90,  kcal: 300, protein: 7,   carbs: 42,  fat: 12  },
-  { name: 'Idli (1 piece)',      grams: 40,  kcal: 58,  protein: 2,   carbs: 12,  fat: 0.3 },
-  { name: 'Plain Dosa',          grams: 100, kcal: 168, protein: 4,   carbs: 32,  fat: 3   },
-  { name: 'Masala Dosa',         grams: 150, kcal: 220, protein: 5,   carbs: 36,  fat: 7   },
-  { name: 'Upma',                grams: 100, kcal: 120, protein: 3.5, carbs: 18,  fat: 4   },
-  { name: 'Poha',                grams: 100, kcal: 130, protein: 3,   carbs: 26,  fat: 2   },
-  { name: 'Vada (1 piece)',      grams: 50,  kcal: 130, protein: 3.5, carbs: 14,  fat: 7   },
-  { name: 'Dhokla',              grams: 50,  kcal: 70,  protein: 3,   carbs: 10,  fat: 1.5 },
+  { name: 'Chapati / Roti', grams: 30, kcal: 90, protein: 2.5, carbs: 17, fat: 1.5 },
+  { name: 'Plain Paratha', grams: 80, kcal: 240, protein: 5, carbs: 32, fat: 10 },
+  { name: 'Aloo Paratha', grams: 120, kcal: 310, protein: 6, carbs: 42, fat: 12 },
+  { name: 'Naan', grams: 90, kcal: 270, protein: 8, carbs: 46, fat: 5 },
+  { name: 'Puri', grams: 30, kcal: 120, protein: 2, carbs: 14, fat: 6 },
+  { name: 'Bhatura', grams: 90, kcal: 300, protein: 7, carbs: 42, fat: 12 },
+  { name: 'Idli (1 piece)', grams: 40, kcal: 58, protein: 2, carbs: 12, fat: 0.3 },
+  { name: 'Plain Dosa', grams: 100, kcal: 168, protein: 4, carbs: 32, fat: 3 },
+  { name: 'Masala Dosa', grams: 150, kcal: 220, protein: 5, carbs: 36, fat: 7 },
+  { name: 'Upma', grams: 100, kcal: 120, protein: 3.5, carbs: 18, fat: 4 },
+  { name: 'Poha', grams: 100, kcal: 130, protein: 3, carbs: 26, fat: 2 },
+  { name: 'Vada (1 piece)', grams: 50, kcal: 130, protein: 3.5, carbs: 14, fat: 7 },
+  { name: 'Dhokla', grams: 50, kcal: 70, protein: 3, carbs: 10, fat: 1.5 },
 
   // ── Indian — Rice & Dal ────────────────────────────────────────
   { name: 'Basmati Rice (cooked)', grams: 100, kcal: 130, protein: 2.7, carbs: 28, fat: 0.3 },
-  { name: 'Chicken Biryani',     grams: 100, kcal: 180, protein: 10,  carbs: 22,  fat: 6   },
-  { name: 'Veg Biryani',         grams: 100, kcal: 145, protein: 4,   carbs: 25,  fat: 4   },
-  { name: 'Khichdi',             grams: 100, kcal: 102, protein: 4,   carbs: 18,  fat: 2   },
-  { name: 'Dal Tadka',           grams: 100, kcal: 85,  protein: 5,   carbs: 11,  fat: 3   },
-  { name: 'Dal Makhani',         grams: 100, kcal: 125, protein: 6,   carbs: 14,  fat: 5   },
-  { name: 'Sambar',              grams: 100, kcal: 55,  protein: 3,   carbs: 8,   fat: 1.5 },
-  { name: 'Rasam',               grams: 150, kcal: 35,  protein: 1,   carbs: 6,   fat: 0.5 },
-  { name: 'Rajma',               grams: 100, kcal: 127, protein: 8,   carbs: 20,  fat: 1   },
-  { name: 'Chana Masala',        grams: 100, kcal: 140, protein: 7,   carbs: 20,  fat: 4   },
-  { name: 'Chole Bhature',       grams: 200, kcal: 490, protein: 14,  carbs: 60,  fat: 21  },
+  { name: 'Chicken Biryani', grams: 100, kcal: 180, protein: 10, carbs: 22, fat: 6 },
+  { name: 'Veg Biryani', grams: 100, kcal: 145, protein: 4, carbs: 25, fat: 4 },
+  { name: 'Khichdi', grams: 100, kcal: 102, protein: 4, carbs: 18, fat: 2 },
+  { name: 'Dal Tadka', grams: 100, kcal: 85, protein: 5, carbs: 11, fat: 3 },
+  { name: 'Dal Makhani', grams: 100, kcal: 125, protein: 6, carbs: 14, fat: 5 },
+  { name: 'Sambar', grams: 100, kcal: 55, protein: 3, carbs: 8, fat: 1.5 },
+  { name: 'Rasam', grams: 150, kcal: 35, protein: 1, carbs: 6, fat: 0.5 },
+  { name: 'Rajma', grams: 100, kcal: 127, protein: 8, carbs: 20, fat: 1 },
+  { name: 'Chana Masala', grams: 100, kcal: 140, protein: 7, carbs: 20, fat: 4 },
+  { name: 'Chole Bhature', grams: 200, kcal: 490, protein: 14, carbs: 60, fat: 21 },
 
   // ── Indian — Paneer & Dairy ────────────────────────────────────
-  { name: 'Paneer (plain)',      grams: 100, kcal: 265, protein: 18,  carbs: 2,   fat: 20  },
-  { name: 'Paneer Butter Masala',grams: 100, kcal: 155, protein: 9,   carbs: 8,   fat: 11  },
-  { name: 'Palak Paneer',        grams: 100, kcal: 125, protein: 8,   carbs: 6,   fat: 8   },
-  { name: 'Shahi Paneer',        grams: 100, kcal: 190, protein: 10,  carbs: 10,  fat: 13  },
-  { name: 'Dahi / Curd',         grams: 100, kcal: 65,  protein: 4,   carbs: 5,   fat: 3   },
-  { name: 'Sweet Lassi',         grams: 200, kcal: 160, protein: 5,   carbs: 28,  fat: 3   },
-  { name: 'Masala Chai',         grams: 150, kcal: 55,  protein: 2,   carbs: 8,   fat: 2   },
+  { name: 'Paneer (plain)', grams: 100, kcal: 265, protein: 18, carbs: 2, fat: 20 },
+  { name: 'Paneer Butter Masala', grams: 100, kcal: 155, protein: 9, carbs: 8, fat: 11 },
+  { name: 'Palak Paneer', grams: 100, kcal: 125, protein: 8, carbs: 6, fat: 8 },
+  { name: 'Shahi Paneer', grams: 100, kcal: 190, protein: 10, carbs: 10, fat: 13 },
+  { name: 'Dahi / Curd', grams: 100, kcal: 65, protein: 4, carbs: 5, fat: 3 },
+  { name: 'Sweet Lassi', grams: 200, kcal: 160, protein: 5, carbs: 28, fat: 3 },
+  { name: 'Masala Chai', grams: 150, kcal: 55, protein: 2, carbs: 8, fat: 2 },
 
   // ── Indian — Meat ─────────────────────────────────────────────
-  { name: 'Butter Chicken',      grams: 100, kcal: 165, protein: 14,  carbs: 6,   fat: 10  },
-  { name: 'Chicken Curry',       grams: 100, kcal: 150, protein: 15,  carbs: 5,   fat: 8   },
-  { name: 'Mutton Curry',        grams: 100, kcal: 225, protein: 18,  carbs: 4,   fat: 15  },
-  { name: 'Egg Curry',           grams: 100, kcal: 140, protein: 9,   carbs: 5,   fat: 10  },
-  { name: 'Fish Curry',          grams: 100, kcal: 130, protein: 14,  carbs: 4,   fat: 7   },
+  { name: 'Butter Chicken', grams: 100, kcal: 165, protein: 14, carbs: 6, fat: 10 },
+  { name: 'Chicken Curry', grams: 100, kcal: 150, protein: 15, carbs: 5, fat: 8 },
+  { name: 'Mutton Curry', grams: 100, kcal: 225, protein: 18, carbs: 4, fat: 15 },
+  { name: 'Egg Curry', grams: 100, kcal: 140, protein: 9, carbs: 5, fat: 10 },
+  { name: 'Fish Curry', grams: 100, kcal: 130, protein: 14, carbs: 4, fat: 7 },
 
   // ── Indian — Snacks ────────────────────────────────────────────
-  { name: 'Samosa (1 piece)',    grams: 70,  kcal: 150, protein: 3,   carbs: 18,  fat: 7   },
-  { name: 'Pakora (veg)',        grams: 50,  kcal: 130, protein: 3,   carbs: 13,  fat: 7   },
-  { name: 'Bhel Puri',           grams: 100, kcal: 160, protein: 4,   carbs: 28,  fat: 4   },
-  { name: 'Pani Puri (6 pcs)',   grams: 90,  kcal: 150, protein: 3,   carbs: 26,  fat: 4   },
-  { name: 'Aloo Tikki',          grams: 80,  kcal: 170, protein: 3,   carbs: 24,  fat: 7   },
-  { name: 'Kachori',             grams: 60,  kcal: 200, protein: 4,   carbs: 22,  fat: 11  },
+  { name: 'Samosa (1 piece)', grams: 70, kcal: 150, protein: 3, carbs: 18, fat: 7 },
+  { name: 'Pakora (veg)', grams: 50, kcal: 130, protein: 3, carbs: 13, fat: 7 },
+  { name: 'Bhel Puri', grams: 100, kcal: 160, protein: 4, carbs: 28, fat: 4 },
+  { name: 'Pani Puri (6 pcs)', grams: 90, kcal: 150, protein: 3, carbs: 26, fat: 4 },
+  { name: 'Aloo Tikki', grams: 80, kcal: 170, protein: 3, carbs: 24, fat: 7 },
+  { name: 'Kachori', grams: 60, kcal: 200, protein: 4, carbs: 22, fat: 11 },
 
   // ── Indian — Sweets ────────────────────────────────────────────
-  { name: 'Gulab Jamun (1 pc)',  grams: 50,  kcal: 175, protein: 2,   carbs: 30,  fat: 6   },
-  { name: 'Kheer',               grams: 100, kcal: 180, protein: 5,   carbs: 28,  fat: 6   },
-  { name: 'Sooji Halwa',         grams: 100, kcal: 250, protein: 4,   carbs: 40,  fat: 9   },
-  { name: 'Rasgulla (1 pc)',     grams: 50,  kcal: 105, protein: 2,   carbs: 23,  fat: 0.5 },
+  { name: 'Gulab Jamun (1 pc)', grams: 50, kcal: 175, protein: 2, carbs: 30, fat: 6 },
+  { name: 'Kheer', grams: 100, kcal: 180, protein: 5, carbs: 28, fat: 6 },
+  { name: 'Sooji Halwa', grams: 100, kcal: 250, protein: 4, carbs: 40, fat: 9 },
+  { name: 'Rasgulla (1 pc)', grams: 50, kcal: 105, protein: 2, carbs: 23, fat: 0.5 },
 
   // ── Indian — Raita & Sides ─────────────────────────────────────
-  { name: 'Boondi Raita',        grams: 100, kcal: 80,  protein: 4,   carbs: 9,   fat: 3   },
-  { name: 'Cucumber Raita',      grams: 100, kcal: 55,  protein: 3,   carbs: 6,   fat: 2   },
-  { name: 'Green Chutney',       grams: 20,  kcal: 18,  protein: 0.5, carbs: 2,   fat: 1   },
+  { name: 'Boondi Raita', grams: 100, kcal: 80, protein: 4, carbs: 9, fat: 3 },
+  { name: 'Cucumber Raita', grams: 100, kcal: 55, protein: 3, carbs: 6, fat: 2 },
+  { name: 'Green Chutney', grams: 20, kcal: 18, protein: 0.5, carbs: 2, fat: 1 },
 
   // ── Indian — Fruits (local) ────────────────────────────────────
-  { name: 'Mango',               grams: 100, kcal: 60,  protein: 0.8, carbs: 15,  fat: 0.4 },
-  { name: 'Guava',               grams: 100, kcal: 68,  protein: 2.5, carbs: 14,  fat: 1   },
-  { name: 'Pomegranate',         grams: 100, kcal: 83,  protein: 1.7, carbs: 19,  fat: 1.2 },
-  { name: 'Papaya',              grams: 100, kcal: 43,  protein: 0.5, carbs: 11,  fat: 0.3 },
-  { name: 'Jackfruit',           grams: 100, kcal: 95,  protein: 1.7, carbs: 23,  fat: 0.6 },
+  { name: 'Mango', grams: 100, kcal: 60, protein: 0.8, carbs: 15, fat: 0.4 },
+  { name: 'Guava', grams: 100, kcal: 68, protein: 2.5, carbs: 14, fat: 1 },
+  { name: 'Pomegranate', grams: 100, kcal: 83, protein: 1.7, carbs: 19, fat: 1.2 },
+  { name: 'Papaya', grams: 100, kcal: 43, protein: 0.5, carbs: 11, fat: 0.3 },
+  { name: 'Jackfruit', grams: 100, kcal: 95, protein: 1.7, carbs: 23, fat: 0.6 },
 ];
 
 const initialMeals: Meal[] = [
@@ -144,7 +145,7 @@ export default function NutritionScreen() {
   const { colors, isDark } = useTheme();
   const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const insets = useSafeAreaInsets();
-  
+
   const {
     user,
     meals,
@@ -265,7 +266,7 @@ export default function NutritionScreen() {
     };
 
     addFoodToMeal(activeMealId, foodToLog);
-    
+
     // Autoexpand log group locally
     setMeals((prev: Meal[]) =>
       prev.map((m: Meal) => (m.id === activeMealId ? { ...m, expanded: true } : m))
@@ -310,13 +311,13 @@ export default function NutritionScreen() {
 
   // Library search: match against built-in list; My Foods shown separately above
   const q = searchQuery.toLowerCase();
-  const filteredLibrary  = FOOD_LIBRARY.filter((item) => item.name.toLowerCase().includes(q));
-  const filteredMyFoods  = customFoods.filter((item) => item.name.toLowerCase().includes(q || 'a'));
+  const filteredLibrary = FOOD_LIBRARY.filter((item) => item.name.toLowerCase().includes(q));
+  const filteredMyFoods = customFoods.filter((item) => item.name.toLowerCase().includes(q || 'a'));
 
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 120 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: 180 }]}
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader
@@ -327,8 +328,8 @@ export default function NutritionScreen() {
         />
 
         {/* Dynamic Water Chip (Quick add +250ml) */}
-        <TouchableOpacity 
-          style={styles.waterChip} 
+        <TouchableOpacity
+          style={styles.waterChip}
           activeOpacity={0.8}
           onPress={() => addWaterLog(250)}
         >
@@ -448,14 +449,14 @@ export default function NutritionScreen() {
 
       {/* Quick-add Segmented Modal (Option A - Recommended) */}
       <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}>
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalKeyboard}
-          >
-            <View style={styles.modalSheet}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalBackdrop}>
+            <KeyboardSlideView style={styles.modalSheet}>
               <View style={styles.modalHandle} />
-              
+
               {/* Modal Header */}
               <View style={styles.modalHeaderRow}>
                 <Text style={styles.modalTitle}>Log Food</Text>
@@ -503,7 +504,7 @@ export default function NutritionScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {activeFormTab === 'library' ? (
                   <View style={styles.modalScrollContent}>
                     {/* Portion Configurator if food selected */}
@@ -515,7 +516,7 @@ export default function NutritionScreen() {
                             <Text style={styles.backToSearchText}>Search Again</Text>
                           </TouchableOpacity>
                         </View>
-                        
+
                         <View style={styles.configFoodTitleRow}>
                           <Text style={styles.configFoodName}>{selectedFood.name}</Text>
                           <Text style={styles.configBaseScale}>Base: {selectedFood.grams}g</Text>
@@ -765,9 +766,9 @@ export default function NutritionScreen() {
                   </TouchableOpacity>
                 </View>
               )}
-            </View>
-          </KeyboardAvoidingView>
-        </View>
+            </KeyboardSlideView>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -944,7 +945,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   modalTabText: { ...Typography.captionBold, color: colors.muted },
   modalTabTextActive: { color: colors.lime },
 
-  modalScroll: { maxHeight: 330 },
+  modalScroll: { flex: 1 },
   modalScrollContent: { paddingBottom: 16 },
 
   // Search Flow

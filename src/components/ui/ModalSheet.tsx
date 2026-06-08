@@ -1,8 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Modal, View, StyleSheet, Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import KeyboardSlideView from './KeyboardSlideView';
 import { Radius, useTheme } from '@/constants/theme';
 
 interface Props {
@@ -17,12 +18,12 @@ export default function ModalSheet({ visible, onClose, children, minHeight = 400
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboard}
-        >
-          <View style={[
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.backdrop}>
+          <KeyboardSlideView style={[
             styles.sheet,
             {
               backgroundColor: colors.ivory,
@@ -32,9 +33,9 @@ export default function ModalSheet({ visible, onClose, children, minHeight = 400
           ]}>
             <View style={[styles.handle, { backgroundColor: colors.muted + '44' }]} />
             {children}
-          </View>
-        </KeyboardAvoidingView>
-      </View>
+          </KeyboardSlideView>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

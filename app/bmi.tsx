@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
@@ -269,7 +270,7 @@ export default function BMIScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setShowCalcModal(false)} />
-          <View style={styles.modalSheet}>
+          <KeyboardSlideView style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>BMI Calculator</Text>
             <Text style={styles.modalSubtitle}>Calculate BMI for any weight & height</Text>
@@ -323,7 +324,7 @@ export default function BMIScreen() {
             >
               <Text style={styles.closeBtnTxt}>Done</Text>
             </TouchableOpacity>
-          </View>
+          </KeyboardSlideView>
         </KeyboardAvoidingView>
       </Modal>
     </ScrollView>

@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
@@ -282,7 +283,7 @@ export default function StepsScreen() {
             activeOpacity={1}
             onPress={() => { setShowAddModal(false); setManualInput(''); }}
           />
-          <View style={styles.modalSheet}>
+          <KeyboardSlideView style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Log Steps</Text>
             <Text style={styles.modalSubtitle}>Add steps manually from your walk, run, or workout</Text>
@@ -344,7 +345,7 @@ export default function StepsScreen() {
               <Ionicons name="checkmark-circle" size={18} color={colors.white} />
               <Text style={styles.saveBtnTxt}>Add Steps</Text>
             </TouchableOpacity>
-          </View>
+          </KeyboardSlideView>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -359,7 +360,7 @@ export default function StepsScreen() {
             activeOpacity={1}
             onPress={() => setShowGoalModal(false)}
           />
-          <View style={styles.modalSheet}>
+          <KeyboardSlideView style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Set Step Goal</Text>
             <Text style={styles.modalSubtitle}>Choose your daily target</Text>
@@ -405,7 +406,7 @@ export default function StepsScreen() {
               <Ionicons name="checkmark-circle" size={18} color={colors.white} />
               <Text style={styles.saveBtnTxt}>Save Goal</Text>
             </TouchableOpacity>
-          </View>
+          </KeyboardSlideView>
         </KeyboardAvoidingView>
       </Modal>
     </ScrollView>

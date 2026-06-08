@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TextInput,
   Dimensions,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,7 +38,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 const STEPS_COUNT = 5;
 
-// ─── LOADING_PHASES ────────────────────────────────────────────────────────────
+// â”€â”€â”€ LOADING_PHASES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const LOADING_PHASES = [
   { icon: 'heart-outline',   color: '#EF4444', title: 'Analyzing Vitals',     subtitle: 'Checking biological metrics & BMR baseline...' },
   { icon: 'barbell-outline', color: '#0EA5E9', title: 'Calibrating Training',  subtitle: 'Structuring optimal training frequency...' },
@@ -46,14 +47,14 @@ const LOADING_PHASES = [
   { icon: 'trophy-outline',  color: '#2E7D5E', title: 'Finalizing Program',    subtitle: 'Forging your custom daily targets...' },
 ];
 
-// ──────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function SetupWizardScreen() {
   const router = useRouter();
   const setUser  = useFitnessStore((s) => s.setUser);
   const user     = useFitnessStore((s) => s.user);
   const { colors, isDark: isDarkMode } = useTheme();
 
-  // ─ Resolve palette dynamically based on global theme tokens ───────────────────────────
+  // â”€ Resolve palette dynamically based on global theme tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const D = React.useMemo(() => ({
     bg: colors.bg,
     card: colors.card,
@@ -83,7 +84,7 @@ export default function SetupWizardScreen() {
   const [results, setResults]   = useState<any>(null);
   const [loadingPhase, setLoadingPhase] = useState(0);
 
-  // ── Animations ──────────────────────────────────────────────────────────────
+  // â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const progressWidth = useSharedValue(0);
   const iconScale     = useSharedValue(1);
   const iconRotation  = useSharedValue(0);
@@ -118,7 +119,7 @@ export default function SetupWizardScreen() {
   }));
   const animatedProgressStyle = useAnimatedStyle(() => ({ width: `${progressWidth.value}%` }));
 
-  // ── Color helpers ────────────────────────────────────────────────────────────
+  // â”€â”€ Color helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const getPrimaryColor = (): string => {
     if (step === 0) return D.accent;
     if (step === 1) return sex === 'male' ? '#3B82F6' : '#EC4899';
@@ -136,7 +137,7 @@ export default function SetupWizardScreen() {
   };
   const activeColor = getPrimaryColor();
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleNext = () => { step === 4 ? calculateEngine() : setStep(step + 1); };
   const handleBack = () => { if (step > 0 && step < 5) setStep(step - 1); };
 
@@ -174,7 +175,7 @@ export default function SetupWizardScreen() {
     router.replace('/(tabs)');
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const phase = LOADING_PHASES[loadingPhase] || LOADING_PHASES[0];
 
   return (
@@ -182,7 +183,7 @@ export default function SetupWizardScreen() {
     <View style={s.root}>
       <StatusBar barStyle={D.statusBar} backgroundColor={D.bg} />
 
-      {/* ── Top Nav ─────────────────────────────────────────────────────── */}
+      {/* â”€â”€ Top Nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {step < 5 && (
         <SafeAreaView edges={['top']} style={s.navBar}>
           <TouchableOpacity onPress={handleBack} style={[s.backBtn, (step === 0) && { opacity: 0 }]} disabled={step === 0}>
@@ -205,13 +206,17 @@ export default function SetupWizardScreen() {
         </View>
       )}
 
-      {/* ── Scrollable content ──────────────────────────────────────────── */}
+      {/* â”€â”€ Scrollable content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <ScrollView
         contentContainerStyle={s.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── STEP 0 — Welcome ──────────────────────────────────────────── */}
+        {/* â”€â”€ STEP 0 â€” Welcome â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 0 && (
           <View style={s.stepWrap}>
             {/* Big hero graphic */}
@@ -254,12 +259,12 @@ export default function SetupWizardScreen() {
           </View>
         )}
 
-        {/* ── STEP 1 — Basics ───────────────────────────────────────────── */}
+        {/* â”€â”€ STEP 1 â€” Basics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 1 && (
           <View style={s.stepWrap}>
             <StepHeader stepNum={1} label="BASICS" title="Tell Us About You" subtitle="This helps us calculate your basal metabolic rate with precision." color={activeColor} />
 
-            {/* Sex selector — horizontal large cards */}
+            {/* Sex selector â€” horizontal large cards */}
             <Animated.View entering={FadeInUp.delay(160).springify().damping(18)} style={s.sexRow}>
               {[
                 { id: 'male',   icon: 'male',   label: 'Male',   color: '#3B82F6' },
@@ -303,7 +308,7 @@ export default function SetupWizardScreen() {
           </View>
         )}
 
-        {/* ── STEP 2 — Metrics ──────────────────────────────────────────── */}
+        {/* â”€â”€ STEP 2 â€” Metrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 2 && (
           <View style={s.stepWrap}>
             <StepHeader stepNum={2} label="METRICS" title="Your Body Stats" subtitle="Current measurements establish your starting baseline." color={activeColor} />
@@ -332,15 +337,15 @@ export default function SetupWizardScreen() {
           </View>
         )}
 
-        {/* ── STEP 3 — Activity ─────────────────────────────────────────── */}
+        {/* â”€â”€ STEP 3 â€” Activity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 3 && (
           <View style={s.stepWrap}>
             <StepHeader stepNum={3} label="LIFESTYLE" title="Activity Level" subtitle="How would you describe your daily physical activity?" color={activeColor} />
             {[
               { id: 'sedentary',         icon: 'cafe-outline',     label: 'Sedentary',         subtitle: 'Desk job, minimal movement', color: '#3B82F6' },
-              { id: 'lightly_active',    icon: 'walk-outline',     label: 'Lightly Active',    subtitle: 'Light exercise 1–3 days/week', color: D.accent },
-              { id: 'moderately_active', icon: 'bicycle-outline',  label: 'Moderately Active', subtitle: 'Exercise 3–5 days/week', color: '#F59E0B' },
-              { id: 'very_active',       icon: 'fitness-outline',  label: 'Very Active',       subtitle: 'Intense training 6–7 days', color: '#EF4444' },
+              { id: 'lightly_active',    icon: 'walk-outline',     label: 'Lightly Active',    subtitle: 'Light exercise 1â€“3 days/week', color: D.accent },
+              { id: 'moderately_active', icon: 'bicycle-outline',  label: 'Moderately Active', subtitle: 'Exercise 3â€“5 days/week', color: '#F59E0B' },
+              { id: 'very_active',       icon: 'fitness-outline',  label: 'Very Active',       subtitle: 'Intense training 6â€“7 days', color: '#EF4444' },
             ].map((item, i) => (
               <ChoiceCard
                 key={item.id}
@@ -356,14 +361,14 @@ export default function SetupWizardScreen() {
           </View>
         )}
 
-        {/* ── STEP 4 — Goal ─────────────────────────────────────────────── */}
+        {/* â”€â”€ STEP 4 â€” Goal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 4 && (
           <View style={s.stepWrap}>
             <StepHeader stepNum={4} label="MISSION" title="Your Primary Goal" subtitle="What outcome are you optimizing for right now?" color={activeColor} />
             {[
-              { id: 'lose_fat',     icon: 'flame-outline',   label: 'Burn Fat',         subtitle: 'Caloric deficit · high-step targets', color: '#F59E0B', badge: '🔥 Most Popular' },
-              { id: 'maintain',     icon: 'leaf-outline',    label: 'Stay Fit',         subtitle: 'Balanced approach · sustainable habits', color: D.accent, badge: null },
-              { id: 'build_muscle', icon: 'barbell-outline', label: 'Build Muscle',     subtitle: 'Caloric surplus · strength focus', color: '#0EA5E9', badge: null },
+              { id: 'lose_fat',     icon: 'flame-outline',   label: 'Burn Fat',         subtitle: 'Caloric deficit Â· high-step targets', color: '#F59E0B', badge: 'ðŸ”¥ Most Popular' },
+              { id: 'maintain',     icon: 'leaf-outline',    label: 'Stay Fit',         subtitle: 'Balanced approach Â· sustainable habits', color: D.accent, badge: null },
+              { id: 'build_muscle', icon: 'barbell-outline', label: 'Build Muscle',     subtitle: 'Caloric surplus Â· strength focus', color: '#0EA5E9', badge: null },
             ].map((item, i) => (
               <View key={item.id}>
                 <ChoiceCard
@@ -385,7 +390,7 @@ export default function SetupWizardScreen() {
           </View>
         )}
 
-        {/* ── STEP 5 — Calibration loading ──────────────────────────────── */}
+        {/* â”€â”€ STEP 5 â€” Calibration loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 5 && (
           <SafeAreaView style={s.calibrateScreen} edges={['top', 'bottom']}>
             {/* Pulsing rings */}
@@ -438,7 +443,7 @@ export default function SetupWizardScreen() {
           </SafeAreaView>
         )}
 
-        {/* ── STEP 6 — Results ──────────────────────────────────────────── */}
+        {/* â”€â”€ STEP 6 â€” Results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {step === 6 && results && (
           <SafeAreaView style={s.resultsScreen} edges={['top', 'bottom']}>
             {/* Hero trophy block */}
@@ -483,8 +488,9 @@ export default function SetupWizardScreen() {
           </SafeAreaView>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
-      {/* ── Footer CTA ─────────────────────────────────────────────────── */}
+      {/* â”€â”€ Footer CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {step < 5 && (
         <SafeAreaView edges={['bottom']} style={s.footer}>
           <TouchableOpacity
@@ -516,7 +522,7 @@ export default function SetupWizardScreen() {
     </ThemeCtx.Provider>
   );
 }
-// ─── Styles factory (accepts palette so it reacts to dark/light) ─────────────
+// â”€â”€â”€ Styles factory (accepts palette so it reacts to dark/light) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function makeStyles(D: Palette) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: D.bg },

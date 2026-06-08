@@ -1,5 +1,21 @@
 # Rollback Plan
 
+If version `2.6.9` (UI: Today's Activity Horizontal Scroll Spacing) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.8)
+
+1. **Revert timeline ScrollView style changes:**
+   ```powershell
+   git checkout v2.6.8 -- app/(tabs)/index.tsx
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.6.8` (Type Compilation: Badge Import Path Suffix) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.6.7)

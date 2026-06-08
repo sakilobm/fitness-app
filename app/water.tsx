@@ -1,7 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, TextInput, Modal, KeyboardAvoidingView, Platform
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, TextInput, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
@@ -210,12 +211,9 @@ export default function WaterScreen() {
 
       {/* Custom Log entry Modal */}
       <Modal visible={showCustom} transparent animationType="slide" onRequestClose={() => setShowCustom(false)}>
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalKeyboard}
-          >
-            <View style={styles.modalSheet}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalBackdrop}>
+            <KeyboardSlideView style={styles.modalSheet}>
               <View style={styles.modalHandle} />
               
               <View style={styles.modalHeaderRow}>
@@ -272,19 +270,16 @@ export default function WaterScreen() {
               <TouchableOpacity onPress={() => setShowCustom(false)} style={styles.modalCancelBtn}>
                 <Text style={styles.modalCancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
+            </KeyboardSlideView>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Goal Edit Modal (Option A - Recommended Selection Grid) */}
       <Modal visible={showGoalModal} transparent animationType="slide" onRequestClose={() => setShowGoalModal(false)}>
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalKeyboard}
-          >
-            <View style={styles.modalSheet}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalBackdrop}>
+            <KeyboardSlideView style={styles.modalSheet}>
               <View style={styles.modalHandle} />
               
               <View style={styles.modalHeaderRow}>
@@ -358,9 +353,9 @@ export default function WaterScreen() {
               <TouchableOpacity onPress={() => setShowGoalModal(false)} style={styles.modalCancelBtn}>
                 <Text style={styles.modalCancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
+            </KeyboardSlideView>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );

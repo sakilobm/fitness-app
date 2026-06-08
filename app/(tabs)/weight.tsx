@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
@@ -446,12 +447,9 @@ export default function WeightScreen() {
         transparent={true}
         onRequestClose={() => setLogModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalKeyboard}
-          >
-            <View style={styles.modalContent}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalOverlay}>
+            <KeyboardSlideView style={styles.modalContent}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <View style={styles.modalHeaderTitleBlock}>
@@ -579,9 +577,9 @@ export default function WeightScreen() {
                   <Text style={styles.saveBtnText}>Log Weight</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
+            </KeyboardSlideView>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );

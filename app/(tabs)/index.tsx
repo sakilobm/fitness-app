@@ -83,7 +83,7 @@ export default function HomeScreen() {
 
   // Sleep — last log (most recent date)
   const lastSleep = sleepLogs.length > 0 ? sleepLogs[0] : null;
-  const sleepHrs  = lastSleep ? (lastSleep.totalMin / 60).toFixed(1) : '--';
+  const sleepHrs = lastSleep ? (lastSleep.totalMin / 60).toFixed(1) : '--';
 
   // Vitals — latest heart rate reading
   const lastHR = heartRateLogs.length > 0 ? heartRateLogs[0] : null;
@@ -189,12 +189,12 @@ export default function HomeScreen() {
   ];
 
   const QUICK_LOGS = [
-    { lib: 'Ionicons' as const, icon: 'water',          color: colors.chart.water, label: 'Water',  value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water' },
-    { lib: 'MCI'     as const, icon: 'food-apple',      color: colors.lime,        label: 'Food',   value: `${totalKcal.toLocaleString()} kcal`, route: '/(tabs)/nutrition' },
-    { lib: 'MCI'     as const, icon: 'scale-bathroom',  color: colors.amber,       label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`, route: '/(tabs)/weight' },
-    { lib: 'Ionicons' as const, icon: 'footsteps',      color: '#6366F1',          label: 'Steps',  value: stepsCount.toLocaleString(), route: '/steps' },
-    { lib: 'Ionicons' as const, icon: 'moon',           color: '#818CF8',          label: 'Sleep',  value: lastSleep ? `${sleepHrs} hr` : '--', route: '/(tabs)/sleep' },
-    { lib: 'MCI'     as const, icon: 'heart-pulse',     color: '#EC4899',          label: 'Vitals', value: lastHR ? `${lastHR.bpm} bpm` : '--', route: '/(tabs)/vitals' },
+    { lib: 'Ionicons' as const, icon: 'water', color: colors.chart.water, label: 'Water', value: isOz ? `${mlToOz(totalWaterMl)} oz` : `${(totalWaterMl / 1000).toFixed(1)} L`, route: '/water' },
+    { lib: 'MCI' as const, icon: 'food-apple', color: colors.lime, label: 'Food', value: `${totalKcal.toLocaleString()} kcal`, route: '/(tabs)/nutrition' },
+    { lib: 'MCI' as const, icon: 'scale-bathroom', color: colors.amber, label: 'Weight', value: isLbs ? `${kgToLbs(currentWeight).toFixed(1)} lbs` : `${currentWeight.toFixed(1)} kg`, route: '/(tabs)/weight' },
+    { lib: 'Ionicons' as const, icon: 'footsteps', color: '#6366F1', label: 'Steps', value: stepsCount.toLocaleString(), route: '/steps' },
+    { lib: 'Ionicons' as const, icon: 'moon', color: '#818CF8', label: 'Sleep', value: lastSleep ? `${sleepHrs} hr` : '--', route: '/(tabs)/sleep' },
+    { lib: 'MCI' as const, icon: 'heart-pulse', color: '#EC4899', label: 'Vitals', value: lastHR ? `${lastHR.bpm} bpm` : '--', route: '/(tabs)/vitals' },
   ];
 
   const getTimeline = () => {
@@ -430,7 +430,7 @@ export default function HomeScreen() {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Today's Activity</Text>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timelineScroll}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timelineScroll} contentContainerStyle={styles.timelineScrollContent}>
         {TIMELINE.map((item, i) => (
           <GlassCard key={i} style={styles.timelineCard}>
             <Text style={styles.timelineTime}>{item.time}</Text>
@@ -446,7 +446,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* ════════════════════ WATER REMINDER ════════════════════ */}
-      <TouchableOpacity style={styles.waterChip} onPress={() => router.push('/water')} activeOpacity={0.8}>
+      <TouchableOpacity style={[styles.waterChip, { borderLeftWidth: 3, borderLeftColor: colors.chart.water }]} onPress={() => router.push('/water')} activeOpacity={0.8}>
         <View style={[styles.waterIconBox, { backgroundColor: colors.chart.water + '18' }]}>
           <Ionicons name="water" size={18} color={colors.chart.water} />
         </View>
@@ -458,7 +458,7 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {/* ════════════════════ BMI QUICK ACCESS ════════════════════ */}
-      <TouchableOpacity style={styles.waterChip} onPress={() => router.push('/bmi')} activeOpacity={0.8}>
+      <TouchableOpacity style={[styles.waterChip, { borderLeftWidth: 3, borderLeftColor: colors.lime }]} onPress={() => router.push('/bmi')} activeOpacity={0.8}>
         <View style={[styles.waterIconBox, { backgroundColor: bmiResult.color + '18' }]}>
           <MaterialCommunityIcons name="human" size={20} color={bmiResult.color} />
         </View>
@@ -471,15 +471,15 @@ export default function HomeScreen() {
 
       {/* ════════════════════ CYCLE QUICK ACCESS (when enabled) ════════════════════ */}
       {cycle.cycleSettings.cycleTrackingEnabled && (() => {
-        const daysLate   = (cycle.daysUntilPeriod !== null && cycle.daysUntilPeriod < 0)
+        const daysLate = (cycle.daysUntilPeriod !== null && cycle.daysUntilPeriod < 0)
           ? Math.abs(cycle.daysUntilPeriod) : 0;
         const lateAccent = daysLate <= 3 ? '#FBBF24' : daysLate <= 7 ? '#FB923C' : '#EF4444';
-        const accent     = daysLate > 0 ? lateAccent : '#F87171';
-        const lateSub    = daysLate <= 3
+        const accent = daysLate > 0 ? lateAccent : '#F87171';
+        const lateSub = daysLate <= 3
           ? 'Small delays are normal — tap to check in'
           : daysLate <= 7
-          ? 'Common causes: stress, diet or illness'
-          : 'Consider speaking with a healthcare provider';
+            ? 'Common causes: stress, diet or illness'
+            : 'Consider speaking with a healthcare provider';
         return (
           <TouchableOpacity
             style={[styles.waterChip, { borderLeftWidth: 3, borderLeftColor: accent }]}
@@ -810,7 +810,8 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   quickLogValue: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
   // Timeline
-  timelineScroll: { marginHorizontal: -20, paddingLeft: 20 },
+  timelineScroll: { marginHorizontal: -20 },
+  timelineScrollContent: { paddingLeft: 20, paddingRight: 20 },
   timelineCard: {
     width: 108, marginRight: 10,
     alignItems: 'center', gap: 4,

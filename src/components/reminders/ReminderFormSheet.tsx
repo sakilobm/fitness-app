@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Platform, KeyboardAvoidingView, StyleSheet,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, Typography, Radius } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
@@ -25,7 +26,7 @@ export default function ReminderFormSheet({ form, categoryColors, accentColorOpt
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={st.backdrop}
       >
-        <View style={st.sheet}>
+        <KeyboardSlideView style={st.sheet}>
           <View style={st.handle} />
           <View style={st.headerRow}>
             <Text style={st.title}>{form.isEditing ? 'Edit Reminder' : 'New Reminder'}</Text>
@@ -183,7 +184,7 @@ export default function ReminderFormSheet({ form, categoryColors, accentColorOpt
               <Text style={st.saveText}>Save Reminder</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardSlideView>
       </KeyboardAvoidingView>
     </Modal>
   );

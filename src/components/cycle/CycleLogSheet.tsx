@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput, Modal, ScrollView,
   KeyboardAvoidingView, Platform, StyleSheet,
 } from 'react-native';
+import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
@@ -84,12 +85,13 @@ export default function CycleLogSheet({ visible, date, existing, onSave, onClose
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
       </Animated.View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.kav}
-        pointerEvents="box-none"
-      >
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }, sheetStyle]}>
+      <KeyboardSlideView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.kav}
+          pointerEvents="box-none"
+        >
+          <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }, sheetStyle]}>
           {/* Handle */}
           <View style={styles.handle} />
 
@@ -208,8 +210,9 @@ export default function CycleLogSheet({ visible, date, existing, onSave, onClose
           >
             <Text style={styles.saveTxt}>Save Log</Text>
           </TouchableOpacity>
-        </Animated.View>
-      </KeyboardAvoidingView>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </KeyboardSlideView>
     </Modal>
   );
 }
