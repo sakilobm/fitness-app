@@ -28,6 +28,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setPhase(session ? 'SIGNED_IN' : 'SIGNED_OUT');
+    }).catch((err) => {
+      console.warn('AuthProvider getSession failed (likely offline):', err?.message || err);
+      setPhase('SIGNED_OUT');
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -40,7 +43,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Sign out error:', err);
+    }
   };
 
   return (

@@ -1,5 +1,29 @@
 # Cursor Test & Validation Log
 
+## [2026-06-28T20:38:00+05:30] - Comprehensive App Rebranding to Vividly (v2.8.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Global Search Verification:**
+  - Verified that all code references to `FitForge` / `fitforge` across `app.json`, `app.config.js`, `package.json`, `AnimatedSplashScreen.tsx`, `onboarding.tsx`, `login.tsx`, `settings.tsx`, `mmkvStorage.ts`, `fitnessStore.ts`, `themeStore.ts`, and theme headers have been successfully updated to **Vividly** / **vividly**.
+
+## [2026-06-28T20:14:00+05:30] - Graceful Network & Offline Error Handling (v2.7.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Network & Host Resolution Failure Interception (`src/utils/errorUtils.ts`):**
+  - Verified that raw technical host errors (`UnknownHostException`, `fetch failed: java.net.UnknownHostException`, `No address associated with hostname`) are intercepted and formatted into clean, user-friendly messages (*"Network connection error. Unable to reach server. Please check your internet connection and try again."*).
+- **Silent Background Error Recovery (`AuthProvider.tsx`, `syncQueue.ts`, `fitnessStore.ts`):**
+  - Verified that app boot (`getSession()`) and background sync operations catch network failures gracefully without throwing unhandled promise rejections or crashing the React Native runtime when offline.
+- **UI Error Banners (`login.tsx`, `signup.tsx`, `settings.tsx`):**
+  - Verified that login and signup forms render styled red error banners with clean English messages instead of raw Java stack traces when submitted offline.
+
 ## [2026-06-08T21:47:00+05:30] - Today's Activity Scroll Spacing Fix (v2.6.9)
 
 ### Automated Checks

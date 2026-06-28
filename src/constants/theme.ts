@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  FitForge — Light Theme
+//  Vividly — Light Theme
 //  Warm cream backgrounds · white cards · deep forest-teal accents
 // ─────────────────────────────────────────────────────────────────────────────
 

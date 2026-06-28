@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase, performOAuth } from '@/lib/supabase';
+import { formatErrorMessage } from '@/utils/errorUtils';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -83,26 +84,30 @@ export default function SignupScreen() {
 
     setIsSigningUp(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name.trim(),
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      setErrorMessage(error.message);
-      setIsSigningUp(false);
-    } else {
-      setIsSigningUp(false);
-      if (!data.session) {
-        // Email confirmation required — session won't exist until they verify
-        setConfirmationSent(true);
+      if (error) {
+        setErrorMessage(formatErrorMessage(error));
+      } else {
+        if (!data.session) {
+          // Email confirmation required — session won't exist until they verify
+          setConfirmationSent(true);
+        }
+        // If session exists, onAuthStateChange handles routing automatically
       }
-      // If session exists, onAuthStateChange handles routing automatically
+    } catch (error: any) {
+      setErrorMessage(formatErrorMessage(error));
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
@@ -113,7 +118,7 @@ export default function SignupScreen() {
       await performOAuth(platform.toLowerCase() as 'google' | 'apple');
       // On success, state will update automatically via AppContext listener
     } catch (error: any) {
-      setErrorMessage(error.message || `Failed to sign up with ${platform}`);
+      setErrorMessage(formatErrorMessage(error));
     } finally {
       setIsSigningUp(false);
     }

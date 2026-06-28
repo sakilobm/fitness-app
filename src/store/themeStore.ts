@@ -14,7 +14,7 @@ export const useThemeStore = create<ThemeState>()(
       setIsDarkMode: (value) => set({ isDarkMode: value }),
     }),
     {
-      name: 'fitforge-theme-store',
+      name: 'vividly-theme-store',
       storage: createJSONStorage(() => zustandMMKVStorage),
     }
   )

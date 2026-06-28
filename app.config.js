@@ -26,10 +26,10 @@ function loadEnvFile() {
 module.exports = ({ config }) => {
   const env = loadEnvFile();
 
-  const appName = process.env.APP_NAME || config.name || 'FitForge';
+  const appName = process.env.APP_NAME || config.name || 'Vividly';
   const appPackage =
     process.env.APP_PACKAGE || config.android?.package || 'com.b.sakil.fitnessapp';
-  const appScheme = process.env.APP_SCHEME || config.scheme || 'fitforge';
+  const appScheme = process.env.APP_SCHEME || config.scheme || 'vividly';
 
   return {
     ...config,

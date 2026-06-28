@@ -483,40 +483,46 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
   setUser: (updatedUser) => {
     set((state) => ({ user: { ...state.user, ...updatedUser } }));
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        // Map camelCase to snake_case for DB
-        const dbUpdate: any = { ...updatedUser };
-        if ('calorieGoal' in dbUpdate) { dbUpdate.calorie_goal = dbUpdate.calorieGoal; delete dbUpdate.calorieGoal; }
-        if ('waterGoal' in dbUpdate) { dbUpdate.water_goal = dbUpdate.waterGoal; delete dbUpdate.waterGoal; }
-        if ('stepsGoal' in dbUpdate) { dbUpdate.steps_goal = dbUpdate.stepsGoal; delete dbUpdate.stepsGoal; }
-        if ('workoutGoal' in dbUpdate) { dbUpdate.workout_goal = dbUpdate.workoutGoal; delete dbUpdate.workoutGoal; }
-        if ('profilePic' in dbUpdate) { dbUpdate.profile_pic = dbUpdate.profilePic; delete dbUpdate.profilePic; }
-        if ('weightUnit' in dbUpdate) { dbUpdate.weight_unit = dbUpdate.weightUnit; delete dbUpdate.weightUnit; }
-        if ('volumeUnit' in dbUpdate) { dbUpdate.volume_unit = dbUpdate.volumeUnit; delete dbUpdate.volumeUnit; }
-        if ('notificationsEnabled' in dbUpdate) { dbUpdate.notifications_enabled = dbUpdate.notificationsEnabled; delete dbUpdate.notificationsEnabled; }
-        if ('hapticsEnabled' in dbUpdate) { dbUpdate.haptics_enabled = dbUpdate.hapticsEnabled; delete dbUpdate.hapticsEnabled; }
-        delete dbUpdate.privateProfileEnabled;
-        delete dbUpdate.appLockEnabled;
-        delete dbUpdate.setupCompleted;
-        
-        supabase.from('profiles').update(dbUpdate).eq('id', data.user.id).then();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          // Map camelCase to snake_case for DB
+          const dbUpdate: any = { ...updatedUser };
+          if ('calorieGoal' in dbUpdate) { dbUpdate.calorie_goal = dbUpdate.calorieGoal; delete dbUpdate.calorieGoal; }
+          if ('waterGoal' in dbUpdate) { dbUpdate.water_goal = dbUpdate.waterGoal; delete dbUpdate.waterGoal; }
+          if ('stepsGoal' in dbUpdate) { dbUpdate.steps_goal = dbUpdate.stepsGoal; delete dbUpdate.stepsGoal; }
+          if ('workoutGoal' in dbUpdate) { dbUpdate.workout_goal = dbUpdate.workoutGoal; delete dbUpdate.workoutGoal; }
+          if ('profilePic' in dbUpdate) { dbUpdate.profile_pic = dbUpdate.profilePic; delete dbUpdate.profilePic; }
+          if ('weightUnit' in dbUpdate) { dbUpdate.weight_unit = dbUpdate.weightUnit; delete dbUpdate.weightUnit; }
+          if ('volumeUnit' in dbUpdate) { dbUpdate.volume_unit = dbUpdate.volumeUnit; delete dbUpdate.volumeUnit; }
+          if ('notificationsEnabled' in dbUpdate) { dbUpdate.notifications_enabled = dbUpdate.notificationsEnabled; delete dbUpdate.notificationsEnabled; }
+          if ('hapticsEnabled' in dbUpdate) { dbUpdate.haptics_enabled = dbUpdate.hapticsEnabled; delete dbUpdate.hapticsEnabled; }
+          delete dbUpdate.privateProfileEnabled;
+          delete dbUpdate.appLockEnabled;
+          delete dbUpdate.setupCompleted;
+          
+          await supabase.from('profiles').update(dbUpdate).eq('id', data.user.id);
+        } catch {}
       }
-    });
+    }).catch(() => {});
   },
   
   updateUserGoal: (goal) => {
     set((state) => ({ user: { ...state.user, goal } }));
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) supabase.from('profiles').update({ goal }).eq('id', data.user.id).then();
-    });
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try { await supabase.from('profiles').update({ goal }).eq('id', data.user.id); } catch {}
+      }
+    }).catch(() => {});
   },
   
   updateUserMotto: (motto) => {
     set((state) => ({ user: { ...state.user, motto } }));
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) supabase.from('profiles').update({ motto }).eq('id', data.user.id).then();
-    });
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try { await supabase.from('profiles').update({ motto }).eq('id', data.user.id); } catch {}
+      }
+    }).catch(() => {});
   },
 
   addWeightLog: (weight, timeOfDay, dateOffset) => {
@@ -553,17 +559,19 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     get().checkAndUnlockBadges();
 
     // Supabase sync
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('weight_logs').insert({
-          id: newLogId,
-          user_id: data.user.id,
-          weight,
-          date: targetDate,
-          time_of_day: timeOfDay
-        }).then();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          await supabase.from('weight_logs').insert({
+            id: newLogId,
+            user_id: data.user.id,
+            weight,
+            date: targetDate,
+            time_of_day: timeOfDay
+          });
+        } catch {}
       }
-    });
+    }).catch(() => {});
   },
 
   deleteWeightLog: (id) => {
@@ -581,11 +589,13 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
     if (deletedLog) {
       mmkvDeleteLog('weight', deletedLog.date, id);
-      supabase.auth.getUser().then(({ data }) => {
-        if (data.user) {
-          supabase.from('weight_logs').delete().eq('id', id).eq('user_id', data.user.id).then();
+      supabase.auth.getUser().then(async ({ data }) => {
+        if (data?.user) {
+          try {
+            await supabase.from('weight_logs').delete().eq('id', id).eq('user_id', data.user.id);
+          } catch {}
         }
-      });
+      }).catch(() => {});
     }
   },
 
@@ -646,16 +656,18 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     get().addXP(XP_TABLE.waterLog, 'Logged water intake', { lib: 'Ionicons', name: 'water' });
     get().checkAndUnlockBadges();
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('water_logs').insert({
-          id: logEntry.id,
-          user_id: data.user.id,
-          time: logEntry.time,
-          ml: logEntry.ml
-        }).then();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          await supabase.from('water_logs').insert({
+            id: logEntry.id,
+            user_id: data.user.id,
+            time: logEntry.time,
+            ml: logEntry.ml
+          });
+        } catch {}
       }
-    });
+    }).catch(() => {});
   },
 
   deleteWaterLog: (id) => {
@@ -663,18 +675,22 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       waterLogs: state.waterLogs.filter((item) => item.id !== id),
     }));
     mmkvDeleteLog('water', getPastDateStr(0), id);
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('water_logs').delete().eq('id', id).eq('user_id', data.user.id).then();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          await supabase.from('water_logs').delete().eq('id', id).eq('user_id', data.user.id);
+        } catch {}
       }
-    });
+    }).catch(() => {});
   },
 
   setWaterGoal: (goal) => {
     set((state) => ({ user: { ...state.user, waterGoal: goal } }));
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) supabase.from('profiles').update({ water_goal: goal }).eq('id', data.user.id).then();
-    });
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try { await supabase.from('profiles').update({ water_goal: goal }).eq('id', data.user.id); } catch {}
+      }
+    }).catch(() => {});
   },
 
   addReminder: (reminder) => {
@@ -893,69 +909,73 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   },
   
   initializeFromSupabase: async () => {
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) return;
-    const userId = authData.user.id;
-    
-    // Fetch Profile
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (profile) {
-      // Profile has meaningful data only when height + weight are set (filled in during setup).
-      // A bare auth-trigger row has nulls → setupCompleted stays false → wizard shows.
-      const hasRealData = (profile.height ?? 0) > 0 && (profile.weight ?? 0) > 0;
-      set((state) => ({
-        user: {
-          ...state.user,
-          name:       profile.name    ?? state.user.name,
-          age:        profile.age     ?? state.user.age,
-          height:     profile.height  ?? state.user.height,
-          weight:     profile.weight  ?? state.user.weight,
-          goal:       profile.goal    || state.user.goal,
-          motto:      profile.motto   || state.user.motto,
-          calorieGoal:  profile.calorie_goal  ?? state.user.calorieGoal,
-          waterGoal:    profile.water_goal     ?? state.user.waterGoal,
-          stepsGoal:    profile.steps_goal     ?? state.user.stepsGoal,
-          workoutGoal:  profile.workout_goal   ?? state.user.workoutGoal,
-          level:   profile.level  ?? state.user.level,
-          xp:      profile.xp     ?? state.user.xp,
-          streak:  profile.streak ?? state.user.streak,
-          profilePic: profile.profile_pic ?? state.user.profilePic,
-          weightUnit: profile.weight_unit || 'kg',
-          volumeUnit: profile.volume_unit || 'ml',
-          notificationsEnabled: profile.notifications_enabled ?? true,
-          hapticsEnabled: profile.haptics_enabled ?? true,
-          privateProfileEnabled: state.user.privateProfileEnabled,
-          appLockEnabled: state.user.appLockEnabled,
-          setupCompleted: hasRealData,
-        }
-      }));
-    }
-    
-    // Fetch Water
-    const { data: waterLogs } = await supabase.from('water_logs').select('*').eq('user_id', userId);
-    if (waterLogs) {
-      set({ waterLogs: waterLogs.map((log: any) => ({ id: log.id, time: log.time, ml: log.ml })) });
-    }
-    
-    // Fetch Weight
-    const { data: weightLogs } = await supabase.from('weight_logs').select('*').eq('user_id', userId);
-    if (weightLogs) {
-      const timeOrder: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
-      const sorted = weightLogs.map((log: any) => ({
-        id: log.id,
-        weight: log.weight,
-        date: log.date,
-        timeOfDay: log.time_of_day,
-      })).sort((a: any, b: any) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
-        return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
-      });
-      set({ weightLogs: sorted });
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) return;
+      const userId = authData.user.id;
+      
+      // Fetch Profile
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (profile) {
+        // Profile has meaningful data only when height + weight are set (filled in during setup).
+        // A bare auth-trigger row has nulls → setupCompleted stays false → wizard shows.
+        const hasRealData = (profile.height ?? 0) > 0 && (profile.weight ?? 0) > 0;
+        set((state) => ({
+          user: {
+            ...state.user,
+            name:       profile.name    ?? state.user.name,
+            age:        profile.age     ?? state.user.age,
+            height:     profile.height  ?? state.user.height,
+            weight:     profile.weight  ?? state.user.weight,
+            goal:       profile.goal    || state.user.goal,
+            motto:      profile.motto   || state.user.motto,
+            calorieGoal:  profile.calorie_goal  ?? state.user.calorieGoal,
+            waterGoal:    profile.water_goal     ?? state.user.waterGoal,
+            stepsGoal:    profile.steps_goal     ?? state.user.stepsGoal,
+            workoutGoal:  profile.workout_goal   ?? state.user.workoutGoal,
+            level:   profile.level  ?? state.user.level,
+            xp:      profile.xp     ?? state.user.xp,
+            streak:  profile.streak ?? state.user.streak,
+            profilePic: profile.profile_pic ?? state.user.profilePic,
+            weightUnit: profile.weight_unit || 'kg',
+            volumeUnit: profile.volume_unit || 'ml',
+            notificationsEnabled: profile.notifications_enabled ?? true,
+            hapticsEnabled: profile.haptics_enabled ?? true,
+            privateProfileEnabled: state.user.privateProfileEnabled,
+            appLockEnabled: state.user.appLockEnabled,
+            setupCompleted: hasRealData,
+          }
+        }));
+      }
+      
+      // Fetch Water
+      const { data: waterLogs } = await supabase.from('water_logs').select('*').eq('user_id', userId);
+      if (waterLogs) {
+        set({ waterLogs: waterLogs.map((log: any) => ({ id: log.id, time: log.time, ml: log.ml })) });
+      }
+      
+      // Fetch Weight
+      const { data: weightLogs } = await supabase.from('weight_logs').select('*').eq('user_id', userId);
+      if (weightLogs) {
+        const timeOrder: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
+        const sorted = weightLogs.map((log: any) => ({
+          id: log.id,
+          weight: log.weight,
+          date: log.date,
+          timeOfDay: log.time_of_day,
+        })).sort((a: any, b: any) => {
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          return timeOrder[a.timeOfDay] - timeOrder[b.timeOfDay];
+        });
+        set({ weightLogs: sorted });
+      }
+    } catch (err) {
+      console.warn('initializeFromSupabase skipped (offline or network error):', err);
     }
   },
 }),
 {
-  name: 'fitforge-store',
+  name: 'vividly-store',
   storage: createJSONStorage(() => zustandMMKVStorage),
   partialize: (state: FitnessState) => ({
     user:          state.user,

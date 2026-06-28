@@ -139,7 +139,7 @@ export default function AnimatedSplashScreen({ isAppReady, preview = false, onPr
 
       {/* App name + tagline */}
       <Animated.View style={[styles.textBlock, textStyle]}>
-        <Animated.Text style={styles.appName}>FitForge</Animated.Text>
+        <Animated.Text style={styles.appName}>Vividly</Animated.Text>
         <Animated.Text style={styles.tagline}>Forge Your Best Self</Animated.Text>
       </Animated.View>
 

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  FitForge — Theme Tokens
+//  Vividly — Theme Tokens
 //  Same shape for both themes so `Colors.*` → `colors.*` is a drop-in swap.
 // ─────────────────────────────────────────────────────────────────────────────
 

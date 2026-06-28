@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase, performOAuth } from '@/lib/supabase';
+import { formatErrorMessage } from '@/utils/errorUtils';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -54,16 +55,18 @@ export default function LoginScreen() {
 
     setIsLoggingIn(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setErrorMessage(error.message);
-      setIsLoggingIn(false);
-    } else {
-      // The auth state listener in _layout.tsx will handle the routing
+      if (error) {
+        setErrorMessage(formatErrorMessage(error));
+      }
+    } catch (err: any) {
+      setErrorMessage(formatErrorMessage(err));
+    } finally {
       setIsLoggingIn(false);
     }
   };
@@ -75,7 +78,7 @@ export default function LoginScreen() {
       await performOAuth(platform.toLowerCase() as 'google' | 'apple');
       // On success, state will update automatically via AppContext listener
     } catch (error: any) {
-      setErrorMessage(error.message || `Failed to sign in with ${platform}`);
+      setErrorMessage(formatErrorMessage(error));
     } finally {
       setIsLoggingIn(false);
     }
@@ -288,7 +291,7 @@ export default function LoginScreen() {
             onPress={() => router.push('/(auth)/signup')}
             disabled={isLoggingIn}
           >
-            <Text style={styles.toggleAuthLabel}>New to FitForge? </Text>
+            <Text style={styles.toggleAuthLabel}>New to Vividly? </Text>
             <Text style={styles.toggleAuthAction}>Create Account</Text>
           </TouchableOpacity>
         </ScrollView>

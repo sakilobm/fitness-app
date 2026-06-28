@@ -95,7 +95,7 @@ export default function OnboardingScreen() {
           <View style={styles.logoBadge}>
             <Ionicons name="flash" size={18} color={Colors.white} />
           </View>
-          <Text style={styles.logoText}>FitForge</Text>
+          <Text style={styles.logoText}>Vividly</Text>
         </View>
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
           <Text style={styles.skipText}>Skip</Text>

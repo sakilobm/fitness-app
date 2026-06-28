@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.0] - 2026-06-28T20:38:00+05:30
+
+### Changed — Comprehensive App Rebranding to Vividly
+
+**Architectural Decision:** Renamed application across all native bundle configurations, scheme listeners, local storage engines, authentication forms, settings cards, and splash screen animations to **Vividly**.
+
+**Changes:**
+- **`app.json` & `app.config.js`:** Updated app `name` to `"Vividly"`, `slug` & `scheme` to `"vividly"`, and iOS permissions descriptions.
+- **`package.json`:** Renamed project package identifier to `"vividly"`.
+- **`src/components/AnimatedSplashScreen.tsx` & `app/(auth)/onboarding.tsx`:** Rebranded splash screen animated title and onboarding header badge to **Vividly**.
+- **`app/(auth)/login.tsx` & `app/settings.tsx`:** Updated auth toggle prompts, deep link scheme (`vividly://reset-password`), data exports, and Privacy Policy / Terms of Service modals.
+- **`src/store/fitnessStore.ts`, `src/store/themeStore.ts`, `src/utils/mmkvStorage.ts`:** Updated MMKV storage IDs to `vividly-store` and `vividly-theme-store`.
+
+#### Rollback
+See ROLLBACK.md section for v2.8.0.
+
+## [2.7.0] - 2026-06-28T20:14:00+05:30
+
+### Fixed — Graceful Network & Offline Error Handling (User-Friendly Network Messages)
+
+**Architectural Decision:** Prevented unhandled promise rejections and raw technical Java/CodedError stack traces (`java.net.UnknownHostException: Unable to resolve host`) from showing up on screen when the device is offline or loses connection to Supabase. Created a unified error formatter and secured background network synchronization calls.
+
+**Changes:**
+- **`src/utils/errorUtils.ts`:** Created global error formatting utility `formatErrorMessage()` to convert technical DNS/fetch exceptions into user-friendly notices (*"Network connection error. Unable to reach server. Please check your internet connection and try again."*).
+- **`src/providers/AuthProvider.tsx` & `src/utils/syncQueue.ts`:** Wrapped `getSession()` and background queue flushes in `.catch()` and `try/catch` handlers to avoid crashes during offline app boot.
+- **`src/store/fitnessStore.ts`:** Secured background profile, water log, and weight log sync calls with `try/catch` and `.catch()` chains.
+- **`app/(auth)/login.tsx`, `app/(auth)/signup.tsx`, `app/settings.tsx`:** Updated authentication screens and setting actions to pass all auth exceptions through `formatErrorMessage()`.
+
+#### Rollback
+See ROLLBACK.md section for v2.7.0.
+
 ## [2.6.9] - 2026-06-08T21:47:00+05:30
 
 ### Fixed — UI: Today's Activity Horizontal Scroll Spacing

@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch,
   TextInput, KeyboardAvoidingView, Platform, Modal, Image, Share, Alert, ActivityIndicator,
@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import AnimatedSplashScreen from '@/components/AnimatedSplashScreen';
 import { triggerHaptic } from '@/utils/haptics';
 import { kgToLbs, mlToOz, ozToMl } from '@/utils/units';
+import { formatErrorMessage } from '@/utils/errorUtils';
 import Animated, {
   FadeInUp, FadeInDown, FadeIn, ZoomIn,
   useSharedValue, useAnimatedStyle, withSpring, withDelay, withSequence, interpolate,
@@ -248,23 +249,23 @@ export default function SettingsScreen() {
     }
   };
 
-  // â”€â”€â”€ Change Account Password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ——— Change Account Password ——————————————————————————————————————————————
   const handleChangePassword = async () => {
     triggerHaptic('selection');
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user || !authData.user.email) {
-      showToast('Password change is only available for online cloud accounts.', 'info');
-      return;
-    }
-    
     try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user || !authData.user.email) {
+        showToast('Password change is only available for online cloud accounts.', 'info');
+        return;
+      }
+      
       const { error } = await supabase.auth.resetPasswordForEmail(authData.user.email, {
-        redirectTo: 'fitforge://reset-password',
+        redirectTo: 'vividly://reset-password',
       });
       if (error) throw error;
       showToast(`Password reset link sent to ${authData.user.email}.`, 'success');
     } catch (e: any) {
-      showToast(e.message || 'Failed to send password reset request.', 'alert');
+      showToast(formatErrorMessage(e), 'alert');
     }
   };
 
@@ -274,7 +275,7 @@ export default function SettingsScreen() {
     try {
       const exportPayload = {
         exportedAt: new Date().toISOString(),
-        appName: 'FitForge Pro',
+        appName: 'Vividly Pro',
         profile: {
           name: user.name,
           age: user.age,
@@ -303,7 +304,7 @@ export default function SettingsScreen() {
       const prettyJson = JSON.stringify(exportPayload, null, 2);
       await Share.share({
         message: prettyJson,
-        title: 'FitForge Personal Data Export',
+        title: 'Vividly Personal Data Export',
       });
     } catch (e) {
       showToast('Failed to share data export payload.', 'alert');
@@ -374,7 +375,7 @@ export default function SettingsScreen() {
     triggerHaptic('warning');
     Alert.alert(
       'Log Out',
-      'Are you sure you want to log out of FitForge?',
+      'Are you sure you want to log out of Vividly?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -999,7 +1000,7 @@ export default function SettingsScreen() {
         {/* â”€â”€â”€ Legal / Privacy Policy â”€â”€â”€ */}
         <Animated.View entering={FadeInUp.delay(300).springify().damping(18)}>
           <GlassCard>
-            <PressableRow style={styles.row} onPress={() => setShowDocModal({ visible: true, title: 'Privacy Policy', content: 'Your health and workout logs are stored locally on your device using encrypted sandbox directories. FitForge does not sell, distribute, or trace your personal telemetry logs. Backups are stored in Supabase with standard TLS encryption protocols.' })}>
+            <PressableRow style={styles.row} onPress={() => setShowDocModal({ visible: true, title: 'Privacy Policy', content: 'Your health and workout logs are stored locally on your device using encrypted sandbox directories. Vividly does not sell, distribute, or trace your personal telemetry logs. Backups are stored in Supabase with standard TLS encryption protocols.' })}>
               <View style={[styles.iconBubble, { backgroundColor: 'rgba(0,0,0,0.05)' }]}>
                 <Ionicons name="document-text-outline" size={18} color={colors.muted} />
               </View>
@@ -1011,7 +1012,7 @@ export default function SettingsScreen() {
 
             <View style={styles.divider} />
 
-            <PressableRow style={styles.row} onPress={() => setShowDocModal({ visible: true, title: 'Terms of Service', content: 'By utilizing FitForge, you acknowledge that all metabolic calculations (BMR, TDEE, BMI, macro targets) are estimated based on mathematical algorithms (Mifflin-St Jeor). Always consult a healthcare professional before starting extreme dieting regimes.' })}>
+            <PressableRow style={styles.row} onPress={() => setShowDocModal({ visible: true, title: 'Terms of Service', content: 'By utilizing Vividly, you acknowledge that all metabolic calculations (BMR, TDEE, BMI, macro targets) are estimated based on mathematical algorithms (Mifflin-St Jeor). Always consult a healthcare professional before starting extreme dieting regimes.' })}>
               <View style={[styles.iconBubble, { backgroundColor: 'rgba(0,0,0,0.05)' }]}>
                 <Ionicons name="shield-checkmark-outline" size={18} color={colors.muted} />
               </View>
@@ -1041,7 +1042,7 @@ export default function SettingsScreen() {
 
         {/* Version */}
         <View style={styles.versionBlock}>
-          <Text style={styles.versionText}>FitForge Premium v1.0.0</Text>
+          <Text style={styles.versionText}>Vividly Premium v1.0.0</Text>
           <Text style={styles.versionSub}>Made with ðŸ’š and spring physics</Text>
         </View>
       </ScrollView>

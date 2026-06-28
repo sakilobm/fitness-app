@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "FitForge",
-    "slug": "fitness-app",
+    "name": "Vividly",
+    "slug": "vividly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/fitness-forge-new-icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "fitforge",
+    "scheme": "vividly",
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSHealthShareUsageDescription": "FitForge reads your health data to sync steps, weight and activity into your fitness dashboard.",
-        "NSHealthUpdateUsageDescription": "FitForge saves your weight and hydration logs back to Apple Health."
+        "NSHealthShareUsageDescription": "Vividly reads your health data to sync steps, weight and activity into your fitness dashboard.",
+        "NSHealthUpdateUsageDescription": "Vividly saves your weight and hydration logs back to Apple Health."
       }
     },
     "android": {

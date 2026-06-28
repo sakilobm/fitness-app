@@ -1,7 +1,7 @@
 import { AppState } from 'react-native';
 import { createMMKV } from 'react-native-mmkv';
 
-export const storage = createMMKV({ id: 'fitforge-store' });
+export const storage = createMMKV({ id: 'vividly-store' });
 
 // ─── Debounced persist writes ──────────────────────────────────────────────
 // The zustand `persist` middleware re-serializes and writes the ENTIRE store

@@ -23,7 +23,13 @@ function scheduleFlush() {
 }
 
 async function flushQueue() {
-  const { data: { session } } = await supabase.auth.getSession();
+  let session = null;
+  try {
+    const res = await supabase.auth.getSession();
+    session = res.data?.session;
+  } catch {
+    return; // offline or network error — keep queued items for later
+  }
   if (!session) return; // unauthenticated or offline — leave in queue
 
   while (queue.length > 0) {

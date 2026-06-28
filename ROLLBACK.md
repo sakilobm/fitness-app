@@ -1,5 +1,38 @@
 # Rollback Plan
 
+If version `2.8.0` (Comprehensive App Rebranding to Vividly) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.7.0)
+
+1. **Revert modified branding files:**
+   ```powershell
+   git checkout v2.7.0 -- app.json app.config.js package.json src/components/AnimatedSplashScreen.tsx app/(auth)/onboarding.tsx app/(auth)/login.tsx app/settings.tsx src/utils/mmkvStorage.ts src/store/fitnessStore.ts src/store/themeStore.ts src/theme/tokens.ts src/constants/theme.ts
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
+If version `2.7.0` (Graceful Network & Offline Error Handling) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.6.9)
+
+1. **Revert modified error handling files:**
+   ```powershell
+   git checkout v2.6.9 -- src/providers/AuthProvider.tsx src/utils/syncQueue.ts src/store/fitnessStore.ts app/(auth)/login.tsx app/(auth)/signup.tsx app/settings.tsx src/utils/index.ts
+   Remove-Item src/utils/errorUtils.ts
+   ```
+
+2. **Clean Metro bundle cache:**
+   ```powershell
+   npx expo start -c
+   ```
+
+---
+
 If version `2.6.9` (UI: Today's Activity Horizontal Scroll Spacing) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.6.8)
