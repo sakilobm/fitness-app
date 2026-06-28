@@ -119,6 +119,81 @@
             "type": "shell",
             "command": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk || npx expo run:android",
             "problemMatcher": []
+        },
+        {
+            "label": "Prebuild Android (Dev)",
+            "type": "shell",
+            "command": "npx expo prebuild --platform android",
+            "options": {
+                "env": {
+                    "APP_ENV": "development"
+                }
+            }
+        },
+        {
+            "label": "Prebuild Android (Prod)",
+            "type": "shell",
+            "command": "npx expo prebuild --platform android",
+            "options": {
+                "env": {
+                    "APP_ENV": "production",
+                    "EAS_BUILD_PROFILE": "production"
+                }
+            }
+        },
+        {
+            "label": "Export APK Local (assembleRelease-Prod)",
+            "type": "shell",
+            "command": "cd android; ./gradlew assembleRelease",
+            "options": {
+                "env": {
+                    "APP_ENV": "production",
+                    "EAS_BUILD_PROFILE": "production"
+                }
+            }
+        },
+        {
+            "label": "Export APK Local (assembleDebug-Dev)",
+            "type": "shell",
+            "command": "cd android; ./gradlew assembleDebug",
+            "options": {
+                "env": {
+                    "APP_ENV": "development"
+                }
+            }
+        },
+        {
+            "label": "Export AAB Local (bundleRelease-Prod)",
+            "type": "shell",
+            "command": "cd android; ./gradlew bundleRelease",
+            "options": {
+                "env": {
+                    "APP_ENV": "production",
+                    "EAS_BUILD_PROFILE": "production"
+                }
+            }
+        },
+        {
+            "label": "Set Env Production Terminal",
+            "type": "shell",
+            "options": {
+                "env": {
+                    "APP_ENV": "production",
+                    "EAS_BUILD_PROFILE": "production"
+                }
+            },
+            "command": "echo 'Environment set to PRODUCTION for this task shell session'"
+        },
+        {
+            "label": "Set Env Development Terminal",
+            "type": "shell",
+            "options": {
+                "env": {
+                    "APP_ENV": "development",
+                    "EAS_BUILD_PROFILE": "development"
+                }
+            },
+            "command": "echo 'Environment set to DEVELOPMENT for this task shell session'"
         }
     ]
 }
