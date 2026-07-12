@@ -11,6 +11,7 @@
     "babel-preset-expo": "^56.0.14",
     "expo": "~56.0.8",
     "expo-auth-session": "~56.0.13",
+    "expo-build-properties": "~56.0.19",
     "expo-constants": "~56.0.16",
     "expo-crypto": "~56.0.4",
     "expo-dev-client": "~56.0.18",
@@ -46,7 +47,17 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "prebuild:dev": "node -e \"process.env.APP_ENV='development'; require('child_process').execSync('npx expo prebuild --platform android', {stdio: 'inherit'})\"",
+    "prebuild:prod": "node -e \"process.env.APP_ENV='production'; require('child_process').execSync('npx expo prebuild --platform android', {stdio: 'inherit'})\"",
+    "build:local:debug-dev": "node scripts/build-local.js development debug",
+    "build:local:apk-dev": "node scripts/build-local.js development apk",
+    "build:local:aab-dev": "node scripts/build-local.js development aab",
+    "build:local:apk-prod": "node scripts/build-local.js production apk",
+    "build:local:aab-prod": "node scripts/build-local.js production aab",
+    "build:eas:apk": "npx eas build --platform android --profile androidapk",
+    "build:eas:dev-apk": "npx eas build --platform android --profile development",
+    "build:eas:aab": "npx eas build --platform android --profile production"
   },
   "private": true
 }

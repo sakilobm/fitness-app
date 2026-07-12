@@ -4,6 +4,28 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Set Env Production Terminal",
+            "type": "shell",
+            "options": {
+                "env": {
+                    "APP_ENV": "production",
+                    "EAS_BUILD_PROFILE": "production"
+                }
+            },
+            "command": "echo 'Environment set to PRODUCTION for this task shell session'"
+        },
+        {
+            "label": "Set Env Development Terminal",
+            "type": "shell",
+            "options": {
+                "env": {
+                    "APP_ENV": "development",
+                    "EAS_BUILD_PROFILE": "development"
+                }
+            },
+            "command": "echo 'Environment set to DEVELOPMENT for this task shell session'"
+        },
+        {
             "label": "Expo Start",
             "type": "shell",
             "command": "npx expo start"
@@ -14,9 +36,9 @@
             "command": "npx clear-npx-cache"
         },
         {
-            "label": "Install Debug APK to Emulator",
+            "label": "Prebuild Clean Android No Install",
             "type": "shell",
-            "command": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk"
+            "command": "npx expo prebuild --clean --platform android --no-install"
         },
         {
             "label": "Supabase Start",
@@ -59,49 +81,44 @@
             "command": "taskkill /f /im java.exe"
         },
         {
-            "label": "Fix Lock & Clean Prebuild",
-            "type": "shell",
-            "command": "taskkill /f /im java.exe & npx expo prebuild --clean"
-        },
-        {
             "label": "Export DEBUG APK Local (assembleDebug-DEBUG)",
             "type": "shell",
-            "command": "cd android; ./gradlew assembleDebug"
+            "command": "npm run build:local:debug-dev"
         },
         {
             "label": "Export APK Local (assembleRelease-APK)",
             "type": "shell",
-            "command": "cd android; ./gradlew assembleRelease"
+            "command": "npm run build:local:apk-prod"
         },
         {
             "label": "Export ABB Local (bundleRelease-AAB)",
             "type": "shell",
-            "command": "cd android; ./gradlew bundleRelease"
+            "command": "npm run build:local:aab-prod"
         },
         {
-            "label": "Prebuild Clean",
+            "label": "Prebuild Android Production",
             "type": "shell",
-            "command": "npx expo prebuild --clean"
+            "command": "npm run prebuild:prod"
         },
         {
-            "label": "Prebuild Android",
+            "label": "Clean Autolinking Cache",
             "type": "shell",
-            "command": "npx expo prebuild --platform android"
+            "command": "Remove-Item -Recurse -Force android/app/build/generated/autolinking -ErrorAction SilentlyContinue"
         },
         {
             "label": "Export APK",
             "type": "shell",
-            "command": "npx eas build --platform android --profile androidapk"
+            "command": "npm run build:eas:apk"
         },
         {
             "label": "Export DEV CLIENT APK",
             "type": "shell",
-            "command": "npx eas build --platform android --profile development"
+            "command": "npm run build:eas:dev-apk"
         },
         {
             "label": "Export AAB",
             "type": "shell",
-            "command": "npx eas build --platform android --profile production"
+            "command": "npm run build:eas:aab"
         },
         {
             "label": "Download EAS CREDENTIALS",
@@ -121,79 +138,19 @@
             "problemMatcher": []
         },
         {
-            "label": "Prebuild Android (Dev)",
+            "label": "Prebuild Android Development",
             "type": "shell",
-            "command": "npx expo prebuild --platform android",
-            "options": {
-                "env": {
-                    "APP_ENV": "development"
-                }
-            }
+            "command": "npm run prebuild:dev"
         },
         {
-            "label": "Prebuild Android (Prod)",
+            "label": "Export APK Local (assembleRelease-APK) - Development",
             "type": "shell",
-            "command": "npx expo prebuild --platform android",
-            "options": {
-                "env": {
-                    "APP_ENV": "production",
-                    "EAS_BUILD_PROFILE": "production"
-                }
-            }
+            "command": "npm run build:local:apk-dev"
         },
         {
-            "label": "Export APK Local (assembleRelease-Prod)",
+            "label": "Export ABB Local (bundleRelease-AAB) - Development",
             "type": "shell",
-            "command": "cd android; ./gradlew assembleRelease",
-            "options": {
-                "env": {
-                    "APP_ENV": "production",
-                    "EAS_BUILD_PROFILE": "production"
-                }
-            }
-        },
-        {
-            "label": "Export APK Local (assembleDebug-Dev)",
-            "type": "shell",
-            "command": "cd android; ./gradlew assembleDebug",
-            "options": {
-                "env": {
-                    "APP_ENV": "development"
-                }
-            }
-        },
-        {
-            "label": "Export AAB Local (bundleRelease-Prod)",
-            "type": "shell",
-            "command": "cd android; ./gradlew bundleRelease",
-            "options": {
-                "env": {
-                    "APP_ENV": "production",
-                    "EAS_BUILD_PROFILE": "production"
-                }
-            }
-        },
-        {
-            "label": "Set Env Production Terminal",
-            "type": "shell",
-            "options": {
-                "env": {
-                    "APP_ENV": "production",
-                    "EAS_BUILD_PROFILE": "production"
-                }
-            },
-            "command": "echo 'Environment set to PRODUCTION for this task shell session'"
-        },
-        {
-            "label": "Set Env Development Terminal",
-            "type": "shell",
-            "options": {
-                "env": {
-                    "APP_ENV": "development",
-                    "EAS_BUILD_PROFILE": "development"
-                }
-            },
-            "command": "echo 'Environment set to DEVELOPMENT for this task shell session'"
+            "command": "npm run build:local:aab-dev"
         }
     ]
 }

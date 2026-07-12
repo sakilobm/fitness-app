@@ -1,5 +1,21 @@
 # Rollback Plan
 
+If version `2.8.1` (Android Manifest Merger and minSdkVersion Conflicts) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.8.0)
+
+1. **Revert configuration changes:**
+   ```powershell
+   git checkout v2.8.0 -- app.json package.json package-lock.json
+   ```
+
+2. **Clean rebuild:**
+   ```powershell
+   npx expo prebuild --clean
+   ```
+
+---
+
 If version `2.8.0` (Comprehensive App Rebranding to Vividly) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.7.0)

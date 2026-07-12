@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.1] - 2026-07-01T14:50:00+05:30
+
+### Fixed — Android Manifest Merger and minSdkVersion Conflicts
+
+**Architectural Decision:** Resolved the gradle build error where manifest merging failed because `react-native-health-connect` demands a minimum SDK version of `26` but the project default was `24`. Integrated the `expo-build-properties` plugin to enforce `minSdkVersion` configuration during native prebuild directory generation.
+
+**Changes:**
+- **`app.json`:** Added `expo-build-properties` plugin to the native configuration array specifying `"minSdkVersion": 26` under Android options.
+- **`package.json`:** Installed `expo-build-properties` module compatibility with Expo SDK 56.
+
+#### Rollback
+See ROLLBACK.md section for v2.8.1.
+
 ## [2.8.0] - 2026-06-28T20:38:00+05:30
 
 ### Changed — Comprehensive App Rebranding to Vividly

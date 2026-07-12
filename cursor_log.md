@@ -1,5 +1,19 @@
 # Cursor Test & Validation Log
 
+## [2026-07-01T14:50:00+05:30] - Android Manifest Merger and minSdkVersion Conflicts (v2.8.1)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+- **Command:** `cd android; ./gradlew assembleDebug`
+  - **Result:** Build completed successfully in **13m 46s**.
+
+### Manual Verification
+- **Gradle minSdkVersion Config:**
+  - Enforced `minSdkVersion` configuration to `26` via the `expo-build-properties` plugin to prevent manifest merger conflicts with the `react-native-health-connect` SDK dependencies.
+- **Expo Prebuild Clean:**
+  - Cleared native android directories and re-generated them cleanly, resolving busy system lock file locks.
+
 ## [2026-06-28T20:38:00+05:30] - Comprehensive App Rebranding to Vividly (v2.8.0)
 
 ### Automated Checks

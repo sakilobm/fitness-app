@@ -41,6 +41,14 @@
       "expo-status-bar",
       "expo-secure-store",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      [
         "react-native-health-connect",
         {
           "healthConnectVersion": "1.1.0-alpha11"
