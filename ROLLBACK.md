@@ -1,5 +1,16 @@
 # Rollback Plan
 
+If version `2.10.3` (Dynamic Steps Font Sizing inside Progress Ring) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.10.2)
+
+1. **Revert dynamic fontSize styling changes inside progress ring in steps screen:**
+   ```powershell
+   git checkout v2.10.2 -- app/steps.tsx
+   ```
+
+---
+
 If version `2.10.2` (Onboarding Page Indicator Flicker) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.10.1)

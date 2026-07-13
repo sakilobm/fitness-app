@@ -1,5 +1,17 @@
 # Cursor Test & Validation Log
 
+## [2026-07-13T19:15:00+05:30] - Dynamic Steps Font Sizing inside Progress Ring (v2.10.3)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Dynamic Font Resizing:**
+  - Verified steps values containing more than 5 digits (e.g. `10,000` steps) automatically scale down to `36px` to avoid touching the Progress Ring.
+  - Verified larger metrics (e.g., `100,000` steps) correctly size down to `30px` to maintain a visual gap from inner progress indicator tracks.
+  - Confirmed normal smaller counts scale up to `42px` for maximum readability.
+
 ## [2026-07-13T19:00:00+05:30] - Onboarding Page Indicator Flicker (v2.10.2)
 
 ### Automated Checks

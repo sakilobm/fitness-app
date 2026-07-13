@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.3] - 2026-07-13T19:15:00+05:30
+
+### Fixed — Dynamic Steps Font Sizing inside Progress Ring
+
+**Architectural Decision:** Implemented dynamic sizing for the main steps number rendering inside the `ProgressRing` to scale down the font size as the number length grows (such as exceeding 10,000 steps). This prevents the text boundary from touching or overlapping the progress ring borders.
+
+**Changes:**
+- **`app/steps.tsx`:** Adjusted the `fontSize` property on `stepsNum` text dynamically based on the character length of the formatted steps count.
+
+#### Rollback
+See ROLLBACK.md section for v2.10.3.
+
 ## [2.10.2] - 2026-07-13T19:00:00+05:30
 
 ### Fixed — Onboarding Page Indicator Flicker

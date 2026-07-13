@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Dimensions, Modal, TextInput, KeyboardAvoidingView, Platform,
@@ -130,7 +130,9 @@ export default function StepsScreen() {
       {/* ════════ Giant Progress Ring ════════ */}
       <View style={styles.ringSection}>
         <ProgressRing size={220} strokeWidth={18} progress={progress} color={STEPS_COLOR} glowing>
-          <Text style={styles.stepsNum}>{stepsCount.toLocaleString()}</Text>
+          <Text style={[styles.stepsNum, { fontSize: stepsCount.toLocaleString().length >= 7 ? 30 : stepsCount.toLocaleString().length >= 6 ? 36 : 42 }]}>
+            {stepsCount.toLocaleString()}
+          </Text>
           <Text style={styles.stepsGoal}>/ {goal.toLocaleString()} steps</Text>
           <View style={styles.ringStats}>
             <View style={styles.ringStat}>
