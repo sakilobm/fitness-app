@@ -56,6 +56,8 @@ interface FitnessState {
   addSteps: (steps: number) => void;
   addManualSteps: (steps: number) => void;
   updateStepsGoal: (goal: number) => void;
+  addActiveMinutes: (minutes: number) => void;
+
 
   // Dashboard Grid Layout Preferences
   dashboardGrid: string[];
@@ -371,7 +373,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   activeMinutes: 48,
   stepHistory: generateInitialStepHistory(),
   dashboardGrid: defaultDashboardGrid,
-  isDarkMode: true,
+  isDarkMode: false,
   dailyLogs: [],
   sleepLogs: generateInitialSleepLogs(),
   heartRateLogs:    generateInitialHRLogs(),
@@ -801,6 +803,16 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
   updateStepsGoal: (goal) => set((state) => ({ user: { ...state.user, stepsGoal: goal } })),
 
+  addActiveMinutes: (minutes) => {
+    if (minutes <= 0) return;
+    set((state) => ({
+      activeMinutes: state.activeMinutes + minutes
+    }));
+    get().addXP(15, 'Completed active exercise', { lib: 'MCI', name: 'dumbbell' });
+    get().checkAndUnlockBadges();
+  },
+
+
   setDashboardGrid: (grid) => set({ dashboardGrid: grid }),
 
   setIsDarkMode: (value) => set({ isDarkMode: value }),
@@ -1032,6 +1044,7 @@ export function useWorkoutEngine() {
   const addSteps = useFitnessStore((state) => state.addSteps);
   const addManualSteps = useFitnessStore((state) => state.addManualSteps);
   const updateStepsGoal = useFitnessStore((state) => state.updateStepsGoal);
+  const addActiveMinutes = useFitnessStore((state) => state.addActiveMinutes);
 
   return {
     stepsCount,
@@ -1041,6 +1054,7 @@ export function useWorkoutEngine() {
     addSteps,
     addManualSteps,
     updateStepsGoal,
+    addActiveMinutes,
   };
 }
 

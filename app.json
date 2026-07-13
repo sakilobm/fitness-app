@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/fitness-forge-new-icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "scheme": "vividly",
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#fafafa"
       },
-      "package": "com.b.sakil.fitnessapp",
+      "package": "com.vividly.app",
       "minSdkVersion": 26,
       "permissions": [
         "android.permission.health.READ_STEPS",

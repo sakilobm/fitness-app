@@ -1,5 +1,30 @@
 # Cursor Test & Validation Log
 
+## [2026-07-13T18:10:00+05:30] - Default App Theme Configuration to Light Mode (v2.9.1)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Default Theme Verification:**
+  - Confirmed stores default `isDarkMode` to `false` so the first-time user experience opens in the premium light mode interface.
+  - Verified toggle transition triggers correctly between light and dark settings smoothly.
+
+## [2026-07-13T13:00:00+05:30] - Daily Quests & Checklist Dashboard Widget (v2.9.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Daily Quests Layout Rendering:**
+  - Placed the `DailyQuests` checklist card prominently on the Home Screen right under the Activity strip for immediate interaction.
+- **Quest Completion Mechanics:**
+  - Verified that tapping quick logging updates progress bars and counts immediately.
+  - Verified that completing a task dynamically hides it from the main checklist and shifts it into the collapsible completed section.
+  - Verified unit preference adaptive rendering (`ml` vs `oz` for water).
+
 ## [2026-07-01T14:50:00+05:30] - Android Manifest Merger and minSdkVersion Conflicts (v2.8.1)
 
 ### Automated Checks

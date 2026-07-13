@@ -28,7 +28,7 @@ module.exports = ({ config }) => {
 
   const appName = process.env.APP_NAME || config.name || 'Vividly';
   const appPackage =
-    process.env.APP_PACKAGE || config.android?.package || 'com.b.sakil.fitnessapp';
+    process.env.APP_PACKAGE || config.android?.package || 'com.vividly.app';
   const appScheme = process.env.APP_SCHEME || config.scheme || 'vividly';
 
   return {

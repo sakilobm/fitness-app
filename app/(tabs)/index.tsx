@@ -15,6 +15,7 @@ import { useHomeDashboard } from '@/hooks/useHomeDashboard';
 import ActivityStrip from '@/components/home/ActivityStrip';
 import CycleBanner from '@/components/home/CycleBanner';
 import CycleInfoChip from '@/components/home/CycleInfoChip';
+import DailyQuests from '@/components/home/DailyQuests';
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -33,15 +34,15 @@ export default function HomeScreen() {
     openCustomize, closeCustomize, toggleWidgetVisibility, moveWidget,
     dismissCycleBanner, enableCycleTracking,
     goToRewards, goToProfile, goToSteps, goToWater, goToBmi, goToCycle,
-    stepsCount,
+    stepsCount, activeMinutes,
   } = useHomeDashboard();
 
   // Activity metrics — built here to avoid import cycle; handlers come from hook.
   const activityMetrics = useMemo(() => [
     { lib: 'Ionicons' as const, icon: 'flame', color: colors.amber, value: activeKcal.toLocaleString(), unit: 'kcal', label: 'Burned', onPress: goToSteps },
     { lib: 'Ionicons' as const, icon: 'footsteps', color: colors.lime, value: stepsCount.toLocaleString(), unit: 'steps', label: 'Steps', onPress: goToSteps },
-    { lib: 'Ionicons' as const, icon: 'timer-outline', color: '#6366F1', value: '0', unit: 'min', label: 'Active', onPress: goToSteps },
-  ], [colors, activeKcal, stepsCount, goToSteps]);
+    { lib: 'Ionicons' as const, icon: 'timer-outline', color: '#6366F1', value: activeMinutes.toString(), unit: 'min', label: 'Active', onPress: goToSteps },
+  ], [colors, activeKcal, stepsCount, activeMinutes, goToSteps]);
 
   const quickLogs = useMemo(() => [
     { lib: 'Ionicons' as const, icon: 'water', color: colors.chart.water, label: 'Water', value: waterDisplay, route: goToWater },
@@ -92,6 +93,9 @@ export default function HomeScreen() {
       {showCycleBanner && (
         <CycleBanner onEnable={enableCycleTracking} onDismiss={dismissCycleBanner} />
       )}
+
+      {/* ── Daily Goals Checklist ────────────────────────────────────────── */}
+      <DailyQuests />
 
       {/* ── Metrics grid ───────────────────────────────────────────────────── */}
       <View style={styles.sectionHeader}>

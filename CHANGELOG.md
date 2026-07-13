@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.1] - 2026-07-13T18:10:00+05:30
+
+### Changed — Default App Theme Configuration to Light Mode
+
+**Architectural Decision:** Configured the application stores to initialize default theme settings to Light Mode (`isDarkMode: false`) for new app launches, while retaining full toggleable transition functionality.
+
+**Changes:**
+- **`src/store/themeStore.ts`:** Updated default `isDarkMode` state value to `false`.
+- **`src/store/fitnessStore.ts`:** Adjusted standard default profile metrics wrapper `isDarkMode` setting value to `false` for synchronization compatibility.
+
+#### Rollback
+See ROLLBACK.md section for v2.9.1.
+
+## [2.9.0] - 2026-07-13T13:00:00+05:30
+
+### Added — Daily Quests & Checklist Dashboard Widget
+
+**Architectural Decision:** Implemented a gamified, interactive daily todo checklist to encourage goal logging directly from the Home Screen. Completed goals are dynamically moved to a collapsible bottom section, reducing clutter and highlighting remaining tasks. Includes smooth layout transitions and satisfying micro-haptics.
+
+**Changes:**
+- **`src/components/home/DailyQuests.tsx`:** Created a new daily checklist widget displaying Hydration, Steps, Calories, Sleep, and Active minutes targets with integrated quick-log button actions and haptic feedbacks.
+- **`src/store/fitnessStore.ts`:** Added the `addActiveMinutes` action to mutate active minutes state directly, awarding XP upon completion.
+- **`app/(tabs)/index.tsx`:** Integrated the `DailyQuests` checklist at the top of the dashboard.
+
+#### Rollback
+See ROLLBACK.md section for v2.9.0.
+
 ## [2.8.1] - 2026-07-01T14:50:00+05:30
 
 ### Fixed — Android Manifest Merger and minSdkVersion Conflicts

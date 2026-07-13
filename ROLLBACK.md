@@ -1,5 +1,32 @@
 # Rollback Plan
 
+If version `2.9.1` (Default App Theme Configuration to Light Mode) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.9.0)
+
+1. **Revert store default changes:**
+   ```powershell
+   git checkout v2.9.0 -- src/store/themeStore.ts src/store/fitnessStore.ts
+   ```
+
+---
+
+If version `2.9.0` (Daily Quests & Checklist Dashboard Widget) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.8.1)
+
+1. **Revert code edits:**
+   ```powershell
+   git checkout v2.8.1 -- app/(tabs)/index.tsx src/store/fitnessStore.ts
+   ```
+
+2. **Delete added components:**
+   ```powershell
+   rm src/components/home/DailyQuests.tsx
+   ```
+
+---
+
 If version `2.8.1` (Android Manifest Merger and minSdkVersion Conflicts) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.8.0)
