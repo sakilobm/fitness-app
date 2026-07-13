@@ -1,5 +1,44 @@
 # Cursor Test & Validation Log
 
+## [2026-07-13T19:00:00+05:30] - Onboarding Page Indicator Flicker (v2.10.2)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Carousel Programmatic Navigation:**
+  - Tested clicking the "Next" button in the onboarding slide deck.
+  - Confirmed the page indicator dots and primary button themes transition smoothly at the 50% slide animation threshold.
+  - Verified indicator flicker and duplicate active index bouncing have been completely eliminated.
+
+## [2026-07-13T18:50:00+05:30] - Stopwatch Timer and Hours/Minutes Manual Logging modes (v2.10.1)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Hours & Minutes Inputs:**
+  - Tested logging manually by setting Hours to `1` and Minutes to `15` and confirmed total duration calculated as `75 minutes` matches properly.
+- **Stopwatch controls:**
+  - Started the live timer and verified it increments seconds incrementally.
+  - Paused the stopwatch and confirmed it displays elapsed time accurately.
+  - Tapping checkmark button imports stopwatch minutes into duration text inputs correctly.
+
+## [2026-07-13T18:40:00+05:30] - Full-Fledged Gym & Workout Logging System (v2.10.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Workouts Screen Layout:**
+  - Verified navigation from both the HomeScreen focus card ("Start Workout") and Daily Quests' Workout item to `/workouts` routes correctly.
+  - Confirmed Stats indicator values calculate calories and duration metrics dynamically.
+  - Logged multiple template workout sessions (Leg Day, Cardio, Push Day) and verified they populate the history lists properly.
+  - Confirmed deleting logs updates total activeMinutes automatically.
+
 ## [2026-07-13T18:22:00+05:30] - Daily Quests Card Layout Spacing Alignment (v2.9.2)
 
 ### Automated Checks

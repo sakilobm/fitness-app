@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.2] - 2026-07-13T19:00:00+05:30
+
+### Fixed — Onboarding Page Indicator Flicker
+
+**Architectural Decision:** Removed redundant state update `setActiveIndex` inside the manual programmatic transition (`handleNext`), allowing the ScrollView native `onScroll` listener to be the single source of truth for carousel positions. This prevents indicator bounce toggling during visual slide animations.
+
+**Changes:**
+- **`app/(auth)/onboarding.tsx`:** Removed `setActiveIndex(activeIndex + 1)` statement from `handleNext` trigger.
+
+#### Rollback
+See ROLLBACK.md section for v2.10.2.
+
+## [2.10.1] - 2026-07-13T18:50:00+05:30
+
+### Added — Stopwatch Timer and Hours/Minutes Manual Logging modes
+
+**Architectural Decision:** Extended the Gym and Workout logging interface to support dual duration input modes: a real-time Stopwatch Timer with start/pause/reset controls, and side-by-side Manual Hours/Minutes fields that automatically sync calculations.
+
+**Changes:**
+- **`app/workouts.tsx`:** Added `isStopwatchMode` mode switcher tabs. Integrated a live stopwatch layout with circle display ticking, play/pause controls, resets, and calculated saving handlers. Added double hour/minutes inputs to manual logging sections.
+
+#### Rollback
+See ROLLBACK.md section for v2.10.1.
+
+## [2.10.0] - 2026-07-13T18:40:00+05:30
+
+### Added — Full-Fledged Gym & Workout Logging System
+
+**Architectural Decision:** Implemented a robust Gym and Workouts logging feature that allows users to record and track workouts (such as Leg Day, Full Body, Cardio, etc.) with custom intensities, durations, notes, and calories calculations. Fully integrated this system with Home screen hero elements and Daily Quests detail routing.
+
+**Changes:**
+- **`app/workouts.tsx`:** Created a dedicated screen displaying weekly workout goal progress bars, template workout categories (Full Body, Leg Day, Push/Pull, Cardio, Abs, Yoga), statistics badges (Logged workouts, Burned kcal, Average active minutes), and detailed logs history.
+- **`src/types/index.ts`:** Defined `WorkoutLog` schema.
+- **`src/store/fitnessStore.ts`:** Integrated `workoutLogs` list, `addWorkoutLog` and `deleteWorkoutLog` state managers synced with Supabase, and exported the `useWorkoutTracker` selector hook.
+- **`src/components/home/DailyQuests.tsx`:** Configured active cards to route to their respective detailed trackers when clicked.
+- **`app/(tabs)/index.tsx`:** Connected the "Start Workout" button on the hero dashboard focus banner to open the Workouts screen.
+
+#### Rollback
+See ROLLBACK.md section for v2.10.0.
+
 ## [2.9.2] - 2026-07-13T18:22:00+05:30
 
 ### Changed — Daily Quests Card Layout Spacing Alignment

@@ -75,7 +75,6 @@ export default function OnboardingScreen() {
         x: (activeIndex + 1) * SCREEN_WIDTH,
         animated: true,
       });
-      setActiveIndex(activeIndex + 1);
     } else {
       router.push('/(auth)/signup');
     }

@@ -1,5 +1,43 @@
 # Rollback Plan
 
+If version `2.10.2` (Onboarding Page Indicator Flicker) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.10.1)
+
+1. **Revert handleNext code logic change in onboarding screen:**
+   ```powershell
+   git checkout v2.10.1 -- app/(auth)/onboarding.tsx
+   ```
+
+---
+
+If version `2.10.1` (Stopwatch Timer and Hours/Minutes Manual Logging modes) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.10.0)
+
+1. **Revert modal state changes in workouts screen:**
+   ```powershell
+   git checkout v2.10.0 -- app/workouts.tsx
+   ```
+
+---
+
+If version `2.10.0` (Full-Fledged Gym & Workout Logging System) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.9.2)
+
+1. **Revert modified code configurations:**
+   ```powershell
+   git checkout v2.9.2 -- src/types/index.ts src/store/fitnessStore.ts src/components/home/DailyQuests.tsx app/(tabs)/index.tsx
+   ```
+
+2. **Delete workouts details screen:**
+   ```powershell
+   rm app/workouts.tsx
+   ```
+
+---
+
 If version `2.9.2` (Daily Quests Card Layout Spacing Alignment) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.9.1)

@@ -214,3 +214,14 @@ export interface CycleSettings {
   lastPeriodStart:       string | null; // YYYY-MM-DD
   cycleTrackingEnabled:  boolean;       // show cycle in tab bar
 }
+
+export interface WorkoutLog {
+  id: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  type: string; // Leg Day, Full Body, Push Day, Pull Day, Cardio, Arms, Core, etc.
+  durationMin: number;
+  intensity: 'low' | 'medium' | 'high';
+  caloriesBurned: number;
+  notes?: string;
+}

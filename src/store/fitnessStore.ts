@@ -6,7 +6,7 @@ import {
   DailyLog, SleepLog,
   HeartRateLog, BloodPressureLog, BloodGlucoseLog, OxygenLog,
   Badge, XPGainEvent,
-  CycleLog, CycleSettings,
+  CycleLog, CycleSettings, WorkoutLog,
 } from '../types';
 import { computeSleepScore, estimateStages } from '../constants/sleep';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
@@ -71,6 +71,11 @@ interface FitnessState {
   // Calendar daily snapshots
   dailyLogs: DailyLog[];
   upsertDailyLog: (log: DailyLog) => void;
+
+  // Workout / Gym logging
+  workoutLogs: WorkoutLog[];
+  addWorkoutLog: (log: Omit<WorkoutLog, 'id'>) => void;
+  deleteWorkoutLog: (id: string) => void;
 
   // Sleep tracking
   sleepLogs: SleepLog[];
@@ -374,6 +379,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   stepHistory: generateInitialStepHistory(),
   dashboardGrid: defaultDashboardGrid,
   isDarkMode: false,
+  workoutLogs: [],
   dailyLogs: [],
   sleepLogs: generateInitialSleepLogs(),
   heartRateLogs:    generateInitialHRLogs(),
@@ -812,6 +818,60 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     get().checkAndUnlockBadges();
   },
 
+  addWorkoutLog: (log) => {
+    const newLog: WorkoutLog = {
+      ...log,
+      id: `w_log_${Date.now()}`,
+    };
+    set((state) => ({
+      workoutLogs: [newLog, ...(state.workoutLogs || [])],
+      activeMinutes: state.activeMinutes + log.durationMin,
+    }));
+    mmkvSaveLog('workouts', getPastDateStr(0), newLog);
+
+    get().addXP(25, `Completed ${log.type}`, { lib: 'MCI', name: 'dumbbell' });
+    get().checkAndUnlockBadges();
+
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          await supabase.from('workout_logs').insert({
+            id: newLog.id,
+            user_id: data.user.id,
+            date: newLog.date,
+            time: newLog.time,
+            type: newLog.type,
+            duration_min: newLog.durationMin,
+            intensity: newLog.intensity,
+            calories_burned: newLog.caloriesBurned,
+            notes: newLog.notes || '',
+          });
+        } catch {}
+      }
+    }).catch(() => {});
+  },
+
+  deleteWorkoutLog: (id) => {
+    set((state) => {
+      const targetLog = state.workoutLogs.find((w) => w.id === id);
+      const updatedLogs = state.workoutLogs.filter((w) => w.id !== id);
+      const minutesToDeduct = targetLog ? targetLog.durationMin : 0;
+      return {
+        workoutLogs: updatedLogs,
+        activeMinutes: Math.max(0, state.activeMinutes - minutesToDeduct),
+      };
+    });
+    mmkvDeleteLog('workouts', getPastDateStr(0), id);
+
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          await supabase.from('workout_logs').delete().eq('id', id).eq('user_id', data.user.id);
+        } catch {}
+      }
+    }).catch(() => {});
+  },
+
 
   setDashboardGrid: (grid) => set({ dashboardGrid: grid }),
 
@@ -907,8 +967,10 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     // This function is kept for manual refresh (e.g. pull-to-refresh) — synchronous reads.
     const recentWater = mmkvHydrateLogs('water', 2);
     const recentWeight = mmkvHydrateLogs('weight', 2);
+    const recentWorkouts = mmkvHydrateLogs('workouts', 2);
 
     if (recentWater.length > 0) set({ waterLogs: recentWater });
+    if (recentWorkouts.length > 0) set({ workoutLogs: recentWorkouts });
 
     if (recentWeight.length > 0) {
       const timeOrder: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
@@ -981,6 +1043,22 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
         });
         set({ weightLogs: sorted });
       }
+
+      // Fetch Workouts
+      const { data: workoutLogs } = await supabase.from('workout_logs').select('*').eq('user_id', userId);
+      if (workoutLogs) {
+        const sorted = workoutLogs.map((log: any) => ({
+          id: log.id,
+          date: log.date,
+          time: log.time,
+          type: log.type,
+          durationMin: log.duration_min,
+          intensity: log.intensity,
+          caloriesBurned: log.calories_burned,
+          notes: log.notes || '',
+        })).sort((a: any, b: any) => b.date.localeCompare(a.date));
+        set({ workoutLogs: sorted });
+      }
     } catch (err) {
       console.warn('initializeFromSupabase skipped (offline or network error):', err);
     }
@@ -1011,6 +1089,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     xpHistory:          state.xpHistory,
     cycleLogs:          state.cycleLogs,
     cycleSettings:      state.cycleSettings,
+    workoutLogs:        state.workoutLogs,
   }),
 }));
 
@@ -1203,4 +1282,23 @@ export function useThemeMode() {
   const isDarkMode   = useFitnessStore((s) => s.isDarkMode);
   const setIsDarkMode = useFitnessStore((s) => s.setIsDarkMode);
   return { isDarkMode, setIsDarkMode };
+}
+
+/**
+ * Custom hook for Workout/Gym Logs tracking.
+ */
+export function useWorkoutTracker() {
+  const workoutLogs = useFitnessStore((state) => state.workoutLogs || []);
+  const addWorkoutLog = useFitnessStore((state) => state.addWorkoutLog);
+  const deleteWorkoutLog = useFitnessStore((state) => state.deleteWorkoutLog);
+  const activeMinutes = useFitnessStore((state) => state.activeMinutes);
+  const workoutGoal = useFitnessStore((state) => state.user.workoutGoal);
+
+  return {
+    workoutLogs,
+    addWorkoutLog,
+    deleteWorkoutLog,
+    activeMinutes,
+    workoutGoal,
+  };
 }

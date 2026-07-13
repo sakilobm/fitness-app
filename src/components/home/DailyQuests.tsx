@@ -8,6 +8,7 @@ import { useTheme } from '@/constants/theme';
 import GlassCard from '../ui/GlassCard';
 import { triggerHaptic } from '@/utils/haptics';
 import { mlToOz, ozToMl } from '@/utils/units';
+import { router } from 'expo-router';
 
 // Enable layout animations for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -28,6 +29,7 @@ interface QuestItem {
   actions: { label: string; amount: number }[];
   onQuickLog: (amount: number) => void;
   onCompleteRemaining: () => void;
+  onPress: () => void;
 }
 
 export default function DailyQuests() {
@@ -102,6 +104,10 @@ export default function DailyQuests() {
         triggerHaptic('success');
         const remaining = Math.max(0, user.waterGoal - totalWaterMl);
         if (remaining > 0) addWaterLog(remaining);
+      },
+      onPress: () => {
+        triggerHaptic('selection');
+        router.push('/water');
       }
     });
 
@@ -126,6 +132,10 @@ export default function DailyQuests() {
         triggerHaptic('success');
         const remaining = Math.max(0, user.stepsGoal - stepsCount);
         if (remaining > 0) addSteps(remaining);
+      },
+      onPress: () => {
+        triggerHaptic('selection');
+        router.push('/steps');
       }
     });
 
@@ -166,6 +176,10 @@ export default function DailyQuests() {
             fat: 0,
           });
         }
+      },
+      onPress: () => {
+        triggerHaptic('selection');
+        router.push('/(tabs)/nutrition' as any);
       }
     });
 
@@ -220,6 +234,10 @@ export default function DailyQuests() {
             notes: 'Completed remaining sleep target',
           });
         }
+      },
+      onPress: () => {
+        triggerHaptic('selection');
+        router.push('/(tabs)/sleep' as any);
       }
     });
 
@@ -245,6 +263,10 @@ export default function DailyQuests() {
         triggerHaptic('success');
         const remaining = Math.max(0, activeTarget - activeMinutes);
         if (remaining > 0) addActiveMinutes(remaining);
+      },
+      onPress: () => {
+        triggerHaptic('selection');
+        router.push('/workouts');
       }
     });
 
@@ -285,35 +307,41 @@ export default function DailyQuests() {
           return (
             <GlassCard key={quest.id} style={st.questCard} accentColor={quest.color}>
               <View style={st.questMainRow}>
-                {/* Icon wrapper */}
-                <View style={[st.iconBubble, { backgroundColor: quest.color + '15' }]}>
-                  {quest.iconLib === 'Ionicons' ? (
-                    <Ionicons name={quest.icon as any} size={20} color={quest.color} />
-                  ) : (
-                    <MaterialCommunityIcons name={quest.icon as any} size={20} color={quest.color} />
-                  )}
-                </View>
-
-                {/* Progress Details */}
-                <View style={st.detailsContainer}>
-                  <View style={st.metaTextRow}>
-                    <Text style={[st.questTitle, { color: colors.text.primary }]}>{quest.title}</Text>
-                    <Text style={[st.questSub, { color: colors.muted }]}>{quest.subtext}</Text>
+                <TouchableOpacity
+                  style={st.questClickableRow}
+                  activeOpacity={0.7}
+                  onPress={quest.onPress}
+                >
+                  {/* Icon wrapper */}
+                  <View style={[st.iconBubble, { backgroundColor: quest.color + '15' }]}>
+                    {quest.iconLib === 'Ionicons' ? (
+                      <Ionicons name={quest.icon as any} size={20} color={quest.color} />
+                    ) : (
+                      <MaterialCommunityIcons name={quest.icon as any} size={20} color={quest.color} />
+                    )}
                   </View>
 
-                  {/* Progress Bar */}
-                  <View style={[st.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}>
-                    <View
-                      style={[
-                        st.progressBarFill,
-                        {
-                          backgroundColor: quest.color,
-                          width: `${progressPercent}%`,
-                        }
-                      ]}
-                    />
+                  {/* Progress Details */}
+                  <View style={st.detailsContainer}>
+                    <View style={st.metaTextRow}>
+                      <Text style={[st.questTitle, { color: colors.text.primary }]}>{quest.title}</Text>
+                      <Text style={[st.questSub, { color: colors.muted }]}>{quest.subtext}</Text>
+                    </View>
+
+                    {/* Progress Bar */}
+                    <View style={[st.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}>
+                      <View
+                        style={[
+                          st.progressBarFill,
+                          {
+                            backgroundColor: quest.color,
+                            width: `${progressPercent}%`,
+                          }
+                        ]}
+                      />
+                    </View>
                   </View>
-                </View>
+                </TouchableOpacity>
 
                 {/* Quick Checkbox button to complete remaining */}
                 <TouchableOpacity
@@ -431,6 +459,12 @@ const st = StyleSheet.create({
     marginBottom: 12,
   },
   questMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  questClickableRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

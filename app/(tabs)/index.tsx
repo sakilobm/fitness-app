@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import GlassCard from '@/components/ui/GlassCard';
 import AppIcon from '@/components/ui/AppIcon';
 import { Radius, useTheme } from '@/constants/theme';
@@ -114,7 +115,7 @@ export default function HomeScreen() {
       </View>
 
       {/* ── Today's focus hero ─────────────────────────────────────────────── */}
-      <TouchableOpacity style={styles.hero} activeOpacity={0.9}>
+      <TouchableOpacity style={styles.hero} activeOpacity={0.9} onPress={() => router.push('/workouts')}>
         <View style={styles.heroBg} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroBody}>
@@ -139,7 +140,7 @@ export default function HomeScreen() {
               <Text style={styles.heroStatVal}>Strength</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.heroBtn} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.heroBtn} activeOpacity={0.85} onPress={() => router.push('/workouts')}>
             <Ionicons name="play" size={13} color={colors.bg} />
             <Text style={styles.heroBtnTxt}>Start Workout</Text>
           </TouchableOpacity>
