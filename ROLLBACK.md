@@ -1,5 +1,16 @@
 # Rollback Plan
 
+If version `2.9.2` (Daily Quests Card Layout Spacing Alignment) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.9.1)
+
+1. **Revert spacing changes:**
+   ```powershell
+   git checkout v2.9.1 -- src/components/home/DailyQuests.tsx
+   ```
+
+---
+
 If version `2.9.1` (Default App Theme Configuration to Light Mode) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.9.0)

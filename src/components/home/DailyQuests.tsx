@@ -398,7 +398,7 @@ export default function DailyQuests() {
 
 const st = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
+    marginHorizontal: 0,
     marginTop: 20,
     marginBottom: 8,
   },

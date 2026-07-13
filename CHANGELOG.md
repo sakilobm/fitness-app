@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.2] - 2026-07-13T18:22:00+05:30
+
+### Changed — Daily Quests Card Layout Spacing Alignment
+
+**Architectural Decision:** Modified DailyQuests container horizontal margins to align flush with the other widgets on the home screen layout grid.
+
+**Changes:**
+- **`src/components/home/DailyQuests.tsx`:** Changed `marginHorizontal` from `16` to `0` to align container limits correctly.
+
+#### Rollback
+See ROLLBACK.md section for v2.9.2.
+
 ## [2.9.1] - 2026-07-13T18:10:00+05:30
 
 ### Changed — Default App Theme Configuration to Light Mode
