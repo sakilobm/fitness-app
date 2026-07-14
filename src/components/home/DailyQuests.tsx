@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager
+  View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager, Modal, ScrollView
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFitnessStore } from '@/store/fitnessStore';
@@ -48,10 +48,41 @@ export default function DailyQuests() {
     addFoodToMeal,
     addSleepLog,
     addActiveMinutes,
+    setUser,
   } = useFitnessStore();
 
   const isOz = user.volumeUnit === 'oz';
   const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Goal Customizer modal states
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [stepsInput, setStepsInput] = useState(10000);
+  const [waterInput, setWaterInput] = useState(2500);
+  const [calorieInput, setCalorieInput] = useState(2300);
+  const [sleepInput, setSleepInput] = useState(8);
+  const [workoutInput, setWorkoutInput] = useState(4);
+
+  const openGoalsModal = () => {
+    triggerHaptic('selection');
+    setStepsInput(user.stepsGoal);
+    setWaterInput(isOz ? Math.round(mlToOz(user.waterGoal)) : user.waterGoal);
+    setCalorieInput(user.calorieGoal);
+    setSleepInput(user.sleepGoal || 8);
+    setWorkoutInput(user.workoutGoal);
+    setShowGoalsModal(true);
+  };
+
+  const handleSaveGoals = () => {
+    triggerHaptic('success');
+    setUser({
+      stepsGoal: stepsInput,
+      waterGoal: isOz ? Math.round(ozToMl(waterInput)) : waterInput,
+      calorieGoal: calorieInput,
+      sleepGoal: sleepInput,
+      workoutGoal: workoutInput,
+    });
+    setShowGoalsModal(false);
+  };
 
   // Derived state values
   const totalWaterMl = useMemo(
@@ -184,7 +215,7 @@ export default function DailyQuests() {
     });
 
     // 4. Sleep Target
-    const sleepTargetHours = 8;
+    const sleepTargetHours = user.sleepGoal || 8;
     const sleepProgressHours = parseFloat((todaySleepMin / 60).toFixed(1));
     list.push({
       id: 'sleep',
@@ -197,21 +228,30 @@ export default function DailyQuests() {
       target: sleepTargetHours * 60,
       unit: 'min',
       completed: todaySleepMin >= (sleepTargetHours * 60),
-      actions: [{ label: 'Log 8h', amount: 480 }],
+      actions: [
+        { label: 'Log 6h', amount: 360 },
+        { label: 'Log 7h', amount: 420 },
+        { label: 'Log 8h', amount: 480 },
+        { label: 'Log 9h', amount: 540 }
+      ],
       onQuickLog: (amount) => {
         triggerHaptic('selection');
+        const deep = Math.round(amount * 0.2);
+        const rem = Math.round(amount * 0.25);
+        const light = Math.round(amount * 0.5);
+        const awake = Math.round(amount * 0.05);
         addSleepLog({
           date: todayISO,
           bedtime: '23:00',
           wakeTime: '07:00',
           totalMin: amount,
-          deepMin: 90,
-          remMin: 90,
-          lightMin: 270,
-          awakeMin: 30,
+          deepMin: deep,
+          remMin: rem,
+          lightMin: light,
+          awakeMin: awake,
           wakeUps: 1,
-          cycles: 5,
-          score: 82,
+          cycles: Math.round(amount / 90),
+          score: Math.min(100, Math.max(60, 80 + Math.round((amount - 480) / 10))),
           notes: 'Logged from Daily Quests widget',
         });
       },
@@ -289,12 +329,34 @@ export default function DailyQuests() {
   return (
     <View style={st.container}>
       <View style={st.sectionHeader}>
-        <View style={st.headerTitleRow}>
-          <Text style={[st.sectionTitle, { color: colors.text.primary }]}>Daily Quests</Text>
-          <View style={[st.badge, { backgroundColor: colors.lime + '20' }]}>
-            <Text style={[st.badgeText, { color: colors.lime }]}>
-              {completedQuests.length} / {quests.length} Done
-            </Text>
+        <View style={st.headerMainRow}>
+          <View style={st.headerTitleRow}>
+            <Text style={[st.sectionTitle, { color: colors.text.primary }]}>Daily Quests</Text>
+            <View style={[st.badge, { backgroundColor: colors.lime + '20' }]}>
+              <Text style={[st.badgeText, { color: colors.lime }]}>
+                {completedQuests.length} / {quests.length} Done
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity
+              style={[st.editGoalsShortcut, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '35' }]}
+              activeOpacity={0.85}
+              onPress={() => { triggerHaptic('selection'); router.push('/quests-tracker'); }}
+            >
+              <Ionicons name="calendar-outline" size={13} color={colors.lime} style={{ marginRight: 2 }} />
+              <Text style={[st.editGoalsText, { color: colors.lime }]}>Stats</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[st.editGoalsShortcut, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '35' }]}
+              activeOpacity={0.85}
+              onPress={openGoalsModal}
+            >
+              <Ionicons name="options-outline" size={13} color={colors.lime} style={{ marginRight: 2 }} />
+              <Text style={[st.editGoalsText, { color: colors.lime }]}>Adjust Goals</Text>
+            </TouchableOpacity>
           </View>
         </View>
         <Text style={[st.sectionSubtitle, { color: colors.muted }]}>Hit your goals to level up and earn XP</Text>
@@ -420,6 +482,189 @@ export default function DailyQuests() {
           )}
         </View>
       )}
+
+      {/* ── Goal Customizer Bottom Sheet Modal ── */}
+      <Modal visible={showGoalsModal} animationType="slide" transparent>
+        <View style={st.modalOverlay}>
+          <GlassCard style={st.modalPane}>
+            <View style={st.modalHeader}>
+              <View style={st.modalHeaderTitleRow}>
+                <Ionicons name="options-outline" size={20} color={colors.lime} />
+                <Text style={[st.modalTitle, { color: colors.text.primary }]}>Adjust Daily Goals</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowGoalsModal(false)}>
+                <Ionicons name="close-circle-outline" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={st.modalForm}>
+              {/* 1. Steps Goal */}
+              <View style={st.goalEditCard}>
+                <View style={st.goalMetaRow}>
+                  <View style={st.goalMetaLabelRow}>
+                    <View style={[st.goalIconBox, { backgroundColor: '#A3E63515' }]}>
+                      <Ionicons name="footsteps" size={18} color="#A3E635" />
+                    </View>
+                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Daily Steps</Text>
+                  </View>
+                  <Text style={[st.goalValue, { color: '#A3E635' }]}>{stepsInput.toLocaleString()} steps</Text>
+                </View>
+                <View style={st.adjustControls}>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setStepsInput(prev => Math.max(1000, prev - 500)); }}
+                  >
+                    <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                  <View style={st.adjustIndicator}>
+                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +150 XP</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setStepsInput(prev => Math.min(30000, prev + 500)); }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 2. Water Goal */}
+              <View style={st.goalEditCard}>
+                <View style={st.goalMetaRow}>
+                  <View style={st.goalMetaLabelRow}>
+                    <View style={[st.goalIconBox, { backgroundColor: '#38BDF815' }]}>
+                      <Ionicons name="water" size={18} color="#38BDF8" />
+                    </View>
+                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Hydration Target</Text>
+                  </View>
+                  <Text style={[st.goalValue, { color: '#38BDF8' }]}>
+                    {waterInput} {isOz ? 'oz' : 'ml'}
+                  </Text>
+                </View>
+                <View style={st.adjustControls}>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setWaterInput(prev => Math.max(isOz ? 16 : 500, prev - (isOz ? 8 : 250))); }}
+                  >
+                    <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                  <View style={st.adjustIndicator}>
+                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +100 XP</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setWaterInput(prev => Math.min(isOz ? 320 : 10000, prev + (isOz ? 8 : 250))); }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 3. Calories Goal */}
+              <View style={st.goalEditCard}>
+                <View style={st.goalMetaRow}>
+                  <View style={st.goalMetaLabelRow}>
+                    <View style={[st.goalIconBox, { backgroundColor: '#FB923C15' }]}>
+                      <MaterialCommunityIcons name="food-apple" size={18} color="#FB923C" />
+                    </View>
+                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Calorie Intake</Text>
+                  </View>
+                  <Text style={[st.goalValue, { color: '#FB923C' }]}>{calorieInput.toLocaleString()} kcal</Text>
+                </View>
+                <View style={st.adjustControls}>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setCalorieInput(prev => Math.max(1000, prev - 100)); }}
+                  >
+                    <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                  <View style={st.adjustIndicator}>
+                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +200 XP</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setCalorieInput(prev => Math.min(6000, prev + 100)); }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 4. Sleep Goal */}
+              <View style={st.goalEditCard}>
+                <View style={st.goalMetaRow}>
+                  <View style={st.goalMetaLabelRow}>
+                    <View style={[st.goalIconBox, { backgroundColor: '#818CF815' }]}>
+                      <Ionicons name="moon" size={18} color="#818CF8" />
+                    </View>
+                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Sleep Duration</Text>
+                  </View>
+                  <Text style={[st.goalValue, { color: '#818CF8' }]}>{sleepInput} hrs</Text>
+                </View>
+                <View style={st.adjustControls}>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setSleepInput(prev => Math.max(4, prev - 0.5)); }}
+                  >
+                    <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                  <View style={st.adjustIndicator}>
+                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +150 XP</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setSleepInput(prev => Math.min(12, prev + 0.5)); }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 5. Workouts Goal */}
+              <View style={st.goalEditCard}>
+                <View style={st.goalMetaRow}>
+                  <View style={st.goalMetaLabelRow}>
+                    <View style={[st.goalIconBox, { backgroundColor: '#F43F5E15' }]}>
+                      <MaterialCommunityIcons name="dumbbell" size={18} color="#F43F5E" />
+                    </View>
+                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Weekly Workouts</Text>
+                  </View>
+                  <Text style={[st.goalValue, { color: '#F43F5E' }]}>{workoutInput} days / wk</Text>
+                </View>
+                <View style={st.adjustControls}>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setWorkoutInput(prev => Math.max(1, prev - 1)); }}
+                  >
+                    <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                  <View style={st.adjustIndicator}>
+                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +300 XP</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => { triggerHaptic('selection'); setWorkoutInput(prev => Math.min(7, prev + 1)); }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Save Button */}
+              <View style={st.modalSaveBtnWrap}>
+                <TouchableOpacity
+                  style={[st.modalSaveBtn, { backgroundColor: colors.lime }]}
+                  activeOpacity={0.85}
+                  onPress={handleSaveGoals}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color={colors.white} />
+                  <Text style={st.modalSaveBtnTxt}>Apply Goal Changes</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </GlassCard>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -433,10 +678,28 @@ const st = StyleSheet.create({
   sectionHeader: {
     marginBottom: 12,
   },
+  headerMainRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  editGoalsShortcut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  editGoalsText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 18,
@@ -601,5 +864,110 @@ const st = StyleSheet.create({
   completedProgress: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalPane: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  modalForm: {
+    maxHeight: 500,
+  },
+  goalEditCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: 'rgba(0,0,0,0.015)',
+  },
+  goalMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  goalMetaLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  goalIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  goalTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  goalValue: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  adjustControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  adjustBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adjustIndicator: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  adjustSub: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalSaveBtnWrap: {
+    marginTop: 16,
+    marginBottom: 30,
+  },
+  modalSaveBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 100,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    elevation: 4,
+  },
+  modalSaveBtnTxt: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

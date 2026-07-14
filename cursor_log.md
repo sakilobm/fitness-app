@@ -1,5 +1,86 @@
 # Cursor Test & Validation Log
 
+## [2026-07-14T19:22:00+05:30] - Screen Edge Alignment on Quest Calendar Tracker Header (v2.12.2)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Header Margin Padding:**
+  - Verified the `ScreenHeader` contains a safe `20px` horizontal margin on both sides.
+  - Confirmed the back navigation icon is perfectly aligned with the grid content and cards, and does not touch or clip the screen border anymore.
+
+## [2026-07-14T19:20:00+05:30] - Status Bar Overlap on Quest Calendar Tracker (v2.12.1)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Safe Area Top Padding:**
+  - Verified the `ScreenHeader` no longer overlaps with or sits behind the hardware notch or device status bar on the Quest Tracker screen.
+  - Confirmed vertical scrolling is smooth and aligns flush with dynamic device height thresholds.
+
+## [2026-07-14T19:15:00+05:30] - Daily Quest Calendar Tracker & Advanced Statistics Screen (v2.12.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Header Navigation Shortcut:**
+  - Tapped the new "Stats" shortcut on the home screen Daily Quests header.
+  - Verified it navigates properly to the newly added `/quests-tracker` screen.
+- **Calendar Monthly Grid:**
+  - Checked paging works correctly between different months.
+  - Verified completed quests are tracked per day: perfect days (5/5 completed) display a golden trophy icon, while days with progress show progress color dots.
+  - Verified selecting any day updates the detailed Quest Breakdown cards inline.
+- **Quest Completion Summary Sharing:**
+  - Tapped "Share Monthly Quest Report" and verified output string formatting aggregates monthly targets correctly.
+
+## [2026-07-14T19:00:00+05:30] - Flexible Sleep Logging Options in Daily Quests (v2.11.2)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Multiple Sleep Quick Action Buttons:**
+  - Tested logging sleep from the Daily Quests widget.
+  - Confirmed 6h, 7h, 8h, and 9h quick options are fully visible and clickable.
+  - Verified selecting a specific duration updates the quest checklist progress immediately with custom deep, rem, and light sleep metrics scaled correctly.
+
+## [2026-07-14T18:50:00+05:30] - Dynamic and Custom-Editable Today's Focus Hero Card (v2.11.1)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Rotating Day Presets:**
+  - Checked focus details fallback correctly based on the current day of the week (e.g. Chest & Triceps on Monday, Legs on Wednesday, Yoga on Thursday).
+- **Edit Customizer Sheet:**
+  - Clicked the pencil edit button on the Today's Focus Hero Card.
+  - Customised values to `Chest Day Blast` (duration `45 min`, calories `380 kcal`, category `Strength`).
+  - Confirmed the Home Screen banner displays these exact custom values immediately.
+  - Reset to rotating presets and verified it defaults back to day-of-week settings.
+
+## [2026-07-14T12:35:00+05:30] - Centralized Daily Goals / Quests Customizer Shortcut (v2.11.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Manual Verification
+- **Adjust Goals Header Shortcut:**
+  - Verified clicking the "Adjust Goals" shortcut on the home screen routes properly to open the custom modal bottom sheet.
+- **Tactile Adjustment Controls:**
+  - Tested incrementing and decrementing steps, calories, water, sleep, and workouts.
+  - Confirmed the limits (minimum and maximum bounds) restrain variables correctly.
+  - Verified unit formatting adapts correctly to `oz` mode.
+  - Tested "Apply Goal Changes" and verified the daily quests checklists render with the updated targets immediately.
+
 ## [2026-07-13T19:15:00+05:30] - Dynamic Steps Font Sizing inside Progress Ring (v2.10.3)
 
 ### Automated Checks

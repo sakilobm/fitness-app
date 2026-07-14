@@ -54,6 +54,11 @@ export interface UserProfile {
   waterGoal: number;
   stepsGoal: number;
   workoutGoal: number;
+  sleepGoal?: number;
+  customFocusTitle?: string;
+  customFocusDuration?: number;
+  customFocusCalories?: number;
+  customFocusType?: string;
   level: number;
   xp: number;
   streak: number;

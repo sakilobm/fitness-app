@@ -137,6 +137,7 @@ const initialUserProfile: UserProfile = {
   waterGoal: 2500,
   stepsGoal: 10000,
   workoutGoal: 4,
+  sleepGoal: 8,
   level: 8,
   xp: 850,
   streak: 14,
@@ -508,6 +509,11 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
           delete dbUpdate.privateProfileEnabled;
           delete dbUpdate.appLockEnabled;
           delete dbUpdate.setupCompleted;
+          delete dbUpdate.sleepGoal;
+          delete dbUpdate.customFocusTitle;
+          delete dbUpdate.customFocusDuration;
+          delete dbUpdate.customFocusCalories;
+          delete dbUpdate.customFocusType;
           
           await supabase.from('profiles').update(dbUpdate).eq('id', data.user.id);
         } catch {}

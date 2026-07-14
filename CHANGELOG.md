@@ -2,6 +2,83 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.12.2] - 2026-07-14T19:22:00+05:30
+
+### Fixed — Screen Edge Alignment on Quest Calendar Tracker Header
+
+**Architectural Decision:** Wrapped the header container in a padded View layout to enforce a consistent 20px safe horizontal margin. This ensures the back navigation arrow does not clip or touch the left screen edge.
+
+**Changes:**
+- **`app/quests-tracker.tsx`:** Wrapped the `ScreenHeader` in a `View` component containing a `paddingHorizontal: 20` and `paddingBottom: 10` layout rule.
+
+#### Rollback
+See ROLLBACK.md section for v2.12.2.
+
+## [2.12.1] - 2026-07-14T19:20:00+05:30
+
+### Fixed — Status Bar Overlap on Quest Calendar Tracker
+
+**Architectural Decision:** Configured safe area top padding dynamically using `useSafeAreaInsets` on the Quest Tracker screen root layout container to prevent top bars from going behind native device status bars.
+
+**Changes:**
+- **`app/quests-tracker.tsx`:** Added `paddingTop: insets.top` to the root `View` container style properties.
+
+#### Rollback
+See ROLLBACK.md section for v2.12.1.
+
+## [2.12.0] - 2026-07-14T19:15:00+05:30
+
+### Added — Daily Quest Calendar Tracker & Advanced Statistics Screen
+
+**Architectural Decision:** Designed and launched a comprehensive sub-page (`app/quests-tracker.tsx`) allowing users to visualize and track quest completion rates historically across a month-by-month calendar view. Integrated advanced monthly metrics summary calculations (average completion rate, perfect 5/5 days counts, active streak details, and per-category achievement charts) alongside dynamic sharing systems.
+
+**Changes:**
+- **`app/quests-tracker.tsx`:** Created a new responsive calendar tracker screen displaying a monthly grid representation of daily quests completion, complete with day selection review panels, metrics progress bars, and stats breakdowns.
+- **`src/components/home/DailyQuests.tsx`:** Integrated a "Stats" shortcut action next to "Adjust Goals" on the Daily Quests card header to navigate to the new calendar tracker route.
+
+#### Rollback
+See ROLLBACK.md section for v2.12.0.
+
+## [2.11.2] - 2026-07-14T19:00:00+05:30
+
+### Added — Flexible Sleep Logging Options in Daily Quests
+
+**Architectural Decision:** Replaced the static, single "Log 8h" quick logging option in the Sleep Quest widget with a multi-option selector (6h, 7h, 8h, and 9h). Structured the quick log logic to dynamically calculate sleep cycles, sleep stage metrics (deep, rem, light, awake time ratios), and sleep quality scores based on the hours chosen.
+
+**Changes:**
+- **`src/components/home/DailyQuests.tsx`:** Updated the sleep quest definition object's `actions` list to export 6h, 7h, 8h, and 9h options, and updated `onQuickLog` to dynamically scale quality scores and phase ratios.
+
+#### Rollback
+See ROLLBACK.md section for v2.11.2.
+
+## [2.11.1] - 2026-07-14T18:50:00+05:30
+
+### Added — Dynamic and Custom-Editable Today's Focus Hero Card
+
+**Architectural Decision:** Replaced the static hardcoded home screen "Today's Focus" hero card with a dynamic system. Built an automatic daily rotating preset cycle (mapping different muscle groups/cardio workouts to each day of the week) and integrated a bottom sheet modal to configure custom titles, active durations, categories, and estimated calories.
+
+**Changes:**
+- **`src/types/index.ts`:** Appended `customFocusTitle`, `customFocusDuration`, `customFocusCalories`, and `customFocusType` optional fields to `UserProfile` type definitions.
+- **`src/store/fitnessStore.ts`:** Excluded focus configuration fields from Supabase profiles payload updates to prevent column schema failures.
+- **`app/(tabs)/index.tsx`:** Dynamized focus card text rendering. Added a premium circular edit trigger icon and a full-featured `FocusCustomizerModal` bottom sheet with quick preset chips (Legs, HIIT, Upper Body, etc.).
+
+#### Rollback
+See ROLLBACK.md section for v2.11.1.
+
+## [2.11.0] - 2026-07-14T12:35:00+05:30
+
+### Added — Centralized Daily Goals / Quests Customizer Shortcut
+
+**Architectural Decision:** Unified the concepts of "Goals" (numeric configuration values) and "Quests" (gamified checklist displays) under a single underlying store state. Created a highly interactive bottom sheet modal triggerable directly from the Home Screen's Daily Quests card to easily modify active targets using tactile increment controls without keyboard interruptions.
+
+**Changes:**
+- **`src/types/index.ts`:** Added optional `sleepGoal` field to the `UserProfile` schema.
+- **`src/store/fitnessStore.ts`:** Added `sleepGoal` default initialization to `initialUserProfile` and safely handled its exclusion from Supabase schema updates to prevent column errors.
+- **`src/components/home/DailyQuests.tsx`:** Added an "Adjust Goals" shortcut button on the main header. Built an interactive `GoalCustomizerModal` bottom sheet modal with tactile adjustment controls for calorie, water, steps, sleep, and weekly workouts.
+
+#### Rollback
+See ROLLBACK.md section for v2.11.0.
+
 ## [2.10.3] - 2026-07-13T19:15:00+05:30
 
 ### Fixed — Dynamic Steps Font Sizing inside Progress Ring

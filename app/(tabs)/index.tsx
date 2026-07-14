@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, Image, Modal, Dimensions,
+  TouchableOpacity, Image, Modal, Dimensions, TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useFitnessStore } from '@/store/fitnessStore';
+import { triggerHaptic } from '@/utils/haptics';
 import GlassCard from '@/components/ui/GlassCard';
 import AppIcon from '@/components/ui/AppIcon';
 import { Radius, useTheme } from '@/constants/theme';
@@ -37,6 +39,69 @@ export default function HomeScreen() {
     goToRewards, goToProfile, goToSteps, goToWater, goToBmi, goToCycle,
     stepsCount, activeMinutes,
   } = useHomeDashboard();
+
+  const { setUser } = useFitnessStore();
+
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [focusTitleInput, setFocusTitleInput] = useState('');
+  const [focusDurationInput, setFocusDurationInput] = useState('45');
+  const [focusCaloriesInput, setFocusCaloriesInput] = useState('380');
+  const [focusTypeInput, setFocusTypeInput] = useState('Strength');
+
+  // Days of the week preset list
+  const defaultFocus = useMemo(() => {
+    const day = new Date().getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const presets = [
+      { title: "Rest & Stretch", duration: 20, calories: 120, type: "Stretch" }, // Sunday
+      { title: "Chest & Triceps", duration: 50, calories: 420, type: "Strength" }, // Monday
+      { title: "HIIT & Cardio", duration: 35, calories: 350, type: "Cardio" }, // Tuesday
+      { title: "Legs & Lower Body", duration: 60, calories: 500, type: "Strength" }, // Wednesday
+      { title: "Recovery Yoga", duration: 40, calories: 180, type: "Flexibility" }, // Thursday
+      { title: "Back & Biceps Power", duration: 50, calories: 400, type: "Strength" }, // Friday
+      { title: "Core & Abs Blast", duration: 30, calories: 250, type: "Core" } // Saturday
+    ];
+    return presets[day] || presets[1];
+  }, []);
+
+  const currentFocus = useMemo(() => {
+    return {
+      title: user.customFocusTitle || defaultFocus.title,
+      duration: user.customFocusDuration || defaultFocus.duration,
+      calories: user.customFocusCalories || defaultFocus.calories,
+      type: user.customFocusType || defaultFocus.type,
+    };
+  }, [user, defaultFocus]);
+
+  const openFocusCustomizer = () => {
+    triggerHaptic('selection');
+    setFocusTitleInput(currentFocus.title);
+    setFocusDurationInput(currentFocus.duration.toString());
+    setFocusCaloriesInput(currentFocus.calories.toString());
+    setFocusTypeInput(currentFocus.type);
+    setShowFocusModal(true);
+  };
+
+  const handleSaveFocus = () => {
+    triggerHaptic('success');
+    setUser({
+      customFocusTitle: focusTitleInput,
+      customFocusDuration: parseInt(focusDurationInput, 10) || 45,
+      customFocusCalories: parseInt(focusCaloriesInput, 10) || 380,
+      customFocusType: focusTypeInput,
+    });
+    setShowFocusModal(false);
+  };
+
+  const handleResetFocus = () => {
+    triggerHaptic('selection');
+    setUser({
+      customFocusTitle: undefined,
+      customFocusDuration: undefined,
+      customFocusCalories: undefined,
+      customFocusType: undefined,
+    });
+    setShowFocusModal(false);
+  };
 
   // Activity metrics — built here to avoid import cycle; handlers come from hook.
   const activityMetrics = useMemo(() => [
@@ -119,25 +184,36 @@ export default function HomeScreen() {
         <View style={styles.heroBg} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroBody}>
-          <View style={styles.heroBadge}>
-            <View style={styles.heroBadgeDot} />
-            <Text style={styles.heroBadgeTxt}>TODAY'S FOCUS</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 12 }}>
+            <View style={styles.heroBadge}>
+              <View style={styles.heroBadgeDot} />
+              <Text style={styles.heroBadgeTxt}>TODAY'S FOCUS</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.heroEditBtn}
+              activeOpacity={0.8}
+              onPress={openFocusCustomizer}
+            >
+              <Ionicons name="create-outline" size={15} color={colors.text.primary} />
+            </TouchableOpacity>
           </View>
-          <Text style={styles.heroTitle}>Upper Body{'\n'}Strength</Text>
+
+          <Text style={styles.heroTitle} numberOfLines={2} adjustsFontSizeToFit>{currentFocus.title}</Text>
+          
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Ionicons name="timer-outline" size={14} color={colors.muted} />
-              <Text style={styles.heroStatVal}>45 min</Text>
+              <Text style={styles.heroStatVal}>{currentFocus.duration} min</Text>
             </View>
             <View style={styles.heroStatSep} />
             <View style={styles.heroStat}>
               <Ionicons name="flame" size={14} color={colors.amber} />
-              <Text style={styles.heroStatVal}>380 kcal</Text>
+              <Text style={styles.heroStatVal}>{currentFocus.calories} kcal</Text>
             </View>
             <View style={styles.heroStatSep} />
             <View style={styles.heroStat}>
               <MaterialCommunityIcons name="dumbbell" size={14} color={colors.muted} />
-              <Text style={styles.heroStatVal}>Strength</Text>
+              <Text style={styles.heroStatVal}>{currentFocus.type}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.heroBtn} activeOpacity={0.85} onPress={() => router.push('/workouts')}>
@@ -271,6 +347,109 @@ export default function HomeScreen() {
           </GlassCard>
         </View>
       </Modal>
+
+      {/* ── Today's Focus Customizer Modal ────────────────────────────────────────── */}
+      <Modal visible={showFocusModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <GlassCard style={styles.customizerPane}>
+            <View style={styles.customizerHeader}>
+              <Text style={styles.customizerTitle}>Customize Today's Focus</Text>
+              <TouchableOpacity onPress={() => setShowFocusModal(false)}>
+                <Ionicons name="close-circle-outline" size={26} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.customizerScroll}>
+              <Text style={styles.inputLabel}>Focus Workout Title</Text>
+              <TextInput
+                style={[styles.inputField, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: colors.text.primary, borderColor: colors.cardBorder }]}
+                placeholder="e.g. Upper Body Strength"
+                placeholderTextColor={colors.muted}
+                value={focusTitleInput}
+                onChangeText={setFocusTitleInput}
+              />
+
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Duration (Min)</Text>
+                  <TextInput
+                    style={[styles.inputField, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    keyboardType="numeric"
+                    maxLength={3}
+                    placeholder="45"
+                    placeholderTextColor={colors.muted}
+                    value={focusDurationInput}
+                    onChangeText={setFocusDurationInput}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Calories (kcal)</Text>
+                  <TextInput
+                    style={[styles.inputField, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    keyboardType="numeric"
+                    maxLength={4}
+                    placeholder="380"
+                    placeholderTextColor={colors.muted}
+                    value={focusCaloriesInput}
+                    onChangeText={setFocusCaloriesInput}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Workout Category</Text>
+              <TextInput
+                style={[styles.inputField, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: colors.text.primary, borderColor: colors.cardBorder, marginBottom: 12 }]}
+                placeholder="e.g. Strength, Cardio, Flexibility"
+                placeholderTextColor={colors.muted}
+                value={focusTypeInput}
+                onChangeText={setFocusTypeInput}
+              />
+
+              <Text style={styles.inputLabel}>Quick Focus Presets</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                {[
+                  { title: "Chest & Triceps", duration: 50, calories: 420, type: "Strength" },
+                  { title: "HIIT Cardio Blast", duration: 35, calories: 350, type: "Cardio" },
+                  { title: "Legs & Lower Body", duration: 60, calories: 500, type: "Strength" },
+                  { title: "Recovery Yoga", duration: 40, calories: 180, type: "Flexibility" },
+                  { title: "Back & Biceps Power", duration: 50, calories: 400, type: "Strength" },
+                  { title: "Core & Abs Blast", duration: 30, calories: 250, type: "Core" }
+                ].map((preset, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[styles.presetChip, { borderColor: colors.cardBorder, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
+                    onPress={() => {
+                      triggerHaptic('selection');
+                      setFocusTitleInput(preset.title);
+                      setFocusDurationInput(preset.duration.toString());
+                      setFocusCaloriesInput(preset.calories.toString());
+                      setFocusTypeInput(preset.type);
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, color: colors.text.secondary, fontWeight: '600' }}>{preset.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', flex: 1, borderColor: colors.cardBorder, borderWidth: 1 }]}
+                onPress={handleResetFocus}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text.secondary, textAlign: 'center' }}>Reset to Preset</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: colors.lime, flex: 2 }]}
+                onPress={handleSaveFocus}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFF', textAlign: 'center' }}>Apply Focus</Text>
+              </TouchableOpacity>
+            </View>
+          </GlassCard>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -357,4 +536,9 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   reorderBtnDisabled: { opacity: 0.4 },
   closeCustomizer: { backgroundColor: colors.text.primary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
   closeCustomizerText: { fontSize: 15, fontWeight: '700', color: colors.bg },
+  heroEditBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center' },
+  inputLabel: { fontSize: 11, fontWeight: '700', color: colors.text.secondary, marginBottom: 6, marginTop: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
+  inputField: { borderRadius: Radius.md, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14 },
+  presetChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
+  actionBtn: { paddingVertical: 12, borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center' },
 });

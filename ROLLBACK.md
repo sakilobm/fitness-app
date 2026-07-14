@@ -1,5 +1,72 @@
 # Rollback Plan
 
+If version `2.12.2` (Screen Edge Alignment on Quest Calendar Tracker Header) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.12.1)
+
+1. **Revert padded header view wrapper:**
+   ```powershell
+   git checkout v2.12.1 -- app/quests-tracker.tsx
+   ```
+
+---
+
+If version `2.12.1` (Status Bar Overlap on Quest Calendar Tracker) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.12.0)
+
+1. **Revert safe area top padding change:**
+   ```powershell
+   git checkout v2.12.0 -- app/quests-tracker.tsx
+   ```
+
+---
+
+If version `2.12.0` (Daily Quest Calendar Tracker & Advanced Statistics Screen) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.11.2)
+
+1. **Delete the custom quests-tracker page and revert navigation headers:**
+   ```powershell
+   rm app/quests-tracker.tsx
+   git checkout v2.11.2 -- src/components/home/DailyQuests.tsx
+   ```
+
+---
+
+If version `2.11.2` (Flexible Sleep Logging Options in Daily Quests) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.11.1)
+
+1. **Revert multiple sleep actions changes:**
+   ```powershell
+   git checkout v2.11.1 -- src/components/home/DailyQuests.tsx
+   ```
+
+---
+
+If version `2.11.1` (Dynamic and Custom-Editable Today's Focus Hero Card) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.11.0)
+
+1. **Revert focus customizer code logic and layouts:**
+   ```powershell
+   git checkout v2.11.0 -- src/types/index.ts src/store/fitnessStore.ts app/(tabs)/index.tsx
+   ```
+
+---
+
+If version `2.11.0` (Centralized Daily Goals / Quests Customizer Shortcut) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.10.3)
+
+1. **Revert goal customizer additions and schemas:**
+   ```powershell
+   git checkout v2.10.3 -- src/types/index.ts src/store/fitnessStore.ts src/components/home/DailyQuests.tsx
+   ```
+
+---
+
 If version `2.10.3` (Dynamic Steps Font Sizing inside Progress Ring) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.10.2)
