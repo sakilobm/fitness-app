@@ -1,3 +1,15 @@
+/**
+ * @route quests-tracker
+ * @module App Router Entrypoint
+ * @description Orchestration screen layout for the Daily Quests and custom challenges tracker.
+ * 
+ * @param {None} - Route mapping controller.
+ * @process Enna Pannum (Internal Logic):
+ *          - Connects custom hooks to pull fully processed datasets.
+ *          - Standardizes widget configurations into generic templates.
+ * @returns {React.ReactElement} Enna Return Pannum (Outputs): Parent Screen layout container.
+ */
+
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,

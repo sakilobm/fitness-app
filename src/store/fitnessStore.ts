@@ -1,3 +1,16 @@
+/**
+ * @file fitnessStore.ts
+ * @module Store/FitnessStore
+ * @description Centralized Zustand state management architecture with persistent MMKV synchronization.
+ * 
+ * @param {None} - Root store provider.
+ * @process Enna Pannum (Internal Processing):
+ *          - Manages user profiles, historical step streams, hydration, diets, custom challenges, sleep cycles, and achievements.
+ *          - Automatically persists store state using a highly optimized JSON storage engine linked to MMKV.
+ *          - Automatically runs experience calculators and triggers dynamic level-up rewards when action thresholds are met.
+ * @returns {StoreApi<FitnessState>} Enna Return Pannum (Outputs): Globally accessible reactive state context and actions.
+ */
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';

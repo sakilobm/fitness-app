@@ -1,3 +1,16 @@
+/**
+ * @hook useQuestTracker
+ * @module Features/Quests/Hooks
+ * @description Decoupled calculations and performance engine for daily challenges and user-created custom quests. Selector layer over Zustand store.
+ * 
+ * @param {None} - Enna Vāngum (Inputs): Consumes user level, goals, step counters, logs, sleep metrics, and custom quest configurations from the Zustand fitness store via granular select functions.
+ * @process Enna Pannum (Internal Logic):
+ *          - Granular selectors wrapped in `useShallow` to prevent unnecessary component thrashing.
+ *          - Performance: Memoizes selected date metrics, monthly summaries, quest completion rates, and quest lists via `useMemo`.
+ *          - Restricts haptic feedback calls and sharing actions using React `useCallback` references.
+ * @returns {UseQuestTrackerResult} Enna Return Pannum (Outputs): Memoized state metrics, navigation handlers, custom quest CRUD setters, and sharing utilities.
+ */
+
 import { useState, useMemo, useCallback } from 'react';
 import { useFitnessStore } from '@/store/fitnessStore';
 import { useShallow } from 'zustand/react/shallow';

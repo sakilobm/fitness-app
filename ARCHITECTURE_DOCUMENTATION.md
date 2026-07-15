@@ -307,3 +307,54 @@ To simplify component code and maintain a single source of truth, user profile c
 * **Hydration Adjusters:** Daily hydration targets are displayed in ounces if `volumeUnit === 'oz'` and can be incremented or decremented in standard `8 oz` steps or modified via custom quick-pills.
 * **Cloud & Purge Operations:** Contains manual backup sync buttons (which pull from and load the latest Supabase profiles state synchronously into the UI inputs) and database purge confirmation dialogs (which wipe local MMKV store state and clear remote Supabase table rows securely).
 * **System-Wide Haptic Toggles:** Global preference toggles (`user.hapticsEnabled`) drive the native `expo-haptics` module throughout weight tracking, water tracking, and settings clicks.
+
+---
+
+## 16. Domain-Driven Feature Decoupling & Selective Zustand Subscriptions (v2.13.4)
+
+To achieve maximum horizontal scalability, zero-lag re-renders (60 FPS fluid performance), and clean code maintenance, the application enforces a strict separation of concerns by separating presentation elements from the business hooks/math utility layers.
+
+### A. Directory Structure Mapping
+We deconstruct monolithic screens by isolating states, actions, and pure calculations into feature-specific directories (`src/features/{domain}/`):
+*   **Hooks (`hooks/`):** Custom selective hooks that handle local states, modal toggles, stopwatch interval tickers, native callbacks, and store subscriptions.
+*   **Utilities (`utils/`):** Pure mathematical functions (no React dependencies) for calorie burns, BMI classes, calendar day builders, and step streaks.
+*   **Components (`components/`):** Presentational subcomponents (e.g. `BMIGridHero.tsx`, `QuestItem.tsx`) optimized for performance.
+
+```
+src/features/
+├── bmi/
+│   ├── hooks/useBMIScreen.ts
+│   └── utils/bmiCalculator.ts
+├── quests/
+│   ├── hooks/useQuestTracker.ts
+│   └── utils/questDateUtils.ts
+├── steps/
+│   ├── hooks/useStepsScreen.ts
+│   └── utils/stepsMath.ts
+└── workouts/
+    ├── hooks/useWorkoutsScreen.ts
+    └── utils/workoutCalculations.ts
+```
+
+### B. Selector-Based Performance Engine (`useShallow`)
+Consuming State directly via bare destructuring (e.g. `const { user, steps } = useFitnessStore()`) causes components to re-render whenever *any* property of the store updates. 
+We resolve this by using Zustand's `useShallow` selector pattern inside feature hooks:
+```typescript
+const store = useFitnessStore(useShallow((s) => ({
+  stepsCount: s.stepsCount,
+  activeMinutes: s.activeMinutes,
+  stepHistory: s.stepHistory,
+})));
+```
+This ensures that React view elements are only notified and re-rendered when their exact requested properties change, eliminating cascade re-renders.
+
+### C. Pure Math Utilities & Memoized Transforms
+To offload processing from the React lifecycle:
+*   **Zero-Dependency Calculators:** Calorie expenditure values and BMI status classifications are calculated in standalone functional files (e.g. [workoutCalculations.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/workouts/utils/workoutCalculations.ts)).
+*   **Strict Memoization (`useMemo`):** Heavy transformations, such as slicing arrays, reducing metrics totals, and filtering historical datasets, are wrapped inside React `useMemo` blocks with precise dependency arrays to ensure calculations are only re-evaluated when the source arrays actually change.
+
+### D. Zero-Visual-Regression Boundaries
+To preserve the premium dashboard grids, glassmorphism aesthetics, and user experience controls:
+*   **Stylesheets & Markups Untouched:** Visual elements, style properties, fonts, margin constants, and layout markup tags are kept exactly identical to the original repository.
+*   **Hook Decoupling Adapter:** Monolithic screen files (e.g. [app/workouts.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/workouts.tsx)) serve as pure presentational layouts, destructuring their states and functions dynamically from feature hooks without changing visual styles.
+

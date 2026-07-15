@@ -1,3 +1,18 @@
+/**
+ * @hook useCalendarData
+ * @module Hooks/CalendarData
+ * @description Compiles, tracks, and caches aggregate fitness metrics, daily streak flags, and calendar cells. Selector layer over Zustand store.
+ * 
+ * @param {number} viewYear - Enna Vāngum (Inputs): The active calendar view year.
+ * @param {number} viewMonth - Enna Vāngum (Inputs): The active calendar view month (0-indexed).
+ * @param {string} selDate - Enna Vāngum (Inputs): Selected ISO date string (YYYY-MM-DD) for metrics extraction.
+ * @process Enna Pannum (Internal Logic):
+ *          - Subscribes to BMI trackers, workout logs, water hydration logs, and diet store metrics.
+ *          - Combines history arrays via optimized `useMemo` loops to build calendar cells status configurations.
+ *          - Calculates month-over-month averages and delta indicators.
+ * @returns {CalendarDataResult} Enna Return Pannum (Outputs): Memoized calendar cell structures, monthly averages, and daily details.
+ */
+
 import { useMemo, useEffect, useCallback } from 'react';
 import {
   useFitnessStore,
@@ -8,48 +23,97 @@ import {
 } from '@/store/fitnessStore';
 import { buildCalendarDays, todayISO } from '@/constants/calendar';
 
+/**
+ * Status representation of a calendar day's logged activities.
+ * Used to render small progress dot indications in the calendar cells.
+ */
 export interface DayStatus {
+  /** True if a body weight log was submitted on this date. */
   hasWeight:  boolean;
+  /** Percentage of daily step count goal achieved (0–100). */
   stepsPct:   number;   // 0–100
+  /** Percentage of daily water volume goal achieved (0–100). */
   waterPct:   number;   // 0–100
+  /** Percentage of daily active calorie goal achieved (0–100). */
   mealsPct:   number;   // 0–100
+  /** Dynamic sleep score recorded on this date (0–100), or null if unrecorded. */
   sleepScore: number | null;
 }
 
+/**
+ * Aggregated summary statistics for a selected calendar month.
+ */
 export interface MonthStats {
+  /** Total number of times weight logs were added during this month. */
   weightEntries: number;
+  /** Number of days where step count achieved at least 60% of the target. */
   activeDays:    number;
+  /** Average daily step count logged during this month. */
   avgSteps:      number;
+  /** Net weight change (in kg) from the first log to the last log of this month. */
   trend:         number | null;  // kg change first→last of month
 }
 
+/**
+ * Detailed metrics breakdown for a selected calendar date.
+ */
 export interface DayDetail {
+  /** Human-readable date string label (e.g. "Monday, July 15"). */
   label:        string;
+  /** True if this date represents the current active calendar day. */
   isToday:      boolean;
+  /** Active weight log entry registered for this day (weight in kg and timeOfDay). */
   wLog?:        { weight: number; timeOfDay: string } | undefined;
+  /** Weight difference compared to the closest previous recorded weight. */
   weightDelta:  number | null;
+  /** Steps log entry registered for this day. */
   sLog?:        { steps: number; distanceKm: number; caloriesBurned: number } | undefined;
+  /** Step goal completion percentage (0-100). */
   stepsPct:     number;
+  /** Total water consumed in ml on this day. */
   waterMl:      number;
+  /** Water goal completion percentage (0-100). */
   waterPct:     number;
+  /** Total active food calories logged in kcal on this day. */
   caloriesKcal: number;
+  /** Calorie goal completion percentage (0-100). */
   calPct:       number;
+  /** Number of dynamic meals logged on this day. */
   mealsLogged:  number;
+  /** Target water intake goal in ml. */
   wGoal:        number;
+  /** Target calorie intake goal in kcal. */
   calGoal:      number;
+  /** Target step count goal. */
   sGoal:        number;
+  /** Preferred display unit for weight metrics ('kg' or 'lbs'). */
   weightUnit:   string;
 }
 
 interface CalendarDataResult {
+  /** List of month days representing the month grid (including leading null spaces). */
   calDays:      (number | null)[];
+  /** Callbacks to resolve a day's status dots list based on ISO date. */
   getDayStatus: (dateStr: string) => DayStatus;
+  /** Monthly stats aggregations for the active calendar view month. */
   monthStats:   MonthStats;
+  /** Detailed log information metrics breakdown for the selected calendar date. */
   dayDetail:    DayDetail | null;
 }
 
 const TOD_ORDER: Record<string, number> = { morning: 0, afternoon: 1, night: 2 };
 
+/**
+ * Custom hook to compile, sync, and memoize calendar overview stats, monthly trends,
+ * and date details for the calendar tracker screens.
+ * 
+ * Automatically captures today's live tracker totals (water, steps, meals) and snapshots
+ * them dynamically to the central persistence store daily logs context.
+ * 
+ * @param viewYear The calendar year currently in view (e.g. 2026).
+ * @param viewMonth The 0-indexed calendar month currently in view (0 = January).
+ * @param selDate Selected ISO date string (YYYY-MM-DD) to fetch details for.
+ */
 export function useCalendarData(
   viewYear:  number,
   viewMonth: number,
