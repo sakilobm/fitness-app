@@ -48,6 +48,7 @@ export function useQuestList() {
   const [calorieInput, setCalorieInput] = useState(2300);
   const [sleepInput, setSleepInput] = useState(8);
   const [workoutInput, setWorkoutInput] = useState(4);
+  const [exerciseInput, setExerciseInput] = useState(30);
 
   const openGoalsModal = useCallback(() => {
     triggerHaptic('selection');
@@ -56,6 +57,7 @@ export function useQuestList() {
     setCalorieInput(user.calorieGoal);
     setSleepInput(user.sleepGoal || 8);
     setWorkoutInput(user.workoutGoal);
+    setExerciseInput(user.activeMinutesGoal || 30);
     setShowGoalsModal(true);
   }, [user, isOz]);
 
@@ -67,9 +69,10 @@ export function useQuestList() {
       calorieGoal: calorieInput,
       sleepGoal: sleepInput,
       workoutGoal: workoutInput,
+      activeMinutesGoal: exerciseInput,
     });
     setShowGoalsModal(false);
-  }, [stepsInput, waterInput, calorieInput, sleepInput, workoutInput, isOz, setUser]);
+  }, [stepsInput, waterInput, calorieInput, sleepInput, workoutInput, exerciseInput, isOz, setUser]);
 
   const closeGoalsModal = useCallback(() => {
     setShowGoalsModal(false);
@@ -376,6 +379,8 @@ export function useQuestList() {
     setSleepInput,
     workoutInput,
     setWorkoutInput,
+    exerciseInput,
+    setExerciseInput,
     isOz,
   };
 }

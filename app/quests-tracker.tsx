@@ -33,6 +33,8 @@ export default function QuestsTrackerScreen() {
   const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const {
+    user,
+    setUser,
     viewYear,
     viewMonth,
     selectedDate,
@@ -60,6 +62,50 @@ export default function QuestsTrackerScreen() {
   const [questDurationDays, setQuestDurationDays] = useState('7');
   const [selectedIcon, setSelectedIcon] = useState('trophy');
   const [selectedColor, setSelectedColor] = useState('#10B981');
+
+  // Goals modal state
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [goalSteps, setGoalSteps] = useState(user.stepsGoal?.toString() || '10000');
+  const [goalWater, setGoalWater] = useState(user.waterGoal?.toString() || '2500');
+  const [goalCalories, setGoalCalories] = useState(user.calorieGoal?.toString() || '2000');
+  const [goalSleep, setGoalSleep] = useState(user.sleepGoal?.toString() || '8');
+  const [goalActive, setGoalActive] = useState(user.activeMinutesGoal?.toString() || '30');
+
+  const handleOpenGoalsModal = () => {
+    setGoalSteps(user.stepsGoal?.toString() || '10000');
+    setGoalWater(user.waterGoal?.toString() || '2500');
+    setGoalCalories(user.calorieGoal?.toString() || '2000');
+    setGoalSleep(user.sleepGoal?.toString() || '8');
+    setGoalActive(user.activeMinutesGoal?.toString() || '30');
+    setShowGoalsModal(true);
+  };
+
+  const handleSaveGoals = () => {
+    const stepsVal = parseInt(goalSteps, 10);
+    const waterVal = parseInt(goalWater, 10);
+    const caloriesVal = parseInt(goalCalories, 10);
+    const sleepVal = parseFloat(goalSleep);
+    const activeVal = parseInt(goalActive, 10);
+
+    if (isNaN(stepsVal) || stepsVal <= 0 ||
+        isNaN(waterVal) || waterVal <= 0 ||
+        isNaN(caloriesVal) || caloriesVal <= 0 ||
+        isNaN(sleepVal) || sleepVal <= 0 ||
+        isNaN(activeVal) || activeVal <= 0) {
+      Alert.alert('Invalid Goals', 'Please enter valid positive numbers for all goals.');
+      return;
+    }
+
+    triggerHaptic('success');
+    setUser({
+      stepsGoal: stepsVal,
+      waterGoal: waterVal,
+      calorieGoal: caloriesVal,
+      sleepGoal: sleepVal,
+      activeMinutesGoal: activeVal,
+    });
+    setShowGoalsModal(false);
+  };
 
   // Quick log progress state
   const [showLogModal, setShowLogModal] = useState(false);
@@ -260,7 +306,17 @@ export default function QuestsTrackerScreen() {
         {/* ── Selected Day Focus Card ────────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Quest Breakdown</Text>
-          <Text style={styles.dateLabelBadge}>{selectedDate === todayStr ? 'Today' : selectedDate}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.dateLabelBadge}>{selectedDate === todayStr ? 'Today' : selectedDate}</Text>
+            <TouchableOpacity
+              style={styles.editGoalsButton}
+              activeOpacity={0.8}
+              onPress={handleOpenGoalsModal}
+            >
+              <Ionicons name="settings-outline" size={12} color={colors.lime} />
+              <Text style={styles.editGoalsButtonText}>Edit Goals</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <GlassCard style={styles.breakdownCard}>
@@ -529,6 +585,20 @@ export default function QuestsTrackerScreen() {
                     value={questTarget}
                     onChangeText={setQuestTarget}
                   />
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPillsRow}>
+                    {['5', '10', '20', '50', '100', '1000'].map((val) => (
+                      <TouchableOpacity
+                        key={val}
+                        style={[styles.quickPill, { borderColor: colors.cardBorder }]}
+                        onPress={() => {
+                          triggerHaptic('selection');
+                          setQuestTarget(val);
+                        }}
+                      >
+                        <Text style={[styles.quickPillText, { color: colors.text.secondary }]}>{val}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modalInputLabel}>Unit</Text>
@@ -539,18 +609,76 @@ export default function QuestsTrackerScreen() {
                     value={questUnit}
                     onChangeText={setQuestUnit}
                   />
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPillsRow}>
+                    {['reps', 'mins', 'ml', 'km', 'steps', 'times'].map((val) => (
+                      <TouchableOpacity
+                        key={val}
+                        style={[styles.quickPill, { borderColor: colors.cardBorder }]}
+                        onPress={() => {
+                          triggerHaptic('selection');
+                          setQuestUnit(val);
+                        }}
+                      >
+                        <Text style={[styles.quickPillText, { color: colors.text.secondary }]}>{val}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               </View>
 
-              <Text style={styles.modalInputLabel}>Duration (Days · Set 0 for ongoing)</Text>
-              <TextInput
-                style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
-                keyboardType="numeric"
-                placeholder="e.g. 7 or 30 (0 for indefinite)"
-                placeholderTextColor={colors.muted}
-                value={questDurationDays}
-                onChangeText={setQuestDurationDays}
-              />
+              <Text style={styles.modalInputLabel}>Challenge Duration</Text>
+              <View style={styles.durationPillsRow}>
+                {[
+                  { label: 'Ongoing', value: 0 },
+                  { label: '7 Days', value: 7 },
+                  { label: '30 Days', value: 30 },
+                  { label: 'Custom', value: -1 }
+                ].map((dur) => {
+                  const isSelected = dur.value === -1
+                    ? (questDurationDays !== '0' && questDurationDays !== '7' && questDurationDays !== '30')
+                    : questDurationDays === dur.value.toString();
+                  return (
+                    <TouchableOpacity
+                      key={dur.label}
+                      style={[
+                        styles.durationPill,
+                        { borderColor: colors.cardBorder },
+                        isSelected && { borderColor: colors.lime, backgroundColor: colors.lime + '15' }
+                      ]}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        if (dur.value === -1) {
+                          setQuestDurationDays('14'); // Default custom value
+                        } else {
+                          setQuestDurationDays(dur.value.toString());
+                        }
+                      }}
+                    >
+                      <Text style={[
+                        styles.durationPillText,
+                        { color: colors.text.secondary },
+                        isSelected && { color: colors.lime, fontWeight: '700' }
+                      ]}>
+                        {dur.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {questDurationDays !== '0' && questDurationDays !== '7' && questDurationDays !== '30' && (
+                <View>
+                  <Text style={styles.modalInputLabel}>Custom Duration (Days)</Text>
+                  <TextInput
+                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    keyboardType="numeric"
+                    placeholder="Enter number of days"
+                    placeholderTextColor={colors.muted}
+                    value={questDurationDays}
+                    onChangeText={setQuestDurationDays}
+                  />
+                </View>
+              )}
 
               {/* Icon Selector */}
               <Text style={styles.modalInputLabel}>Select Icon</Text>
@@ -619,6 +747,115 @@ export default function QuestsTrackerScreen() {
                   <Text style={styles.modalDeleteBtnText}>Delete Challenge</Text>
                 </TouchableOpacity>
               )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Edit Daily Goals Modal ── */}
+      <Modal
+        visible={showGoalsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowGoalsModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalBackdrop}
+        >
+          <TouchableOpacity
+            style={styles.modalBackdropPressable}
+            activeOpacity={1}
+            onPress={() => setShowGoalsModal(false)}
+          />
+          <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitleText}>Customize Daily Goals</Text>
+              <TouchableOpacity
+                onPress={() => setShowGoalsModal(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <View>
+                <Text style={styles.modalInputLabel}>Steps Target (steps/day)</Text>
+                <TextInput
+                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                  keyboardType="numeric"
+                  placeholder="e.g. 10000"
+                  placeholderTextColor={colors.muted}
+                  value={goalSteps}
+                  onChangeText={setGoalSteps}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalInputLabel}>Hydration Target ({user.volumeUnit === 'oz' ? 'oz/day' : 'ml/day'})</Text>
+                <TextInput
+                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                  keyboardType="numeric"
+                  placeholder="e.g. 2500"
+                  placeholderTextColor={colors.muted}
+                  value={goalWater}
+                  onChangeText={setGoalWater}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalInputLabel}>Calorie Target (kcal/day)</Text>
+                <TextInput
+                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                  keyboardType="numeric"
+                  placeholder="e.g. 2000"
+                  placeholderTextColor={colors.muted}
+                  value={goalCalories}
+                  onChangeText={setGoalCalories}
+                />
+              </View>
+
+              <View style={styles.modalDoubleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalInputLabel}>Sleep Target (hours)</Text>
+                  <TextInput
+                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    keyboardType="numeric"
+                    placeholder="e.g. 8"
+                    placeholderTextColor={colors.muted}
+                    value={goalSleep}
+                    onChangeText={setGoalSleep}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalInputLabel}>Exercise Target (mins)</Text>
+                  <TextInput
+                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    keyboardType="numeric"
+                    placeholder="e.g. 30"
+                    placeholderTextColor={colors.muted}
+                    value={goalActive}
+                    onChangeText={setGoalActive}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.modalCancelBtn, { borderColor: colors.cardBorder }]}
+                  onPress={() => setShowGoalsModal(false)}
+                >
+                  <Text style={[styles.modalBtnText, { color: colors.text.primary }]}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.modalSaveBtn, { backgroundColor: colors.lime }]}
+                  onPress={handleSaveGoals}
+                >
+                  <Text style={[styles.modalBtnText, { color: '#000000', fontWeight: '800' }]}>Save Goals</Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -1175,5 +1412,56 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
     textAlign: 'center',
+  },
+  editGoalsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.lime + '30',
+    backgroundColor: colors.lime + '10',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  editGoalsButtonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.lime,
+  },
+  durationPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  durationPill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+  },
+  durationPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  quickPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 6,
+    paddingBottom: 4,
+  },
+  quickPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderRadius: 10,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+  },
+  quickPillText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
 });

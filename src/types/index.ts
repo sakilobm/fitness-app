@@ -55,6 +55,7 @@ export interface UserProfile {
   stepsGoal: number;
   workoutGoal: number;
   sleepGoal?: number;
+  activeMinutesGoal?: number;
   customFocusTitle?: string;
   customFocusDuration?: number;
   customFocusCalories?: number;

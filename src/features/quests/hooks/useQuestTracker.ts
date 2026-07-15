@@ -22,6 +22,7 @@ export function useQuestTracker() {
   // Select state fields from Zustand store using select functions
   const store = useFitnessStore(useShallow((s) => ({
     user: s.user,
+    setUser: s.setUser,
     stepsCount: s.stepsCount,
     stepHistory: s.stepHistory,
     waterLogs: s.waterLogs,
@@ -40,6 +41,7 @@ export function useQuestTracker() {
 
   const {
     user,
+    setUser,
     stepsCount,
     stepHistory,
     waterLogs,
@@ -131,7 +133,7 @@ export function useQuestTracker() {
     const sleep = getSleepForDate(d);
     const sleepGoal = (user.sleepGoal || 8) * 60; // in minutes
     const active = getActiveMinForDate(d);
-    const activeGoal = 30; // standard daily active minutes standard goal
+    const activeGoal = user.activeMinutesGoal || 30; // standard daily active minutes standard goal
 
     const list = [
       { id: 'steps', name: 'Steps Challenge', icon: 'footsteps', color: '#6366F1', progress: steps, target: stepsGoal, unit: 'steps', completed: steps >= stepsGoal },
@@ -264,5 +266,6 @@ export function useQuestTracker() {
     updateCustomQuest,
     deleteCustomQuest,
     logCustomQuestProgress,
+    setUser,
   };
 }

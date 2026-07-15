@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme';
 import GlassCard from '../ui/GlassCard';
 import { triggerHaptic } from '@/utils/haptics';
@@ -37,6 +37,8 @@ export default function DailyQuests() {
     setSleepInput,
     workoutInput,
     setWorkoutInput,
+    exerciseInput,
+    setExerciseInput,
     isOz,
   } = useQuestList();
 
@@ -73,7 +75,8 @@ export default function DailyQuests() {
               activeOpacity={0.85}
               onPress={openGoalsModal}
             >
-              <Ionicons name="options-outline" size={13} color={colors.lime} style={{ marginRight: 2 }} />
+              {/* <Ionicons name="options-outline" size={13} color={colors.lime} style={{ marginRight: 2 }} /> */}
+              <FontAwesome6 name="edit" size={13} color={colors.lime} style={{ marginRight: 2 }} />
               <Text style={[st.editGoalsText, { color: colors.lime }]}>Adjust Goals</Text>
             </TouchableOpacity>
           </View>
@@ -153,6 +156,8 @@ export default function DailyQuests() {
         setSleepInput={setSleepInput}
         workoutInput={workoutInput}
         setWorkoutInput={setWorkoutInput}
+        exerciseInput={exerciseInput}
+        setExerciseInput={setExerciseInput}
         isOz={isOz}
       />
     </View>

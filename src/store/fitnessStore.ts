@@ -537,6 +537,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
           delete dbUpdate.appLockEnabled;
           delete dbUpdate.setupCompleted;
           delete dbUpdate.sleepGoal;
+          delete dbUpdate.activeMinutesGoal;
           delete dbUpdate.customFocusTitle;
           delete dbUpdate.customFocusDuration;
           delete dbUpdate.customFocusCalories;

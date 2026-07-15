@@ -1,5 +1,32 @@
 # Cursor Test & Validation Log
 
+## [2026-07-15T22:04:00+05:30] - Integrated Active Exercise Target inside Adjust Goals Modal (v2.13.9)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Adjust Goals Modal Synchronization:**
+  - Added "Daily Exercise" target configuration card to [GoalCustomizer.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/components/GoalCustomizer.tsx) (customizable in 5-minute increments).
+  - Wired active exercise state input variables (`exerciseInput`, `setExerciseInput`) in the custom hook [useQuestList.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/hooks/useQuestList.ts).
+  - Passed input variables and callback hooks through [DailyQuests.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/components/home/DailyQuests.tsx) to ensure absolute synchronization between the Home dashboard drawer and the calendar quest tracker settings.
+
+## [2026-07-15T22:00:00+05:30] - Implemented Daily Goals Editing and Advanced Custom Quests UX (v2.13.8)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Daily Goals Edit Integration:**
+  - Added a "Customize Daily Goals" modal in [quests-tracker.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/quests-tracker.tsx) to configure Steps, Water, Calories, Sleep, and Active Exercise targets.
+  - Linked active minutes target to the new `activeMinutesGoal` property in user profile to dynamicize workout quests targets.
+  - Updated Zustand store `setUser` action in [fitnessStore.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/store/fitnessStore.ts) to handle the new goal field and omit it from Supabase updates.
+- **Advanced Custom Quests UX:**
+  - Created quick target value selector pills ('5', '10', '20', '50', '100', '1000') and unit selector pills ('reps', 'mins', 'ml', 'km', 'steps', 'times') inside the custom challenge creator modal.
+  - Implemented advanced duration options layout: "Ongoing" (0 days), "7 Days", "30 Days", and "Custom" (reveals customized numeric field).
+
 ## [2026-07-15T21:50:43+05:30] - Cleaned JSDoc Headers to Strict English (v2.13.7)
 
 ### Automated Checks

@@ -19,6 +19,8 @@ interface GoalCustomizerProps {
   setSleepInput: React.Dispatch<React.SetStateAction<number>>;
   workoutInput: number;
   setWorkoutInput: React.Dispatch<React.SetStateAction<number>>;
+  exerciseInput: number;
+  setExerciseInput: React.Dispatch<React.SetStateAction<number>>;
   isOz: boolean;
 }
 
@@ -36,6 +38,8 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
   setSleepInput,
   workoutInput,
   setWorkoutInput,
+  exerciseInput,
+  setExerciseInput,
   isOz,
 }) {
   const { colors } = useTheme();
@@ -229,7 +233,49 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
               </View>
             </View>
 
-            {/* 5. Workouts Goal */}
+            {/* 5. Daily Exercise Goal */}
+            <View style={styles.goalEditCard}>
+              <View style={styles.goalMetaRow}>
+                <View style={styles.goalMetaLabelRow}>
+                  <View style={[styles.goalIconBox, { backgroundColor: '#F43F5E15' }]}>
+                    <Ionicons name="timer" size={18} color="#F43F5E" />
+                  </View>
+                  <Text style={[styles.goalTitle, { color: colors.text.primary }]}>
+                    Daily Exercise
+                  </Text>
+                </View>
+                <Text style={[styles.goalValue, { color: '#F43F5E' }]}>
+                  {exerciseInput} mins
+                </Text>
+              </View>
+              <View style={styles.adjustControls}>
+                <TouchableOpacity
+                  style={[styles.adjustBtn, { borderColor: colors.cardBorder }]}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setExerciseInput((prev) => Math.max(5, prev - 5));
+                  }}
+                >
+                  <Ionicons name="remove" size={18} color={colors.text.primary} />
+                </TouchableOpacity>
+                <View style={styles.adjustIndicator}>
+                  <Text style={[styles.adjustSub, { color: colors.muted }]}>
+                    XP Reward: +250 XP
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.adjustBtn, { borderColor: colors.cardBorder }]}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setExerciseInput((prev) => Math.min(300, prev + 5));
+                  }}
+                >
+                  <Ionicons name="add" size={18} color={colors.text.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 6. Workouts Goal */}
             <View style={styles.goalEditCard}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
