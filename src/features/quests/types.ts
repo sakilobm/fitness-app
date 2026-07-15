@@ -4,7 +4,7 @@
  * @description Type-safe structures and domain model interfaces for Quest/Challenge entities.
  * 
  * @param {None} - Strictly static TypeScript data models.
- * @process Enna Pannum (Internal Processing):
+ * @process (Internal Processing):
  *          - Enforces schema contracts for quest definitions, logging payloads, custom user challenge creations, and component action event handlers.
  * @returns {None} Pure TypeScript type and interface declarations.
  */

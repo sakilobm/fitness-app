@@ -1,5 +1,22 @@
 # Cursor Test & Validation Log
 
+## [2026-07-15T21:50:43+05:30] - Cleaned JSDoc Headers to Strict English (v2.13.7)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **JSDoc Language Correction:**
+  - Removed Tanglish template labels (`Enna Vāngum`, `Enna Pannum`, `Enna Return Pannum`) across all refactored files:
+    - [calendar.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/constants/calendar.ts)
+    - [StatBadge.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/components/ui/StatBadge.tsx)
+    - [types.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/types.ts)
+    - [useQuestTracker.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/hooks/useQuestTracker.ts)
+    - [useCalendarData.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/hooks/useCalendarData.ts)
+    - [quests-tracker.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/quests-tracker.tsx)
+    - [fitnessStore.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/store/fitnessStore.ts)
+
 ## [2026-07-15T21:20:56+05:30] - Implemented Strict JSDoc Schemas and UI Optimizations (v2.13.6)
 
 ### Automated Checks

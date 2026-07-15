@@ -3,14 +3,14 @@
  * @module Utilities/CalendarHelpers
  * @description Pure, zero-dependency algorithmic computations for calendar layout generation and ISO date serialization.
  * 
- * @param {number} year - Enna Vāngum (Inputs): The target calendar year (e.g., 2026).
- * @param {number} month - Enna Vāngum (Inputs): The target calendar month (0-indexed, 0 = January, 11 = December).
- * @param {number} day - Enna Vāngum (Inputs): The day of the month (1-indexed).
- * @process Enna Pannum (Internal Processing):
+ * @param {number} year - (Inputs): The target calendar year (e.g., 2026).
+ * @param {number} month - (Inputs): The target calendar month (0-indexed, 0 = January, 11 = December).
+ * @param {number} day - (Inputs): The day of the month (1-indexed).
+ * @process (Internal Processing):
  *          - Calculates month start day offsets and total days in month.
  *          - Generates complete padding sequences to fill calendar grids.
  *          - Standardizes year-month-date formats into standardized YYYY-MM-DD representations.
- * @returns {(number | null)[]} Enna Return Pannum (Outputs): Decoupled array of days with prefix pads for grid rendering.
+ * @returns {(number | null)[]} (Outputs): Decoupled array of days with prefix pads for grid rendering.
  */
 
 import { Dimensions } from 'react-native';

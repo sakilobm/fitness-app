@@ -3,11 +3,11 @@
  * @module Shared/UI/Components
  * @description Pure presentational rendering component for displaying specific metric statistics with custom brand accent colors. Handles zero business logic.
  * 
- * @param {StatBadgeProps} props - Enna Vāngum (Inputs): Receives UI configuration interfaces including label, value, color, styling and layout options.
- * @process Enna Pannum (Internal Logic):
+ * @param {StatBadgeProps} props - (Inputs): Receives UI configuration interfaces including label, value, color, styling and layout options.
+ * @process (Internal Logic):
  *          - Performance: Wrapped in `React.memo` to skip Virtual DOM diffing unless props mutate.
  *          - Dynamic accent line coloring and relative opacity calculations.
- * @returns {React.ReactElement} Enna Return Pannum (Outputs): Smooth, 60 FPS visual layout container.
+ * @returns {React.ReactElement} (Outputs): Smooth, 60 FPS visual layout container.
  */
 
 import React from 'react';

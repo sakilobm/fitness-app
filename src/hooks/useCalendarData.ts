@@ -3,14 +3,14 @@
  * @module Hooks/CalendarData
  * @description Compiles, tracks, and caches aggregate fitness metrics, daily streak flags, and calendar cells. Selector layer over Zustand store.
  * 
- * @param {number} viewYear - Enna Vāngum (Inputs): The active calendar view year.
- * @param {number} viewMonth - Enna Vāngum (Inputs): The active calendar view month (0-indexed).
- * @param {string} selDate - Enna Vāngum (Inputs): Selected ISO date string (YYYY-MM-DD) for metrics extraction.
- * @process Enna Pannum (Internal Logic):
+ * @param {number} viewYear - (Inputs): The active calendar view year.
+ * @param {number} viewMonth - (Inputs): The active calendar view month (0-indexed).
+ * @param {string} selDate - (Inputs): Selected ISO date string (YYYY-MM-DD) for metrics extraction.
+ * @process (Internal Logic):
  *          - Subscribes to BMI trackers, workout logs, water hydration logs, and diet store metrics.
  *          - Combines history arrays via optimized `useMemo` loops to build calendar cells status configurations.
  *          - Calculates month-over-month averages and delta indicators.
- * @returns {CalendarDataResult} Enna Return Pannum (Outputs): Memoized calendar cell structures, monthly averages, and daily details.
+ * @returns {CalendarDataResult} (Outputs): Memoized calendar cell structures, monthly averages, and daily details.
  */
 
 import { useMemo, useEffect, useCallback } from 'react';
