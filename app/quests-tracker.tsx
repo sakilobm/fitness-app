@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Dimensions, Share, Alert
+  Dimensions, Share, Alert, Modal, TextInput, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -32,7 +32,115 @@ export default function QuestsTrackerScreen() {
     monthStats,
     handleShareSummary,
     getQuestStatus,
+    customQuests,
+    getCustomQuestsForDate,
+    addCustomQuest,
+    updateCustomQuest,
+    deleteCustomQuest,
+    logCustomQuestProgress,
   } = useQuestTracker();
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingQuestId, setEditingQuestId] = useState<string | null>(null);
+  const [questName, setQuestName] = useState('');
+  const [questTarget, setQuestTarget] = useState('10');
+  const [questUnit, setQuestUnit] = useState('reps');
+  const [questDurationDays, setQuestDurationDays] = useState('7');
+  const [selectedIcon, setSelectedIcon] = useState('trophy');
+  const [selectedColor, setSelectedColor] = useState('#10B981');
+
+  // Quick log progress state
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [loggingQuest, setLoggingQuest] = useState<any | null>(null);
+  const [logAmount, setLogAmount] = useState('5');
+
+  const customQuestsForSelectedDate = useMemo(() => {
+    return getCustomQuestsForDate(selectedDate);
+  }, [selectedDate, getCustomQuestsForDate]);
+
+  const handleCreateOrUpdateQuest = () => {
+    const targetVal = parseFloat(questTarget);
+    const durationDaysVal = parseInt(questDurationDays, 10);
+    if (!questName.trim()) {
+      Alert.alert('Required Fields', 'Please enter a quest name.');
+      return;
+    }
+    if (isNaN(targetVal) || targetVal <= 0) {
+      Alert.alert('Invalid Target', 'Please enter a valid target number.');
+      return;
+    }
+    if (isNaN(durationDaysVal) || durationDaysVal < 0) {
+      Alert.alert('Invalid Duration', 'Please enter a duration greater than or equal to 0.');
+      return;
+    }
+
+    triggerHaptic('success');
+    if (editingQuestId) {
+      updateCustomQuest(editingQuestId, {
+        name: questName.trim(),
+        target: targetVal,
+        unit: questUnit.trim(),
+        durationDays: durationDaysVal,
+        icon: selectedIcon,
+        color: selectedColor,
+      });
+      Alert.alert('Challenge Updated', 'Your custom challenge was successfully modified.');
+    } else {
+      addCustomQuest({
+        name: questName.trim(),
+        target: targetVal,
+        unit: questUnit.trim(),
+        durationDays: durationDaysVal,
+        startDate: selectedDate, // Start date defaults to currently selected calendar day
+        icon: selectedIcon,
+        color: selectedColor,
+      });
+      Alert.alert('Challenge Created', 'Your custom challenge was successfully started for this date.');
+    }
+    setShowCreateModal(false);
+  };
+
+  const handleDeleteQuestLocal = (id: string) => {
+    triggerHaptic('warning');
+    Alert.alert(
+      'Delete Challenge',
+      'Are you sure you want to delete this custom challenge? All logged progress history will be removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            triggerHaptic('success');
+            deleteCustomQuest(id);
+            setShowCreateModal(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleLogProgressLocal = () => {
+    const amountVal = parseFloat(logAmount);
+    if (isNaN(amountVal) || !loggingQuest) {
+      Alert.alert('Invalid Amount', 'Please enter a valid number.');
+      return;
+    }
+    triggerHaptic('success');
+    // Log absolute progress value = current progress + logged amount
+    const currentProgress = loggingQuest.progress || 0;
+    const newProgress = Math.max(0, currentProgress + amountVal);
+    logCustomQuestProgress(loggingQuest.id, selectedDate, newProgress);
+    setShowLogModal(false);
+    setLoggingQuest(null);
+  };
+
+  const handleToggleComplete = (quest: any) => {
+    triggerHaptic('success');
+    const isCompleted = quest.progress >= quest.target;
+    const newProgress = isCompleted ? 0 : quest.target;
+    logCustomQuestProgress(quest.id, selectedDate, newProgress);
+  };
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -194,6 +302,110 @@ export default function QuestsTrackerScreen() {
           </View>
         </GlassCard>
 
+        {/* ── Custom Challenges Section ───────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Custom Challenges</Text>
+          <TouchableOpacity
+            style={styles.addChallengeBtn}
+            activeOpacity={0.8}
+            onPress={() => {
+              triggerHaptic('selection');
+              setEditingQuestId(null);
+              setQuestName('');
+              setQuestTarget('10');
+              setQuestUnit('reps');
+              setQuestDurationDays('7');
+              setSelectedIcon('trophy');
+              setSelectedColor('#10B981');
+              setShowCreateModal(true);
+            }}
+          >
+            <Ionicons name="add" size={14} color={colors.lime} />
+            <Text style={styles.addChallengeBtnTxt}>Create</Text>
+          </TouchableOpacity>
+        </View>
+
+        {customQuestsForSelectedDate.length === 0 ? (
+          <GlassCard style={styles.emptyCustomQuestsCard}>
+            <Ionicons name="calendar-outline" size={24} color={colors.muted} style={{ marginBottom: 4 }} />
+            <Text style={styles.emptyCustomQuestsTxt}>No active custom challenges for this day.</Text>
+            <Text style={styles.emptyCustomQuestsSub}>Tap "Create" to set up custom daily targets.</Text>
+          </GlassCard>
+        ) : (
+          <View style={styles.customQuestsList}>
+            {customQuestsForSelectedDate.map((quest) => {
+              const progressPct = Math.round(Math.min(100, (quest.progress / quest.target) * 100));
+              const isCompleted = quest.progress >= quest.target;
+              return (
+                <GlassCard key={quest.id} style={styles.customQuestItemCard}>
+                  <TouchableOpacity
+                    style={styles.customQuestItemPressable}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      triggerHaptic('selection');
+                      setEditingQuestId(quest.id);
+                      setQuestName(quest.name);
+                      setQuestTarget(quest.target.toString());
+                      setQuestUnit(quest.unit);
+                      setQuestDurationDays(quest.durationDays.toString());
+                      setSelectedIcon(quest.icon);
+                      setSelectedColor(quest.color);
+                      setShowCreateModal(true);
+                    }}
+                  >
+                    <View style={[styles.questIconBox, { backgroundColor: quest.color + '15' }]}>
+                      <Ionicons name={quest.icon as any} size={16} color={quest.color} />
+                    </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View style={styles.questMetaRow}>
+                        <Text style={styles.questName}>{quest.name}</Text>
+                        <Text style={styles.questProgressText}>
+                          {quest.progress} / {quest.target} {quest.unit}
+                        </Text>
+                      </View>
+                      <View style={styles.barBg}>
+                        <View style={[styles.barFill, { backgroundColor: quest.color, width: `${progressPct}%` }]} />
+                      </View>
+                      {quest.durationDays > 0 && (
+                        <Text style={styles.durationDaysLabel}>
+                          Runs for {quest.durationDays} days · Start: {quest.startDate}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Actions column */}
+                  <View style={styles.customQuestActionCol}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      style={styles.quickLogIncrementBtn}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        setLoggingQuest(quest);
+                        setLogAmount('1');
+                        setShowLogModal(true);
+                      }}
+                    >
+                      <Ionicons name="add-circle" size={24} color={quest.color} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.checkboxArea}
+                      onPress={() => handleToggleComplete(quest)}
+                    >
+                      {isCompleted ? (
+                        <Ionicons name="checkmark-circle" size={24} color={colors.lime} />
+                      ) : (
+                        <Ionicons name="ellipse-outline" size={24} color={colors.muted} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </GlassCard>
+              );
+            })}
+          </View>
+        )}
+
         {/* ── Monthly Overview Statistics ──────────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{monthNames[viewMonth]} Stats</Text>
@@ -254,6 +466,229 @@ export default function QuestsTrackerScreen() {
           <Text style={styles.shareButtonTxt}>Share Monthly Quest Report</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* ── Create / Edit Custom Challenge Modal ── */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalBackdrop}
+        >
+          <TouchableOpacity
+            style={styles.modalBackdropPressable}
+            activeOpacity={1}
+            onPress={() => setShowCreateModal(false)}
+          />
+          <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitleText}>
+                {editingQuestId ? 'Edit Challenge' : 'New Daily Challenge'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowCreateModal(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalInputLabel}>Challenge Name</Text>
+              <TextInput
+                style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                placeholder="e.g. Pushups, 5K Run, Read Book"
+                placeholderTextColor={colors.muted}
+                value={questName}
+                onChangeText={setQuestName}
+              />
+
+              <View style={styles.modalDoubleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalInputLabel}>Daily Target</Text>
+                  <TextInput
+                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    keyboardType="numeric"
+                    placeholder="e.g. 50"
+                    placeholderTextColor={colors.muted}
+                    value={questTarget}
+                    onChangeText={setQuestTarget}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalInputLabel}>Unit</Text>
+                  <TextInput
+                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                    placeholder="e.g. reps, mins, km"
+                    placeholderTextColor={colors.muted}
+                    value={questUnit}
+                    onChangeText={setQuestUnit}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.modalInputLabel}>Duration (Days · Set 0 for ongoing)</Text>
+              <TextInput
+                style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                keyboardType="numeric"
+                placeholder="e.g. 7 or 30 (0 for indefinite)"
+                placeholderTextColor={colors.muted}
+                value={questDurationDays}
+                onChangeText={setQuestDurationDays}
+              />
+
+              {/* Icon Selector */}
+              <Text style={styles.modalInputLabel}>Select Icon</Text>
+              <View style={styles.iconSelectionGrid}>
+                {['trophy', 'dumbbell', 'walk', 'heart', 'water', 'flash', 'bookmarks', 'medical', 'fitness'].map((iconName) => {
+                  const isSelected = selectedIcon === iconName;
+                  return (
+                    <TouchableOpacity
+                      key={iconName}
+                      style={[
+                        styles.iconSelectionBox,
+                        { borderColor: colors.cardBorder },
+                        isSelected && { borderColor: colors.lime, backgroundColor: colors.lime + '15' }
+                      ]}
+                      onPress={() => setSelectedIcon(iconName)}
+                    >
+                      <Ionicons name={iconName as any} size={20} color={isSelected ? colors.lime : colors.text.secondary} />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Color Selector */}
+              <Text style={styles.modalInputLabel}>Select Color</Text>
+              <View style={styles.colorSelectionGrid}>
+                {['#6366F1', '#38BDF8', '#FB923C', '#818CF8', '#F43F5E', '#10B981', '#F59E0B'].map((colorCode) => {
+                  const isSelected = selectedColor === colorCode;
+                  return (
+                    <TouchableOpacity
+                      key={colorCode}
+                      style={[
+                        styles.colorSelectionCircle,
+                        { backgroundColor: colorCode },
+                        isSelected && { borderWidth: 3, borderColor: isDark ? '#FFFFFF' : '#000000' }
+                      ]}
+                      onPress={() => setSelectedColor(colorCode)}
+                    />
+                  );
+                })}
+              </View>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.modalCancelBtn, { borderColor: colors.cardBorder }]}
+                  onPress={() => setShowCreateModal(false)}
+                >
+                  <Text style={[styles.modalBtnText, { color: colors.text.primary }]}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalBtn, styles.modalSaveBtn, { backgroundColor: colors.lime }]}
+                  onPress={handleCreateOrUpdateQuest}
+                >
+                  <Text style={[styles.modalBtnText, { color: '#000000', fontWeight: '800' }]}>
+                    {editingQuestId ? 'Update' : 'Start'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {editingQuestId && (
+                <TouchableOpacity
+                  style={styles.modalDeleteBtn}
+                  onPress={() => handleDeleteQuestLocal(editingQuestId)}
+                >
+                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                  <Text style={styles.modalDeleteBtnText}>Delete Challenge</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Log Progress Modal ── */}
+      <Modal
+        visible={showLogModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setShowLogModal(false);
+          setLoggingQuest(null);
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalBackdrop}
+        >
+          <TouchableOpacity
+            style={styles.modalBackdropPressable}
+            activeOpacity={1}
+            onPress={() => {
+              setShowLogModal(false);
+              setLoggingQuest(null);
+            }}
+          />
+          <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitleText}>Log Progress</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowLogModal(false);
+                  setLoggingQuest(null);
+                }}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            {loggingQuest && (
+              <View style={styles.modalLogContent}>
+                <Text style={styles.modalLogQuestName}>{loggingQuest.name}</Text>
+                <Text style={styles.modalLogQuestSub}>
+                  Current: {loggingQuest.progress} / {loggingQuest.target} {loggingQuest.unit}
+                </Text>
+
+                <Text style={styles.modalInputLabel}>Log Progress Amount</Text>
+                <TextInput
+                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder, textAlign: 'center', fontSize: 18 }]}
+                  keyboardType="numeric"
+                  placeholder="e.g. 5"
+                  placeholderTextColor={colors.muted}
+                  value={logAmount}
+                  onChangeText={setLogAmount}
+                  autoFocus
+                />
+
+                <View style={styles.modalButtonsRow}>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalCancelBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => {
+                      setShowLogModal(false);
+                      setLoggingQuest(null);
+                    }}
+                  >
+                    <Text style={[styles.modalBtnText, { color: colors.text.primary }]}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalBtn, styles.modalSaveBtn, { backgroundColor: loggingQuest.color }]}
+                    onPress={handleLogProgressLocal}
+                  >
+                    <Text style={[styles.modalBtnText, { color: '#FFFFFF', fontWeight: '800' }]}>Save Logs</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -532,5 +967,201 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+  addChallengeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.lime + '30',
+    backgroundColor: colors.lime + '10',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  addChallengeBtnTxt: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.lime,
+  },
+  emptyCustomQuestsCard: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  emptyCustomQuestsTxt: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  emptyCustomQuestsSub: {
+    fontSize: 10,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+  customQuestsList: {
+    gap: 12,
+  },
+  customQuestItemCard: {
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  customQuestItemPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    paddingRight: 8,
+  },
+  customQuestActionCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickLogIncrementBtn: {
+    padding: 4,
+  },
+  durationDaysLabel: {
+    fontSize: 9,
+    color: colors.muted,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalBackdropPressable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '90%',
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitleText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text.primary,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalScrollContent: {
+    gap: 16,
+    paddingBottom: 40,
+  },
+  modalInputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text.secondary,
+    marginBottom: 6,
+  },
+  modalTextInput: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+  },
+  modalDoubleRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconSelectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  iconSelectionBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+  },
+  colorSelectionGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  colorSelectionCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+  modalBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCancelBtn: {
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  modalSaveBtn: {
+    // Background color determined dynamically
+  },
+  modalBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalDeleteBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 12,
+  },
+  modalDeleteBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.danger,
+  },
+  modalLogContent: {
+    gap: 16,
+    paddingBottom: 24,
+  },
+  modalLogQuestName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  modalLogQuestSub: {
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: 'center',
   },
 });

@@ -17,6 +17,12 @@ export function useQuestTracker() {
     workoutLogs: s.workoutLogs,
     activeMinutes: s.activeMinutes,
     meals: s.meals,
+    customQuests: s.customQuests,
+    customQuestLogs: s.customQuestLogs,
+    addCustomQuest: s.addCustomQuest,
+    updateCustomQuest: s.updateCustomQuest,
+    deleteCustomQuest: s.deleteCustomQuest,
+    logCustomQuestProgress: s.logCustomQuestProgress,
   })));
 
   const {
@@ -29,6 +35,12 @@ export function useQuestTracker() {
     workoutLogs,
     activeMinutes,
     meals,
+    customQuests,
+    customQuestLogs,
+    addCustomQuest,
+    updateCustomQuest,
+    deleteCustomQuest,
+    logCustomQuestProgress,
   } = store;
 
   const today = useMemo(() => new Date(), []);
@@ -197,6 +209,28 @@ export function useQuestTracker() {
     }
   }, [viewMonth, viewYear, monthStats, user.level]);
 
+  const getCustomQuestsForDate = useCallback((d: string) => {
+    return customQuests.filter((q) => {
+      if (d < q.startDate) return false;
+      if (q.durationDays <= 0) return true; // Ongoing / permanent
+
+      const start = new Date(q.startDate + 'T00:00:00');
+      const current = new Date(d + 'T00:00:00');
+      const diffTime = current.getTime() - start.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays < q.durationDays;
+    }).map((q) => {
+      const log = customQuestLogs.find((l) => l.questId === q.id && l.date === d);
+      const progress = log ? log.progress : 0;
+      const completed = progress >= q.target;
+      return {
+        ...q,
+        progress,
+        completed
+      };
+    });
+  }, [customQuests, customQuestLogs]);
+
   return {
     user,
     viewYear,
@@ -210,5 +244,12 @@ export function useQuestTracker() {
     monthStats,
     handleShareSummary,
     getQuestStatus,
+    customQuests,
+    customQuestLogs,
+    getCustomQuestsForDate,
+    addCustomQuest,
+    updateCustomQuest,
+    deleteCustomQuest,
+    logCustomQuestProgress,
   };
 }

@@ -10,6 +10,7 @@ import {
   Badge, XPGainEvent,
   CycleLog, CycleSettings, WorkoutLog,
 } from '../types';
+import { CustomQuest, CustomQuestLog } from '../features/quests/types';
 import { computeSleepScore, estimateStages } from '../constants/sleep';
 import { calculateBMI, classifyBMI } from '../utils/bmi';
 import { stepsToCalories, stepsToDistanceKm, getDateStr } from '../utils/steps';
@@ -119,6 +120,14 @@ interface FitnessState {
    * called once on startup to silently mark badges already earned by pre-existing data,
    * preventing retroactive celebrations when the user takes their first new action. */
   silentPrimeBadges: () => void;
+
+  // Custom Quests CRUD
+  customQuests: CustomQuest[];
+  customQuestLogs: CustomQuestLog[];
+  addCustomQuest: (quest: Omit<CustomQuest, 'id' | 'createdAt'>) => void;
+  updateCustomQuest: (id: string, updates: Partial<Omit<CustomQuest, 'id' | 'createdAt'>>) => void;
+  deleteCustomQuest: (id: string) => void;
+  logCustomQuestProgress: (questId: string, date: string, progress: number) => void;
 
   // Hydration state
   hydrateStore: () => Promise<void>;
@@ -392,6 +401,9 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
 
   badges:    createInitialBadges(),
   xpHistory: [],
+
+  customQuests: [],
+  customQuestLogs: [],
 
   cycleLogs: [],
   cycleSettings: { cycleLength: 28, periodLength: 5, lastPeriodStart: null, cycleTrackingEnabled: false },
@@ -1071,6 +1083,51 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       console.warn('initializeFromSupabase skipped (offline or network error):', err);
     }
   },
+
+  addCustomQuest: (quest) => {
+    const newQuest: CustomQuest = {
+      ...quest,
+      id: `quest_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
+    set((s) => ({ customQuests: [...s.customQuests, newQuest] }));
+  },
+
+  updateCustomQuest: (id, updates) => {
+    set((s) => ({
+      customQuests: s.customQuests.map((q) => (q.id === id ? { ...q, ...updates } : q))
+    }));
+  },
+
+  deleteCustomQuest: (id) => {
+    set((s) => ({
+      customQuests: s.customQuests.filter((q) => q.id !== id),
+      customQuestLogs: s.customQuestLogs.filter((l) => l.questId !== id)
+    }));
+  },
+
+  logCustomQuestProgress: (questId, date, progress) => {
+    set((s) => {
+      const existingIdx = s.customQuestLogs.findIndex((l) => l.questId === questId && l.date === date);
+      const newLogs = [...s.customQuestLogs];
+
+      if (existingIdx !== -1) {
+        newLogs[existingIdx] = {
+          ...newLogs[existingIdx],
+          progress: Math.max(0, progress)
+        };
+      } else {
+        newLogs.push({
+          id: `qlog_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          questId,
+          date,
+          progress: Math.max(0, progress)
+        });
+      }
+
+      return { customQuestLogs: newLogs };
+    });
+  },
 }),
 {
   name: 'vividly-store',
@@ -1098,6 +1155,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
     cycleLogs:          state.cycleLogs,
     cycleSettings:      state.cycleSettings,
     workoutLogs:        state.workoutLogs,
+    customQuests:       state.customQuests,
+    customQuestLogs:    state.customQuestLogs,
   }),
 }));
 
