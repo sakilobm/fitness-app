@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Modal, TextInput, KeyboardAvoidingView, Platform,
@@ -12,15 +12,10 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Colors, Typography, Radius, Shadows } from '@/constants/theme';
 import { router } from 'expo-router';
-import { useProfileSettings, useBmiTracker, useWorkoutEngine, useHydrationTracker } from '@/store/fitnessStore';
-import {
-  getBMIResult,
-  getIdealWeightRange, getWeightToNormal,
-  generateSuggestions,
-} from '@/utils/bmi';
 import BMIGauge from '@/components/charts/BMIGauge';
 import BMISparkline from '@/components/charts/BMISparkline';
 import BMICategoryCards from '@/components/charts/BMICategoryCards';
+import { useBMIScreen } from '@/features/bmi/hooks/useBMIScreen';
 
 const BMI_COLOR = '#0EA5E9';
 
@@ -28,52 +23,31 @@ const BMI_COLOR = '#0EA5E9';
 
 export default function BMIScreen() {
   const insets = useSafeAreaInsets();
-  const { user } = useProfileSettings();
-  const { bmiLogs, currentBMI, weightTrend } = useBmiTracker();
-  const { stepsCount } = useWorkoutEngine();
-  const { waterLogs } = useHydrationTracker();
-
-  const [showCalcModal, setShowCalcModal] = useState(false);
-  const [calcWeight, setCalcWeight] = useState(user.weight.toString());
-  const [calcHeight, setCalcHeight] = useState(user.height.toString());
-
-  const bmiResult = getBMIResult(user.weight, user.height);
-  const idealRange = getIdealWeightRange(user.height);
-  const weightAction = getWeightToNormal(user.weight, user.height);
-
-  // BMI trend data for sparkline
-  const bmiChartData = useMemo(() => {
-    return bmiLogs.slice(-14).map((l) => ({ date: l.date, bmi: l.bmi }));
-  }, [bmiLogs]);
-
-  // BMI stats
-  const bmiStats = useMemo(() => {
-    if (bmiLogs.length < 2) return { change: 0, direction: 'stable' as const };
-    const first = bmiLogs[0].bmi;
-    const last = bmiLogs[bmiLogs.length - 1].bmi;
-    const change = parseFloat((last - first).toFixed(1));
-    return {
-      change: Math.abs(change),
-      direction: change < -0.2 ? 'down' as const : change > 0.2 ? 'up' as const : 'stable' as const,
-    };
-  }, [bmiLogs]);
-
-  // Suggestions
-  const waterTotal = waterLogs.reduce((s, l) => s + l.ml, 0);
-  const suggestions = generateSuggestions({
+  
+  const {
+    user,
+    currentBMI,
     bmiResult,
-    stepsPct: stepsCount / user.stepsGoal,
-    weightTrend,
-    waterPct: waterTotal / user.waterGoal,
-  });
+    idealRange,
+    weightAction,
+    bmiChartData,
+    bmiStats,
+    bmiLogs,
+    suggestions,
+    showCalcModal,
+    handleOpenCalc,
+    handleCloseCalc,
+    calcWeight,
+    setCalcWeight,
+    calcHeight,
+    setCalcHeight,
+    calcBMI,
+  } = useBMIScreen();
 
-  // Calculator modal result
-  const calcBMI = useMemo(() => {
-    const w = parseFloat(calcWeight);
-    const h = parseFloat(calcHeight);
-    if (w > 0 && h > 0) return getBMIResult(w, h);
-    return null;
-  }, [calcWeight, calcHeight]);
+  const setShowCalcModal = (val: boolean) => {
+    if (val) handleOpenCalc();
+    else handleCloseCalc();
+  };
 
   return (
     <ScrollView

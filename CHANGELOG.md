@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.13.2] - 2026-07-15T17:45:00+05:30
+
+### Optimized — Refactored BMI Tracker Module into Domain-Driven Layers
+
+**Architectural Decision:** Deconstructed the monolithic BMI Screen (`app/bmi.tsx`) into clean domain-driven components, custom selective state hooks, and mathematical utilities to optimize rendering performance, prevent component thrashing, and improve codebase maintainability.
+
+**Changes:**
+- **`src/features/bmi/utils/bmiCalculator.ts`:** Created pure zero-dependency calculators for ideal weight ranges, weight actions to normal, and historical BMI trend stats.
+- **`src/features/bmi/hooks/useBMIScreen.ts`:** Implemented a granular state selector hook that subscribes selectively via `useShallow`, memoizing suggestion generators, trend sparklines, and calculator modal logic.
+- **`src/features/bmi/components/BMIGridHero.tsx`:** Created a presentational BMI hero grid card component utilizing `React.memo` with a custom props equality predicate function to bypass Virtual DOM diffing.
+- **`app/bmi.tsx`:** Completely refactored the screen body to call the new domain hook and mount the hero card presentational component, bringing down screen file dependencies and inline computations.
+
+#### Rollback
+See ROLLBACK.md section for v2.13.2.
+
 ## [2.13.1] - 2026-07-15T15:45:00+05:30
 
 ### Refactored — Decomposed Monolithic DailyQuests into Domain-Driven Subcomponents

@@ -70,6 +70,14 @@ export default function SettingsScreen() {
     handleWeightUnitChange,
     handleSave,
     toastMessage, toastType, showToast,
+    pickImageFromGallery,
+    takePhotoWithCamera,
+    handleManualSync,
+    handleChangePassword,
+    handleExportData,
+    handleClearLocal: handleClearLocalHook,
+    handleClearCloud: handleClearCloudHook,
+    handleLogout: handleLogoutHook,
   } = useSettingsForm();
 
   // Health Connect
@@ -78,7 +86,7 @@ export default function SettingsScreen() {
   const handleHealthConnect = async () => {
     triggerHaptic('medium');
     const ok = await hc.connect();
-    if (ok) showToast('Health Connect linked â€” tap Sync Now to import data.', 'success');
+    if (ok) showToast('Health Connect linked — tap Sync Now to import data.', 'success');
     else showToast('Permission denied or Health Connect unavailable.', 'alert');
   };
 
@@ -87,9 +95,9 @@ export default function SettingsScreen() {
     const result = await hc.syncAll();
     const total = result.steps + result.weightLogs + result.waterLogs;
     if (total > 0) {
-      showToast(`Synced ${result.steps.toLocaleString()} steps Â· ${result.weightLogs} weight Â· ${result.waterLogs} water records.`, 'success');
+      showToast(`Synced ${result.steps.toLocaleString()} steps · ${result.weightLogs} weight · ${result.waterLogs} water records.`, 'success');
     } else {
-      showToast('Synced â€” no new records found since last import.', 'info');
+      showToast('Synced — no new records found since last import.', 'info');
     }
   };
 
@@ -102,6 +110,7 @@ export default function SettingsScreen() {
 
   // Modal / Overlay Controls
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const onCloseActionSheet = () => setActionSheetVisible(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearConfirmText, setClearConfirmText] = useState('');
   const [clearTarget, setClearTarget] = useState<'local' | 'cloud' | null>(null);
@@ -127,7 +136,7 @@ export default function SettingsScreen() {
     opacity: interpolate(confirmBtnScale.value, [0.95, 1], [0.3, 1]),
   }));
 
-  // â”€â”€ Result animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— Result animation ——————————————————————————————————————————————————————
   const resultIconScale = useSharedValue(0);
   const resultGlowScale = useSharedValue(0);
 
@@ -159,156 +168,30 @@ export default function SettingsScreen() {
     const patterns = ['light', 'medium', 'heavy', 'success', 'warning', 'error'] as const;
     const type = patterns[hapticTestIndex % patterns.length];
     triggerHaptic(type);
-    showToast(`Triggered ${type.toUpperCase()} haptic pattern âš¡`, 'info');
+    showToast(`Triggered ${type.toUpperCase()} haptic pattern ⚡`, 'info');
     setHapticTestIndex(hapticTestIndex + 1);
   };
 
-  // â”€â”€â”€ Native Image Picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const pickImageFromGallery = async () => {
+  const onPickImage = () => {
     setActionSheetVisible(false);
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        showToast('Gallery access permissions are required to select an avatar.', 'alert');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        setFormProfilePic(result.assets[0].uri);
-      }
-
-    } catch (e) {
-      console.warn('Image picker error: ', e);
-    }
+    pickImageFromGallery();
   };
 
-  const takePhotoWithCamera = async () => {
+  const onTakePhoto = () => {
     setActionSheetVisible(false);
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        showToast('Camera permissions are required to capture an avatar photo.', 'alert');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        setFormProfilePic(result.assets[0].uri);
-      }
-    } catch (e) {
-      console.warn('Camera capture error: ', e);
-    }
+    takePhotoWithCamera();
   };
 
-  // â”€â”€â”€ Sync Supabase manually â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const handleManualSync = async () => {
-    triggerHaptic('selection');
-    setShowSyncing(true);
-    try {
-      await useFitnessStore.getState().initializeFromSupabase();
-      const updatedUser = useFitnessStore.getState().user;
-      // Reload states from store
-      setFormName(updatedUser.name);
-      setFormAge(updatedUser.age.toString());
-      setFormHeight(updatedUser.height.toString());
-
-      const syncedWeight = (updatedUser.weightUnit ?? 'kg') === 'lbs' ? kgToLbs(updatedUser.weight).toString() : updatedUser.weight.toString();
-      setFormWeight(syncedWeight);
-
-      setFormGoal(updatedUser.goal);
-      setFormMotto(updatedUser.motto);
-      setFormCalorieGoal(updatedUser.calorieGoal);
-      setFormWaterGoal(updatedUser.waterGoal);
-      setFormStepsGoal(updatedUser.stepsGoal);
-      setFormWorkoutGoal(updatedUser.workoutGoal);
-      setFormProfilePic(updatedUser.profilePic || '');
-      setNotifications(updatedUser.notificationsEnabled ?? true);
-      setHaptics(updatedUser.hapticsEnabled ?? true);
-      setWeightUnit(updatedUser.weightUnit ?? 'kg');
-      setVolumeUnit(updatedUser.volumeUnit ?? 'ml');
-      setPrivateProfile(updatedUser.privateProfileEnabled ?? false);
-      setAppLock(updatedUser.appLockEnabled ?? false);
-      showToast('All logs and profile details synced with cloud backup.', 'success');
-    } catch (e) {
-      showToast('Could not sync with Supabase. Offline cache preserved.', 'info');
-    } finally {
-      setShowSyncing(false);
-    }
+  const onManualSync = () => {
+    handleManualSync(setShowSyncing);
   };
 
-  // ——— Change Account Password ——————————————————————————————————————————————
-  const handleChangePassword = async () => {
-    triggerHaptic('selection');
-    try {
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData?.user || !authData.user.email) {
-        showToast('Password change is only available for online cloud accounts.', 'info');
-        return;
-      }
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(authData.user.email, {
-        redirectTo: 'vividly://reset-password',
-      });
-      if (error) throw error;
-      showToast(`Password reset link sent to ${authData.user.email}.`, 'success');
-    } catch (e: any) {
-      showToast(formatErrorMessage(e), 'alert');
-    }
+  const onResetPassword = () => {
+    handleChangePassword();
   };
 
-  // â”€â”€â”€ Native JSON Data Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const handleExportData = async () => {
-    triggerHaptic('selection');
-    try {
-      const exportPayload = {
-        exportedAt: new Date().toISOString(),
-        appName: 'Vividly Pro',
-        profile: {
-          name: user.name,
-          age: user.age,
-          height: user.height,
-          weight: user.weight,
-          goal: user.goal,
-          motto: user.motto,
-          calorieGoal: user.calorieGoal,
-          waterGoal: user.waterGoal,
-          stepsGoal: user.stepsGoal,
-          workoutGoal: user.workoutGoal,
-          preferences: { weightUnit, volumeUnit, notifications, haptics }
-        },
-        logs: (() => {
-          const s = useFitnessStore.getState();
-          return {
-            weightLogs: s.weightLogs,
-            waterLogs: s.waterLogs,
-            stepHistory: s.stepHistory,
-            meals: s.meals,
-            reminders: s.reminders,
-          };
-        })(),
-      };
-
-      const prettyJson = JSON.stringify(exportPayload, null, 2);
-      await Share.share({
-        message: prettyJson,
-        title: 'Vividly Personal Data Export',
-      });
-    } catch (e) {
-      showToast('Failed to share data export payload.', 'alert');
-    }
+  const onExportData = () => {
+    handleExportData();
   };
 
   const EMPTY_MEALS = [
@@ -326,69 +209,32 @@ export default function SettingsScreen() {
     setIsClearing(false);
   };
 
-  const handleClearLocal = () => {
+  const onClearLocal = () => {
     if (clearConfirmText !== 'CLEAR') return;
-    triggerHaptic('success');
-    setIsClearing(true);
-    // Micro-delay lets the spinner render before the synchronous state wipe
-    setTimeout(() => {
-      useFitnessStore.setState({
-        weightLogs: [], waterLogs: [], stepHistory: [],
-        stepsCount: 0, activeMinutes: 0, meals: EMPTY_MEALS,
-      });
-      setIsClearing(false);
+    handleClearLocalHook(setIsClearing, () => {
       setClearResult('success');
       setTimeout(() => {
         closeClearModal();
-        showToast('Local device history cleared successfully.', 'success');
       }, 1600);
-    }, 350);
+    });
   };
 
-  const handleClearCloud = async () => {
+  const onClearCloud = () => {
     if (clearConfirmText !== 'CLEAR') return;
-    triggerHaptic('warning');
-    setIsClearing(true);
-    try {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        await supabase.from('weight_logs').delete().eq('user_id', data.user.id);
-        await supabase.from('water_logs').delete().eq('user_id', data.user.id);
-        await supabase.from('meals').delete().eq('user_id', data.user.id);
+    handleClearCloudHook(setIsClearing, (res) => {
+      setClearResult(res);
+      if (res === 'success') {
+        setTimeout(() => {
+          closeClearModal();
+        }, 1600);
+      } else {
+        setTimeout(() => setClearResult(null), 2000);
       }
-      triggerHaptic('success');
-      setClearResult('success');
-      setTimeout(() => {
-        closeClearModal();
-        showToast('Cloud database history cleared successfully.', 'success');
-      }, 1600);
-    } catch {
-      triggerHaptic('error');
-      setClearResult('error');
-      setTimeout(() => setClearResult(null), 2000);
-    } finally {
-      setIsClearing(false);
-    }
+    }, closeClearModal);
   };
 
-  const handleLogout = async () => {
-    triggerHaptic('warning');
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out of Vividly?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: async () => {
-            triggerHaptic('success');
-            await supabase.auth.signOut();
-            router.replace('/(auth)/login');
-          }
-        }
-      ]
-    );
+  const onLogout = () => {
+    handleLogoutHook();
   };
 
   return (
@@ -817,7 +663,7 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
 
             {/* Change password button */}
-            <PressableRow style={styles.row} onPress={handleChangePassword}>
+            <PressableRow style={styles.row} onPress={onResetPassword}>
               <View style={[styles.iconBubble, { backgroundColor: colors.amber + '15' }]}>
                 <Ionicons name="key" size={18} color={colors.amber} />
               </View>
@@ -948,7 +794,7 @@ export default function SettingsScreen() {
                 <Text style={styles.rowTitle}>Database Cloud Backup</Text>
                 <Text style={styles.rowSub}>{user.email ? 'Connected & active' : 'Offline local database mode'}</Text>
               </View>
-              <TouchableOpacity style={styles.syncBtn} onPress={handleManualSync} disabled={showSyncing}>
+              <TouchableOpacity style={styles.syncBtn} onPress={onManualSync} disabled={showSyncing}>
                 <Text style={styles.syncBtnTxt}>{showSyncing ? 'Syncing...' : 'Sync Now'}</Text>
               </TouchableOpacity>
             </View>
@@ -956,7 +802,7 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
 
             {/* Export JSON logs */}
-            <PressableRow style={styles.row} onPress={handleExportData}>
+            <PressableRow style={styles.row} onPress={onExportData}>
               <View style={[styles.iconBubble, { backgroundColor: colors.chart.fibre + '15' }]}>
                 <Ionicons name="download-outline" size={18} color={colors.chart.fibre} />
               </View>
@@ -1034,7 +880,7 @@ export default function SettingsScreen() {
 
         {/* Log Out */}
         <Animated.View entering={FadeInDown.delay(340).springify()}>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={onLogout} activeOpacity={0.85}>
             <Ionicons name="log-out-outline" size={18} color={colors.danger} />
             <Text style={styles.logoutBtnTxt}>Log Out of Account</Text>
           </TouchableOpacity>
@@ -1049,22 +895,22 @@ export default function SettingsScreen() {
 
       {/* â”€â”€â”€ Camera / Gallery Action Sheet DP â”€â”€â”€ */}
       <Modal visible={actionSheetVisible} transparent animationType="fade">
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setActionSheetVisible(false)}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onCloseActionSheet}>
           <View style={styles.actionSheet}>
             <View style={styles.actionSheetHandle} />
             <Text style={styles.actionSheetTitle}>Select Display Photo</Text>
 
-            <TouchableOpacity style={styles.actionRow} onPress={pickImageFromGallery}>
+            <TouchableOpacity style={styles.actionRow} onPress={onPickImage}>
               <Ionicons name="image" size={20} color={colors.lime} />
               <Text style={styles.actionText}>Choose from Gallery</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionRow} onPress={takePhotoWithCamera}>
+            <TouchableOpacity style={styles.actionRow} onPress={onTakePhoto}>
               <Ionicons name="camera" size={20} color={colors.lime} />
               <Text style={styles.actionText}>Take Photo with Camera</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.actionRow, { borderBottomWidth: 0 }]} onPress={() => setActionSheetVisible(false)}>
+            <TouchableOpacity style={[styles.actionRow, { borderBottomWidth: 0 }]} onPress={onCloseActionSheet}>
               <Ionicons name="close-circle" size={20} color={colors.danger} />
               <Text style={[styles.actionText, { color: colors.danger }]}>Cancel</Text>
             </TouchableOpacity>
@@ -1164,7 +1010,7 @@ export default function SettingsScreen() {
                   <TouchableOpacity
                     style={[styles.dangerConfirmBtn, isReadyToConfirm && styles.dangerConfirmBtnReady]}
                     disabled={!isReadyToConfirm || isClearing}
-                    onPress={clearTarget === 'local' ? handleClearLocal : handleClearCloud}
+                    onPress={clearTarget === 'local' ? onClearLocal : onClearCloud}
                   >
                     {isClearing ? (
                       <>

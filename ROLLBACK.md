@@ -1,5 +1,17 @@
 # Rollback Plan
 
+If version `2.13.2` (Refactored BMI Tracker Module into Domain-Driven Layers) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.13.1)
+
+1. **Delete the custom bmi feature folder and restore screen configuration:**
+   ```powershell
+   rm -Recurse -Force src/features/bmi
+   git checkout v2.13.1 -- app/bmi.tsx
+   ```
+
+---
+
 If version `2.13.1` (Decomposed Monolithic DailyQuests into Domain-Driven Subcomponents) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.13.0)

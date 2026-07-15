@@ -14,7 +14,7 @@ import PillButton from '@/components/ui/PillButton';
 import { Typography, Radius, Shadows, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import { router } from 'expo-router';
-import { useWorkoutTracker, useProfileSettings } from '@/store/fitnessStore';
+import { useWorkoutsScreen } from '@/features/workouts/hooks/useWorkoutsScreen';
 import { triggerHaptic } from '@/utils/haptics';
 
 const { width: W } = Dimensions.get('window');
@@ -38,135 +38,44 @@ export default function WorkoutsScreen() {
 
   const {
     workoutLogs,
-    addWorkoutLog,
-    deleteWorkoutLog,
-    activeMinutes,
     workoutGoal,
-  } = useWorkoutTracker();
+    user,
+    showAddModal,
+    handleOpenAddModal,
+    closeAddModal,
+    selectedType,
+    setSelectedType,
+    durationInput,
+    setDurationInput,
+    intensity,
+    setIntensity,
+    notesInput,
+    setNotesInput,
+    durationHours,
+    durationMins,
+    handleManualTimeChange,
+    isStopwatchMode,
+    setIsStopwatchMode,
+    stopwatchSeconds,
+    setStopwatchSeconds,
+    stopwatchRunning,
+    setStopwatchRunning,
+    stats,
+    computedCaloriesPreview,
+    handleSaveWorkout,
+    handleDeleteWorkout,
+  } = useWorkoutsScreen();
 
-  const { user } = useProfileSettings();
+  const { totalWorkouts, currentWeekWorkouts, totalCaloriesBurned, avgWorkoutDuration } = stats;
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedType, setSelectedType] = useState('Full Body');
-  const [durationInput, setDurationInput] = useState('45');
-  const [intensity, setIntensity] = useState<'low' | 'medium' | 'high'>('medium');
-  const [notesInput, setNotesInput] = useState('');
-
-  // Manual hours and minutes states
-  const [durationHours, setDurationHours] = useState('0');
-  const [durationMins, setDurationMins] = useState('45');
-
-  // Live Stopwatch states
-  const [isStopwatchMode, setIsStopwatchMode] = useState(false);
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
-  const [stopwatchRunning, setStopwatchRunning] = useState(false);
-  const stopwatchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Sync manual inputs when either changes
-  const handleManualTimeChange = (h: string, m: string) => {
-    setDurationHours(h);
-    setDurationMins(m);
-    const hrs = parseInt(h || '0', 10);
-    const mins = parseInt(m || '0', 10);
-    setDurationInput((hrs * 60 + mins).toString());
+  const setShowAddModal = (val: boolean) => {
+    if (val) handleOpenAddModal();
+    else closeAddModal();
   };
 
-  // Stopwatch ticking interval
-  useEffect(() => {
-    if (stopwatchRunning) {
-      stopwatchIntervalRef.current = setInterval(() => {
-        setStopwatchSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (stopwatchIntervalRef.current) {
-        clearInterval(stopwatchIntervalRef.current);
-        stopwatchIntervalRef.current = null;
-      }
-    }
-    return () => {
-      if (stopwatchIntervalRef.current) {
-        clearInterval(stopwatchIntervalRef.current);
-      }
-    };
-  }, [stopwatchRunning]);
-
-  // Clean reset when modal closes
-  const closeAddModal = () => {
-    setStopwatchRunning(false);
-    setStopwatchSeconds(0);
-    setIsStopwatchMode(false);
-    setShowAddModal(false);
+  const handleDeleteLog = (id: string) => {
+    handleDeleteWorkout(id);
   };
-
-  // Statistics
-  const totalWorkouts = workoutLogs.length;
-  const currentWeekWorkouts = useMemo(() => {
-    // Count workouts in the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const dateLimit = sevenDaysAgo.toISOString().split('T')[0];
-    return workoutLogs.filter(w => w.date >= dateLimit).length;
-  }, [workoutLogs]);
-
-  const totalCaloriesBurned = useMemo(() => {
-    return workoutLogs.reduce((sum, w) => sum + w.caloriesBurned, 0);
-  }, [workoutLogs]);
-
-  const avgWorkoutDuration = useMemo(() => {
-    if (totalWorkouts === 0) return 0;
-    return Math.round(workoutLogs.reduce((sum, w) => sum + w.durationMin, 0) / totalWorkouts);
-  }, [workoutLogs, totalWorkouts]);
-
-  // Calorie calculation helper based on activity type, duration and intensity
-  const calculateCalories = (type: string, duration: number, intent: 'low' | 'medium' | 'high') => {
-    let baseBurnRate = 6; // kcal per min
-    if (type === 'Cardio') baseBurnRate = 8.5;
-    else if (type === 'Leg Day') baseBurnRate = 7.5;
-    else if (type === 'Full Body') baseBurnRate = 7.0;
-    else if (type === 'Push Day' || type === 'Pull Day') baseBurnRate = 6.5;
-    else if (type === 'Core / Abs') baseBurnRate = 5.0;
-    else if (type === 'Yoga & Stretch') baseBurnRate = 3.5;
-
-    const multiplier = intent === 'low' ? 0.8 : intent === 'medium' ? 1.0 : 1.3;
-    const bodyWeightMultiplier = user.weight / 70; // Normalized around 70kg weight
-
-    return Math.round(baseBurnRate * duration * multiplier * bodyWeightMultiplier);
-  };
-
-  const handleSaveWorkout = useCallback(() => {
-    const duration = parseInt(durationInput, 10);
-    if (isNaN(duration) || duration <= 0) {
-      alert('Please enter a valid workout duration.');
-      return;
-    }
-
-    triggerHaptic('success');
-    const calories = calculateCalories(selectedType, duration, intensity);
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
-    addWorkoutLog({
-      date: dateStr,
-      time: timeStr,
-      type: selectedType,
-      durationMin: duration,
-      intensity,
-      caloriesBurned: calories,
-      notes: notesInput.trim(),
-    });
-
-    // Reset input fields
-    setDurationInput('45');
-    setIntensity('medium');
-    setNotesInput('');
-    setShowAddModal(false);
-  }, [selectedType, durationInput, intensity, notesInput, addWorkoutLog, user.weight]);
-
-  const handleDeleteLog = useCallback((id: string) => {
-    triggerHaptic('selection');
-    deleteWorkoutLog(id);
-  }, [deleteWorkoutLog]);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.bg }]}>
@@ -469,8 +378,10 @@ export default function WorkoutsScreen() {
                         setStopwatchRunning(false);
                         const minsValue = Math.max(1, Math.ceil(stopwatchSeconds / 60));
                         setDurationInput(minsValue.toString());
-                        setDurationHours(Math.floor(minsValue / 60).toString());
-                        setDurationMins((minsValue % 60).toString());
+                        handleManualTimeChange(
+                          Math.floor(minsValue / 60).toString(),
+                          (minsValue % 60).toString()
+                        );
                         setIsStopwatchMode(false);
                       }}
                       style={[styles.controlBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.cardBorder }]}

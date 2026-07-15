@@ -15,9 +15,8 @@ import PillButton from '@/components/ui/PillButton';
 import { Typography, Radius, Shadows, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
 import { router } from 'expo-router';
-import { useWorkoutEngine, useHydrationTracker, useBmiTracker, useProfileSettings } from '@/store/fitnessStore';
-import { stepsToCalories, stepsToDistanceKm, formatStepCount, getDayLabel } from '@/utils/steps';
-import { generateSuggestions, getBMIResult } from '@/utils/bmi';
+import { stepsToCalories, stepsToDistanceKm } from '@/utils/steps';
+import { useStepsScreen } from '@/features/steps/hooks/useStepsScreen';
 import WeekBars from '@/components/charts/WeekBars';
 import StreakDots from '@/components/charts/StreakDots';
 import MotionBreakdown from '@/components/charts/MotionBreakdown';
@@ -35,82 +34,48 @@ export default function StepsScreen() {
   const { colors } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+
   const {
-    stepsCount, addManualSteps, activeMinutes,
-    stepHistory, updateStepsGoal,
-  } = useWorkoutEngine();
-  const { user } = useProfileSettings();
-  const { waterLogs } = useHydrationTracker();
-  const { weightTrend, currentBMI } = useBmiTracker();
+    stepsCount,
+    activeMinutes,
+    stepHistory,
+    user,
+    goal,
+    progress,
+    caloriesBurned,
+    distanceKm,
+    weekData,
+    streakCount,
+    bestDay,
+    avgSteps,
+    weeklyTotal,
+    stepSuggestions,
+    goalView,
+    setGoalView,
+    showAddModal,
+    handleOpenAddModal,
+    handleCloseAddModal,
+    showGoalModal,
+    handleOpenGoalModal,
+    handleCloseGoalModal,
+    manualInput,
+    setManualInput,
+    goalInput,
+    setGoalInput,
+    handleAddSteps,
+    handleQuickAdd,
+    handleSaveGoal,
+  } = useStepsScreen();
 
-  const [goalView, setGoalView] = useState<'daily' | 'weekly'>('daily');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [manualInput, setManualInput] = useState('');
-  const [goalInput, setGoalInput] = useState(user.stepsGoal.toString());
+  const setShowAddModal = (val: boolean) => {
+    if (val) handleOpenAddModal();
+    else handleCloseAddModal();
+  };
 
-  const goal = user.stepsGoal;
-  const progress = Math.min(stepsCount / goal, 1);
-  const caloriesBurned = stepsToCalories(stepsCount, user.weight);
-  const distanceKm = stepsToDistanceKm(stepsCount, user.height);
-
-  // Last 7 days for the chart
-  const weekData = stepHistory.slice(-7);
-
-  // Streak: consecutive days meeting goal (from end of history)
-  const streakCount = (() => {
-    let count = 0;
-    // Start from second-to-last (skip today since it's in progress)
-    for (let i = stepHistory.length - 2; i >= 0; i--) {
-      if (stepHistory[i].steps >= goal) count++;
-      else break;
-    }
-    return count;
-  })();
-
-  // Best day
-  const bestDay = stepHistory.reduce((max, d) => Math.max(max, d.steps), 0);
-
-  // Average
-  const avgSteps = stepHistory.length > 0
-    ? Math.round(stepHistory.reduce((s, d) => s + d.steps, 0) / stepHistory.length)
-    : 0;
-
-  // Weekly total
-  const weeklyTotal = weekData.reduce((s, d) => s + d.steps, 0);
-
-  // Suggestions
-  const waterTotal = waterLogs.reduce((s, l) => s + l.ml, 0);
-  const bmiResult = getBMIResult(user.weight, user.height);
-  const stepSuggestions = generateSuggestions({
-    bmiResult,
-    stepsPct: progress,
-    weightTrend,
-    waterPct: waterTotal / user.waterGoal,
-  }).filter((s) => s.category === 'exercise').slice(0, 2);
-
-  const handleAddSteps = useCallback(() => {
-    const val = parseInt(manualInput, 10);
-    if (!isNaN(val) && val > 0) {
-      addManualSteps(val);
-      setManualInput('');
-      setShowAddModal(false);
-    }
-  }, [manualInput, addManualSteps]);
-
-  const handleQuickAdd = useCallback((amount: number) => {
-    addManualSteps(amount);
-    setShowAddModal(false);
-    setManualInput('');
-  }, [addManualSteps]);
-
-  const handleSaveGoal = useCallback(() => {
-    const val = parseInt(goalInput, 10);
-    if (!isNaN(val) && val >= 1000) {
-      updateStepsGoal(val);
-      setShowGoalModal(false);
-    }
-  }, [goalInput, updateStepsGoal]);
+  const setShowGoalModal = (val: boolean) => {
+    if (val) handleOpenGoalModal();
+    else handleCloseGoalModal();
+  };
 
   return (
     <ScrollView

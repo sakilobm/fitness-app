@@ -1,5 +1,44 @@
 # Cursor Test & Validation Log
 
+## [2026-07-15T18:50:00+05:30] - Decomposed Monolithic Screens into Layered Features (v2.13.3)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Quests Tracker (`app/quests-tracker.tsx`):**
+  - Created `src/features/quests/utils/questDateUtils.ts` to isolate calendar grid computations.
+  - Implemented `src/features/quests/hooks/useQuestTracker.ts` to retrieve and memoize user quest histories and completion rates.
+  - Decomposed screen into a presentation component layout.
+- **Steps & Walking (`app/steps.tsx`):**
+  - Isolated streak math and historical averaging logic to `src/features/steps/utils/stepsMath.ts`.
+  - Built custom screen controller hook `src/features/steps/hooks/useStepsScreen.ts`.
+  - Bind inputs and modals through reactive callback handlers.
+- **Gym & Workouts (`app/workouts.tsx`):**
+  - Moved calorie burns and seven-day logs transformations to `src/features/workouts/utils/workoutCalculations.ts`.
+  - Extracted stopwatch ticker state and manual adjustments to `src/features/workouts/hooks/useWorkoutsScreen.ts`.
+- **Account Settings (`app/settings.tsx`):**
+  - Migrated Image Pickers, Supabase backups, data exports, password resets, and local/cloud database wipe operations into `src/hooks/useSettingsForm.ts`.
+  - Converted screen actions to simple hook action triggers.
+
+## [2026-07-15T17:45:00+05:30] - Refactored BMI Tracker Module into Domain-Driven Layers (v2.13.2)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Pure Math Utilities:**
+  - Created `src/features/bmi/utils/bmiCalculator.ts` to calculate weight action directives and ideal weight ranges cleanly off-component.
+- **Granular Zustand Selector Hook:**
+  - Implemented `src/features/bmi/hooks/useBMIScreen.ts` using `useShallow` selectors.
+  - Wrapped dynamic list transformations, trends, and calculator states in `useMemo`.
+- **Decoupled Memoized Component:**
+  - Extracted `src/features/bmi/components/BMIGridHero.tsx` wrapped in `React.memo` with custom props comparator predicates.
+- **Clean Screen Body:**
+  - Refactored `app/bmi.tsx` to bind the new domain logic hook and component structure.
+
 ## [2026-07-15T15:45:00+05:30] - Decomposed Monolithic DailyQuests into Domain-Driven Subcomponents (v2.13.1)
 
 ### Automated Checks
