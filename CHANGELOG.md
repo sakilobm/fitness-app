@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.13.1] - 2026-07-15T15:45:00+05:30
+
+### Refactored — Decomposed Monolithic DailyQuests into Domain-Driven Subcomponents
+
+**Architectural Decision:** Implemented a Domain-Driven / Feature-Folder structure for the Daily Quests widget. Decomposed the monolithic 988-line component file into presentational items, a clean custom hook, type definitions, and a wrapper to improve maintainability and performance.
+
+**Changes:**
+- **`src/features/quests/types.ts`:** Defined TypeScript types for quests configuration mapping.
+- **`src/features/quests/hooks/useQuestList.ts`:** Created an isolated hook that reads from the store selectively via `useShallow`, performs derived computations (calorie calculations, sleep, and water math), and exposes stable callback references.
+- **`src/features/quests/components/QuestItem.tsx`:** Implemented a pure, memoized, presentational React card element.
+- **`src/features/quests/components/GoalCustomizer.tsx`:** Implemented a memoized, presentational modal component.
+- **`src/components/home/DailyQuests.tsx`:** Rewrote to serve as a clean wrapper container component, bringing down its line count from 988 to ~180.
+
+#### Rollback
+See ROLLBACK.md section for v2.13.1.
+
+## [2.13.0] - 2026-07-15T15:40:00+05:30
+
+### Optimized — Phase 1 Performance Architecture Refactoring
+
+**Architectural Decision:** Eliminated critical re-render cascades and subscription overhead across the application's state management layer. All changes are purely internal plumbing — zero visual changes to any screen.
+
+**Changes:**
+- **`src/components/home/DailyQuests.tsx`:** Replaced bare `useFitnessStore()` (subscribing to ALL 18 top-level state keys) with `useShallow` selector targeting only the 12 specific fields DailyQuests actually uses. Mutations to unrelated domains (weightLogs, badges, cycleLogs, etc.) no longer trigger re-renders in the quest card tree.
+- **`src/store/fitnessStore.ts` — `useProfileSettings`:** Consolidated 22 individual `useFitnessStore()` subscription calls into a single `useShallow` call. Reduces Zustand listener count from 22 to 1 on every Profile screen mount.
+- **`src/store/fitnessStore.ts` — `useBmiTracker`:** Wrapped `calculateBMI`, Map/forEach/sort O(n) operations, and 14-day weight trend calculation inside `useMemo` with proper dependency tracking. Previously ran on every render.
+- **`src/store/fitnessStore.ts` — `useHydrationTracker`:** Wrapped `waterLogs.reduce()` and all derived calculations (`waterAvg`, `waterBest`, `waterStreak`) in `useMemo`. Previously recomputed on every render.
+- **`app/water.tsx`:** Wrapped inline `log.reduce()`, fill ratio, and goal-met check in `React.useMemo` to prevent recomputation on unrelated re-renders.
+
+#### Rollback
+See ROLLBACK.md section for v2.13.0.
+
 ## [2.12.2] - 2026-07-14T19:22:00+05:30
 
 ### Fixed — Screen Edge Alignment on Quest Calendar Tracker Header

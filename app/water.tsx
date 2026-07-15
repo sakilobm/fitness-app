@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, TextInput, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
@@ -50,10 +50,10 @@ export default function WaterScreen() {
     handleSaveGoal,
   } = useWaterLogger();
 
-  // Dynamic Portions Calculations
-  const totalMl = log.reduce((s, e) => s + e.ml, 0);
-  const filled = Math.min(totalMl / goalMl, 1);
-  const goalMet = totalMl >= goalMl;
+  // Dynamic Portions Calculations (memoized)
+  const totalMl = React.useMemo(() => log.reduce((s, e) => s + e.ml, 0), [log]);
+  const filled = React.useMemo(() => Math.min(totalMl / goalMl, 1), [totalMl, goalMl]);
+  const goalMet = React.useMemo(() => totalMl >= goalMl, [totalMl, goalMl]);
 
   return (
     <ScrollView

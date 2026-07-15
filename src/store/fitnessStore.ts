@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
+import { useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   FoodItem, Meal, LogEntry, ReminderItem, UserProfile, WeightLog, StepLog, BMILog,
@@ -1153,11 +1155,14 @@ export function useHydrationTracker() {
   const deleteWaterLog = useFitnessStore((state) => state.deleteWaterLog);
   const setWaterGoal = useFitnessStore((state) => state.setWaterGoal);
 
-  // Dynamic calculations (from AppContext)
-  const totalMl = waterLogs.reduce((sum, item) => sum + item.ml, 0);
-  const waterAvg = Math.round((2100 * 4 + totalMl) / 5);
-  const waterBest = Math.max(3200, totalMl);
-  const waterStreak = totalMl >= waterGoal ? 9 : 8;
+  // Dynamic calculations (memoized to avoid re-computing on every render)
+  const totalMl = useMemo(
+    () => waterLogs.reduce((sum, item) => sum + item.ml, 0),
+    [waterLogs]
+  );
+  const waterAvg = useMemo(() => Math.round((2100 * 4 + totalMl) / 5), [totalMl]);
+  const waterBest = useMemo(() => Math.max(3200, totalMl), [totalMl]);
+  const waterStreak = useMemo(() => totalMl >= waterGoal ? 9 : 8, [totalMl, waterGoal]);
 
   return {
     waterLogs,
@@ -1175,41 +1180,39 @@ export function useHydrationTracker() {
  * Custom hook for Profile settings.
  */
 export function useProfileSettings() {
-  const name                 = useFitnessStore((s) => s.user.name);
-  const email                = useFitnessStore((s) => s.user.email);
-  const age                  = useFitnessStore((s) => s.user.age);
-  const height               = useFitnessStore((s) => s.user.height);
-  const weight               = useFitnessStore((s) => s.user.weight);
-  const goal                 = useFitnessStore((s) => s.user.goal);
-  const motto                = useFitnessStore((s) => s.user.motto);
-  const profilePic           = useFitnessStore((s) => s.user.profilePic);
-  const calorieGoal          = useFitnessStore((s) => s.user.calorieGoal);
-  const waterGoal            = useFitnessStore((s) => s.user.waterGoal);
-  const stepsGoal            = useFitnessStore((s) => s.user.stepsGoal);
-  const workoutGoal          = useFitnessStore((s) => s.user.workoutGoal);
-  const level                = useFitnessStore((s) => s.user.level);
-  const xp                   = useFitnessStore((s) => s.user.xp);
-  const streak               = useFitnessStore((s) => s.user.streak);
-  const weightUnit           = useFitnessStore((s) => s.user.weightUnit);
-  const volumeUnit           = useFitnessStore((s) => s.user.volumeUnit);
-  const notificationsEnabled = useFitnessStore((s) => s.user.notificationsEnabled);
-  const hapticsEnabled       = useFitnessStore((s) => s.user.hapticsEnabled);
-  const privateProfileEnabled = useFitnessStore((s) => s.user.privateProfileEnabled);
-  const appLockEnabled       = useFitnessStore((s) => s.user.appLockEnabled);
-  const setUser              = useFitnessStore((s) => s.setUser);
-  const updateUserGoal       = useFitnessStore((s) => s.updateUserGoal);
-  const updateUserMotto      = useFitnessStore((s) => s.updateUserMotto);
+  const profile = useFitnessStore(useShallow((s) => ({
+    name:                 s.user.name,
+    email:                s.user.email,
+    age:                  s.user.age,
+    height:               s.user.height,
+    weight:               s.user.weight,
+    goal:                 s.user.goal,
+    motto:                s.user.motto,
+    profilePic:           s.user.profilePic,
+    calorieGoal:          s.user.calorieGoal,
+    waterGoal:            s.user.waterGoal,
+    stepsGoal:            s.user.stepsGoal,
+    workoutGoal:          s.user.workoutGoal,
+    level:                s.user.level,
+    xp:                   s.user.xp,
+    streak:               s.user.streak,
+    weightUnit:           s.user.weightUnit,
+    volumeUnit:           s.user.volumeUnit,
+    notificationsEnabled: s.user.notificationsEnabled,
+    hapticsEnabled:       s.user.hapticsEnabled,
+    privateProfileEnabled: s.user.privateProfileEnabled,
+    appLockEnabled:       s.user.appLockEnabled,
+  })));
+
+  // Actions — function refs are stable, individual selectors are fine
+  const setUser         = useFitnessStore((s) => s.setUser);
+  const updateUserGoal  = useFitnessStore((s) => s.updateUserGoal);
+  const updateUserMotto = useFitnessStore((s) => s.updateUserMotto);
 
   // Reconstruct user object for screens that need the full shape (edit modal etc.)
-  const user = { name, email, age, height, weight, goal, motto, profilePic,
-                 calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
-                 weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled,
-                 privateProfileEnabled, appLockEnabled };
+  const user = profile;
 
-  return { user, name, email, age, height, weight, goal, motto, profilePic,
-           calorieGoal, waterGoal, stepsGoal, workoutGoal, level, xp, streak,
-           weightUnit, volumeUnit, notificationsEnabled, hapticsEnabled,
-           privateProfileEnabled, appLockEnabled,
+  return { user, ...profile,
            setUser, updateUserGoal, updateUserMotto };
 }
 
@@ -1238,27 +1241,24 @@ export function useBmiTracker() {
   const addWeightLog = useFitnessStore((state) => state.addWeightLog);
   const deleteWeightLog = useFitnessStore((state) => state.deleteWeightLog);
 
-  const currentBMI = calculateBMI(weight, height);
+  const currentBMI = useMemo(() => calculateBMI(weight, height), [weight, height]);
 
-  const bmiLogs: BMILog[] = [];
-  const dateMap = new Map<string, WeightLog>();
-  weightLogs.forEach((log) => dateMap.set(log.date, log));
-  
-  dateMap.forEach((log, date) => {
-    const bmi = calculateBMI(log.weight, height);
-    const result = classifyBMI(bmi);
-    bmiLogs.push({
-      date,
-      bmi,
-      weight: log.weight,
-      height,
-      category: result.category,
+  const bmiLogs = useMemo<BMILog[]>(() => {
+    const dateMap = new Map<string, WeightLog>();
+    weightLogs.forEach((log) => dateMap.set(log.date, log));
+
+    const logs: BMILog[] = [];
+    dateMap.forEach((log, date) => {
+      const bmi = calculateBMI(log.weight, height);
+      const result = classifyBMI(bmi);
+      logs.push({ date, bmi, weight: log.weight, height, category: result.category });
     });
-  });
-  bmiLogs.sort((a, b) => a.date.localeCompare(b.date));
 
-  let weightTrend: 'losing' | 'gaining' | 'stable' = 'stable';
-  if (weightLogs.length >= 7) {
+    return logs.sort((a, b) => a.date.localeCompare(b.date));
+  }, [weightLogs, height]);
+
+  const weightTrend = useMemo<'losing' | 'gaining' | 'stable'>(() => {
+    if (weightLogs.length < 7) return 'stable';
     const recent = weightLogs.slice(-14);
     const mid = Math.floor(recent.length / 2);
     const firstHalf = recent.slice(0, mid);
@@ -1266,9 +1266,10 @@ export function useBmiTracker() {
     const avgFirst = firstHalf.reduce((s, l) => s + l.weight, 0) / (firstHalf.length || 1);
     const avgSecond = secondHalf.reduce((s, l) => s + l.weight, 0) / (secondHalf.length || 1);
     const diff = avgSecond - avgFirst;
-    if (diff < -0.3) weightTrend = 'losing';
-    else if (diff > 0.3) weightTrend = 'gaining';
-  }
+    if (diff < -0.3) return 'losing';
+    if (diff > 0.3) return 'gaining';
+    return 'stable';
+  }, [weightLogs]);
 
   return {
     weightLogs,

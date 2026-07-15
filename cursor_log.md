@@ -1,5 +1,40 @@
 # Cursor Test & Validation Log
 
+## [2026-07-15T15:45:00+05:30] - Decomposed Monolithic DailyQuests into Domain-Driven Subcomponents (v2.13.1)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Feature Directory Structure:**
+  - Verified `src/features/quests/types.ts` is created and correctly exported.
+  - Verified `src/features/quests/hooks/useQuestList.ts` encapsulates all Zustand selective states and callbacks with `useCallback` and `useMemo`.
+  - Verified `src/features/quests/components/QuestItem.tsx` is written as a presentational, memoized component using `React.memo`.
+  - Verified `src/features/quests/components/GoalCustomizer.tsx` isolates the modal sheet using `React.memo`.
+  - Verified `src/components/home/DailyQuests.tsx` is decomposed into a clean shell wrapper component.
+
+## [2026-07-15T15:40:00+05:30] - Phase 1 Performance Architecture Refactoring (v2.13.0)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **DailyQuests useShallow migration:**
+  - Verified `useFitnessStore(useShallow(...))` with 12 fields compiles and destructures correctly.
+  - Confirmed `useShallow` import added from `zustand/react/shallow`.
+- **useProfileSettings consolidation:**
+  - Verified 22 individual selectors replaced by single `useShallow` call.
+  - Return shape (`user`, spread individual fields, 3 actions) preserved identically.
+- **useBmiTracker useMemo wrapping:**
+  - `currentBMI`, `bmiLogs`, and `weightTrend` all wrapped in `useMemo` with correct dependency arrays.
+  - `useMemo<BMILog[]>` and `useMemo<'losing' | 'gaining' | 'stable'>` properly typed.
+- **useHydrationTracker useMemo wrapping:**
+  - `totalMl`, `waterAvg`, `waterBest`, `waterStreak` all memoized with correct deps.
+- **water.tsx inline reduce:**
+  - `totalMl`, `filled`, `goalMet` wrapped in `React.useMemo` with `[log]` / `[totalMl, goalMl]` deps.
+
 ## [2026-07-14T19:22:00+05:30] - Screen Edge Alignment on Quest Calendar Tracker Header (v2.12.2)
 
 ### Automated Checks

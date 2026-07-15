@@ -1,5 +1,28 @@
 # Rollback Plan
 
+If version `2.13.1` (Decomposed Monolithic DailyQuests into Domain-Driven Subcomponents) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.13.0)
+
+1. **Delete the custom quests feature folder and restore monolithic file:**
+   ```powershell
+   rm -Recurse -Force src/features/quests
+   git checkout v2.13.0 -- src/components/home/DailyQuests.tsx
+   ```
+
+---
+
+If version `2.13.0` (Phase 1 Performance Architecture Refactoring) needs to be reverted, use this guide.
+
+## Rollback Procedure (Reverting to v2.12.2)
+
+1. **Revert all performance changes:**
+   ```powershell
+   git checkout v2.12.2 -- src/components/home/DailyQuests.tsx src/store/fitnessStore.ts app/water.tsx
+   ```
+
+---
+
 If version `2.12.2` (Screen Edge Alignment on Quest Calendar Tracker Header) needs to be reverted, use this guide.
 
 ## Rollback Procedure (Reverting to v2.12.1)

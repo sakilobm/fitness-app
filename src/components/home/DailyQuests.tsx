@@ -1,329 +1,48 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager, Modal, ScrollView
+  View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFitnessStore } from '@/store/fitnessStore';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/constants/theme';
 import GlassCard from '../ui/GlassCard';
 import { triggerHaptic } from '@/utils/haptics';
-import { mlToOz, ozToMl } from '@/utils/units';
 import { router } from 'expo-router';
+import { useQuestList } from '@/features/quests/hooks/useQuestList';
+import QuestItem from '@/features/quests/components/QuestItem';
+import GoalCustomizer from '@/features/quests/components/GoalCustomizer';
 
-// Enable layout animations for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-interface QuestItem {
-  id: string;
-  title: string;
-  subtext: string;
-  icon: string;
-  iconLib: 'Ionicons' | 'MCI';
-  color: string;
-  progress: number;
-  target: number;
-  unit: string;
-  completed: boolean;
-  actions: { label: string; amount: number }[];
-  onQuickLog: (amount: number) => void;
-  onCompleteRemaining: () => void;
-  onPress: () => void;
-}
-
 export default function DailyQuests() {
-  const { colors, isDark } = useTheme();
-  const [completedExpanded, setCompletedExpanded] = useState(false);
-
+  const { colors } = useTheme();
   const {
-    user,
-    meals,
-    waterLogs,
-    stepsCount,
-    activeMinutes,
-    sleepLogs,
-    addWaterLog,
-    addSteps,
-    addFoodToMeal,
-    addSleepLog,
-    addActiveMinutes,
-    setUser,
-  } = useFitnessStore();
+    quests,
+    activeQuests,
+    completedQuests,
+    completedExpanded,
+    toggleCompletedSection,
+    showGoalsModal,
+    openGoalsModal,
+    closeGoalsModal,
+    handleSaveGoals,
+    stepsInput,
+    setStepsInput,
+    waterInput,
+    setWaterInput,
+    calorieInput,
+    setCalorieInput,
+    sleepInput,
+    setSleepInput,
+    workoutInput,
+    setWorkoutInput,
+    isOz,
+  } = useQuestList();
 
-  const isOz = user.volumeUnit === 'oz';
-  const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
-
-  // Goal Customizer modal states
-  const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [stepsInput, setStepsInput] = useState(10000);
-  const [waterInput, setWaterInput] = useState(2500);
-  const [calorieInput, setCalorieInput] = useState(2300);
-  const [sleepInput, setSleepInput] = useState(8);
-  const [workoutInput, setWorkoutInput] = useState(4);
-
-  const openGoalsModal = () => {
-    triggerHaptic('selection');
-    setStepsInput(user.stepsGoal);
-    setWaterInput(isOz ? Math.round(mlToOz(user.waterGoal)) : user.waterGoal);
-    setCalorieInput(user.calorieGoal);
-    setSleepInput(user.sleepGoal || 8);
-    setWorkoutInput(user.workoutGoal);
-    setShowGoalsModal(true);
-  };
-
-  const handleSaveGoals = () => {
-    triggerHaptic('success');
-    setUser({
-      stepsGoal: stepsInput,
-      waterGoal: isOz ? Math.round(ozToMl(waterInput)) : waterInput,
-      calorieGoal: calorieInput,
-      sleepGoal: sleepInput,
-      workoutGoal: workoutInput,
-    });
-    setShowGoalsModal(false);
-  };
-
-  // Derived state values
-  const totalWaterMl = useMemo(
-    () => waterLogs.reduce((sum, w) => sum + w.ml, 0),
-    [waterLogs]
-  );
-
-  const nutritionKcal = useMemo(() => {
-    let kcal = 0;
-    for (const m of meals) {
-      for (const item of m.items) {
-        kcal += item.kcal;
-      }
-    }
-    return kcal;
-  }, [meals]);
-
-  const todaySleepMin = useMemo(() => {
-    const todaySleep = sleepLogs.find(l => l.date === todayISO);
-    return todaySleep ? todaySleep.totalMin : 0;
-  }, [sleepLogs, todayISO]);
-
-  // Quests configuration mapping
-  const quests: QuestItem[] = useMemo(() => {
-    const list: QuestItem[] = [];
-
-    // 1. Water Intake
-    const waterTarget = isOz ? Math.round(mlToOz(user.waterGoal)) : user.waterGoal;
-    const waterProgress = isOz ? Math.round(mlToOz(totalWaterMl)) : totalWaterMl;
-    list.push({
-      id: 'water',
-      title: 'Stay Hydrated',
-      subtext: isOz ? `${waterProgress} / ${waterTarget} oz` : `${(waterProgress / 1000).toFixed(1)} / ${(waterTarget / 1000).toFixed(1)} L`,
-      icon: 'water',
-      iconLib: 'Ionicons',
-      color: '#38BDF8', // light blue
-      progress: waterProgress,
-      target: waterTarget,
-      unit: isOz ? 'oz' : 'ml',
-      completed: totalWaterMl >= user.waterGoal,
-      actions: isOz
-        ? [{ label: '+8oz', amount: 8 }, { label: '+16oz', amount: 16 }, { label: '+24oz', amount: 24 }]
-        : [{ label: '+250ml', amount: 250 }, { label: '+500ml', amount: 500 }, { label: '+1L', amount: 1000 }],
-      onQuickLog: (amount) => {
-        triggerHaptic('selection');
-        const ml = isOz ? ozToMl(amount) : amount;
-        addWaterLog(ml);
-      },
-      onCompleteRemaining: () => {
-        triggerHaptic('success');
-        const remaining = Math.max(0, user.waterGoal - totalWaterMl);
-        if (remaining > 0) addWaterLog(remaining);
-      },
-      onPress: () => {
-        triggerHaptic('selection');
-        router.push('/water');
-      }
-    });
-
-    // 2. Steps Target
-    list.push({
-      id: 'steps',
-      title: 'Active Walk Steps',
-      subtext: `${stepsCount.toLocaleString()} / ${user.stepsGoal.toLocaleString()} steps`,
-      icon: 'footsteps',
-      iconLib: 'Ionicons',
-      color: '#A3E635', // lime
-      progress: stepsCount,
-      target: user.stepsGoal,
-      unit: 'steps',
-      completed: stepsCount >= user.stepsGoal,
-      actions: [{ label: '+1k', amount: 1000 }, { label: '+2k', amount: 2000 }, { label: '+5k', amount: 5000 }],
-      onQuickLog: (amount) => {
-        triggerHaptic('selection');
-        addSteps(amount);
-      },
-      onCompleteRemaining: () => {
-        triggerHaptic('success');
-        const remaining = Math.max(0, user.stepsGoal - stepsCount);
-        if (remaining > 0) addSteps(remaining);
-      },
-      onPress: () => {
-        triggerHaptic('selection');
-        router.push('/steps');
-      }
-    });
-
-    // 3. Calorie Goal
-    list.push({
-      id: 'calories',
-      title: 'Calorie Intake target',
-      subtext: `${nutritionKcal.toLocaleString()} / ${user.calorieGoal.toLocaleString()} kcal`,
-      icon: 'food-apple',
-      iconLib: 'MCI',
-      color: '#FB923C', // orange
-      progress: nutritionKcal,
-      target: user.calorieGoal,
-      unit: 'kcal',
-      completed: nutritionKcal >= user.calorieGoal,
-      actions: [{ label: '+150kcal', amount: 150 }, { label: '+300kcal', amount: 300 }, { label: '+500kcal', amount: 500 }],
-      onQuickLog: (amount) => {
-        triggerHaptic('selection');
-        addFoodToMeal('snacks', {
-          name: 'Quick Log',
-          grams: 100,
-          kcal: amount,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        });
-      },
-      onCompleteRemaining: () => {
-        triggerHaptic('success');
-        const remaining = Math.max(0, user.calorieGoal - nutritionKcal);
-        if (remaining > 0) {
-          addFoodToMeal('snacks', {
-            name: 'Goal Completion Log',
-            grams: 100,
-            kcal: remaining,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-          });
-        }
-      },
-      onPress: () => {
-        triggerHaptic('selection');
-        router.push('/(tabs)/nutrition' as any);
-      }
-    });
-
-    // 4. Sleep Target
-    const sleepTargetHours = user.sleepGoal || 8;
-    const sleepProgressHours = parseFloat((todaySleepMin / 60).toFixed(1));
-    list.push({
-      id: 'sleep',
-      title: 'Night Sleep Rest',
-      subtext: `${sleepProgressHours} / ${sleepTargetHours} hrs`,
-      icon: 'moon',
-      iconLib: 'Ionicons',
-      color: '#818CF8', // indigo
-      progress: todaySleepMin,
-      target: sleepTargetHours * 60,
-      unit: 'min',
-      completed: todaySleepMin >= (sleepTargetHours * 60),
-      actions: [
-        { label: 'Log 6h', amount: 360 },
-        { label: 'Log 7h', amount: 420 },
-        { label: 'Log 8h', amount: 480 },
-        { label: 'Log 9h', amount: 540 }
-      ],
-      onQuickLog: (amount) => {
-        triggerHaptic('selection');
-        const deep = Math.round(amount * 0.2);
-        const rem = Math.round(amount * 0.25);
-        const light = Math.round(amount * 0.5);
-        const awake = Math.round(amount * 0.05);
-        addSleepLog({
-          date: todayISO,
-          bedtime: '23:00',
-          wakeTime: '07:00',
-          totalMin: amount,
-          deepMin: deep,
-          remMin: rem,
-          lightMin: light,
-          awakeMin: awake,
-          wakeUps: 1,
-          cycles: Math.round(amount / 90),
-          score: Math.min(100, Math.max(60, 80 + Math.round((amount - 480) / 10))),
-          notes: 'Logged from Daily Quests widget',
-        });
-      },
-      onCompleteRemaining: () => {
-        triggerHaptic('success');
-        const remaining = Math.max(0, (sleepTargetHours * 60) - todaySleepMin);
-        if (remaining > 0) {
-          addSleepLog({
-            date: todayISO,
-            bedtime: '23:00',
-            wakeTime: '07:00',
-            totalMin: remaining,
-            deepMin: Math.round(remaining * 0.2),
-            remMin: Math.round(remaining * 0.2),
-            lightMin: Math.round(remaining * 0.5),
-            awakeMin: Math.round(remaining * 0.1),
-            wakeUps: 0,
-            cycles: 3,
-            score: 75,
-            notes: 'Completed remaining sleep target',
-          });
-        }
-      },
-      onPress: () => {
-        triggerHaptic('selection');
-        router.push('/(tabs)/sleep' as any);
-      }
-    });
-
-    // 5. Workout / Active Minutes
-    const activeTarget = 30; // standard daily minutes target
-    list.push({
-      id: 'workouts',
-      title: 'Active Exercise',
-      subtext: `${activeMinutes} / ${activeTarget} active min`,
-      icon: 'dumbbell',
-      iconLib: 'MCI',
-      color: '#F43F5E', // rose
-      progress: activeMinutes,
-      target: activeTarget,
-      unit: 'min',
-      completed: activeMinutes >= activeTarget,
-      actions: [{ label: '+15 min', amount: 15 }, { label: '+30 min', amount: 30 }],
-      onQuickLog: (amount) => {
-        triggerHaptic('selection');
-        addActiveMinutes(amount);
-      },
-      onCompleteRemaining: () => {
-        triggerHaptic('success');
-        const remaining = Math.max(0, activeTarget - activeMinutes);
-        if (remaining > 0) addActiveMinutes(remaining);
-      },
-      onPress: () => {
-        triggerHaptic('selection');
-        router.push('/workouts');
-      }
-    });
-
-    return list;
-  }, [
-    user, totalWaterMl, stepsCount, nutritionKcal, todaySleepMin, activeMinutes,
-    isOz, todayISO, addWaterLog, addSteps, addFoodToMeal, addSleepLog, addActiveMinutes
-  ]);
-
-  // Split into active and completed quests
-  const activeQuests = useMemo(() => quests.filter(q => !q.completed), [quests]);
-  const completedQuests = useMemo(() => quests.filter(q => q.completed), [quests]);
-
-  const toggleCompletedSection = () => {
-    triggerHaptic('selection');
+  const handleToggleCompleted = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setCompletedExpanded(!completedExpanded);
+    toggleCompletedSection();
   };
 
   return (
@@ -364,73 +83,9 @@ export default function DailyQuests() {
 
       {/* ── Active Quests ─────────────────────────────────────────────────── */}
       {activeQuests.length > 0 ? (
-        activeQuests.map((quest) => {
-          const progressPercent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
-          return (
-            <GlassCard key={quest.id} style={st.questCard} accentColor={quest.color}>
-              <View style={st.questMainRow}>
-                <TouchableOpacity
-                  style={st.questClickableRow}
-                  activeOpacity={0.7}
-                  onPress={quest.onPress}
-                >
-                  {/* Icon wrapper */}
-                  <View style={[st.iconBubble, { backgroundColor: quest.color + '15' }]}>
-                    {quest.iconLib === 'Ionicons' ? (
-                      <Ionicons name={quest.icon as any} size={20} color={quest.color} />
-                    ) : (
-                      <MaterialCommunityIcons name={quest.icon as any} size={20} color={quest.color} />
-                    )}
-                  </View>
-
-                  {/* Progress Details */}
-                  <View style={st.detailsContainer}>
-                    <View style={st.metaTextRow}>
-                      <Text style={[st.questTitle, { color: colors.text.primary }]}>{quest.title}</Text>
-                      <Text style={[st.questSub, { color: colors.muted }]}>{quest.subtext}</Text>
-                    </View>
-
-                    {/* Progress Bar */}
-                    <View style={[st.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}>
-                      <View
-                        style={[
-                          st.progressBarFill,
-                          {
-                            backgroundColor: quest.color,
-                            width: `${progressPercent}%`,
-                          }
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-
-                {/* Quick Checkbox button to complete remaining */}
-                <TouchableOpacity
-                  style={[st.completeCheckbox, { borderColor: quest.color + '60' }]}
-                  activeOpacity={0.6}
-                  onPress={quest.onCompleteRemaining}
-                >
-                  <Ionicons name="checkmark" size={16} color="transparent" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Action Quick Logs */}
-              <View style={st.actionsRow}>
-                {quest.actions.map((act, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={[st.actionButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.cardBorder }]}
-                    activeOpacity={0.7}
-                    onPress={() => quest.onQuickLog(act.amount)}
-                  >
-                    <Text style={[st.actionLabel, { color: colors.text.secondary }]}>{act.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </GlassCard>
-          );
-        })
+        activeQuests.map((quest) => (
+          <QuestItem key={quest.id} quest={quest} />
+        ))
       ) : (
         /* Celebration when all quests are complete */
         <GlassCard style={st.celebrationCard} accentColor={colors.lime}>
@@ -452,7 +107,7 @@ export default function DailyQuests() {
           <TouchableOpacity
             style={[st.completedHeader, { borderColor: colors.cardBorder }]}
             activeOpacity={0.8}
-            onPress={toggleCompletedSection}
+            onPress={handleToggleCompleted}
           >
             <View style={st.completedTitleRow}>
               <Ionicons name="checkmark-done-circle" size={18} color={colors.lime} />
@@ -484,187 +139,22 @@ export default function DailyQuests() {
       )}
 
       {/* ── Goal Customizer Bottom Sheet Modal ── */}
-      <Modal visible={showGoalsModal} animationType="slide" transparent>
-        <View style={st.modalOverlay}>
-          <GlassCard style={st.modalPane}>
-            <View style={st.modalHeader}>
-              <View style={st.modalHeaderTitleRow}>
-                <Ionicons name="options-outline" size={20} color={colors.lime} />
-                <Text style={[st.modalTitle, { color: colors.text.primary }]}>Adjust Daily Goals</Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowGoalsModal(false)}>
-                <Ionicons name="close-circle-outline" size={24} color={colors.text.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={st.modalForm}>
-              {/* 1. Steps Goal */}
-              <View style={st.goalEditCard}>
-                <View style={st.goalMetaRow}>
-                  <View style={st.goalMetaLabelRow}>
-                    <View style={[st.goalIconBox, { backgroundColor: '#A3E63515' }]}>
-                      <Ionicons name="footsteps" size={18} color="#A3E635" />
-                    </View>
-                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Daily Steps</Text>
-                  </View>
-                  <Text style={[st.goalValue, { color: '#A3E635' }]}>{stepsInput.toLocaleString()} steps</Text>
-                </View>
-                <View style={st.adjustControls}>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setStepsInput(prev => Math.max(1000, prev - 500)); }}
-                  >
-                    <Ionicons name="remove" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                  <View style={st.adjustIndicator}>
-                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +150 XP</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setStepsInput(prev => Math.min(30000, prev + 500)); }}
-                  >
-                    <Ionicons name="add" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 2. Water Goal */}
-              <View style={st.goalEditCard}>
-                <View style={st.goalMetaRow}>
-                  <View style={st.goalMetaLabelRow}>
-                    <View style={[st.goalIconBox, { backgroundColor: '#38BDF815' }]}>
-                      <Ionicons name="water" size={18} color="#38BDF8" />
-                    </View>
-                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Hydration Target</Text>
-                  </View>
-                  <Text style={[st.goalValue, { color: '#38BDF8' }]}>
-                    {waterInput} {isOz ? 'oz' : 'ml'}
-                  </Text>
-                </View>
-                <View style={st.adjustControls}>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setWaterInput(prev => Math.max(isOz ? 16 : 500, prev - (isOz ? 8 : 250))); }}
-                  >
-                    <Ionicons name="remove" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                  <View style={st.adjustIndicator}>
-                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +100 XP</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setWaterInput(prev => Math.min(isOz ? 320 : 10000, prev + (isOz ? 8 : 250))); }}
-                  >
-                    <Ionicons name="add" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 3. Calories Goal */}
-              <View style={st.goalEditCard}>
-                <View style={st.goalMetaRow}>
-                  <View style={st.goalMetaLabelRow}>
-                    <View style={[st.goalIconBox, { backgroundColor: '#FB923C15' }]}>
-                      <MaterialCommunityIcons name="food-apple" size={18} color="#FB923C" />
-                    </View>
-                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Calorie Intake</Text>
-                  </View>
-                  <Text style={[st.goalValue, { color: '#FB923C' }]}>{calorieInput.toLocaleString()} kcal</Text>
-                </View>
-                <View style={st.adjustControls}>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setCalorieInput(prev => Math.max(1000, prev - 100)); }}
-                  >
-                    <Ionicons name="remove" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                  <View style={st.adjustIndicator}>
-                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +200 XP</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setCalorieInput(prev => Math.min(6000, prev + 100)); }}
-                  >
-                    <Ionicons name="add" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 4. Sleep Goal */}
-              <View style={st.goalEditCard}>
-                <View style={st.goalMetaRow}>
-                  <View style={st.goalMetaLabelRow}>
-                    <View style={[st.goalIconBox, { backgroundColor: '#818CF815' }]}>
-                      <Ionicons name="moon" size={18} color="#818CF8" />
-                    </View>
-                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Sleep Duration</Text>
-                  </View>
-                  <Text style={[st.goalValue, { color: '#818CF8' }]}>{sleepInput} hrs</Text>
-                </View>
-                <View style={st.adjustControls}>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setSleepInput(prev => Math.max(4, prev - 0.5)); }}
-                  >
-                    <Ionicons name="remove" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                  <View style={st.adjustIndicator}>
-                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +150 XP</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setSleepInput(prev => Math.min(12, prev + 0.5)); }}
-                  >
-                    <Ionicons name="add" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 5. Workouts Goal */}
-              <View style={st.goalEditCard}>
-                <View style={st.goalMetaRow}>
-                  <View style={st.goalMetaLabelRow}>
-                    <View style={[st.goalIconBox, { backgroundColor: '#F43F5E15' }]}>
-                      <MaterialCommunityIcons name="dumbbell" size={18} color="#F43F5E" />
-                    </View>
-                    <Text style={[st.goalTitle, { color: colors.text.primary }]}>Weekly Workouts</Text>
-                  </View>
-                  <Text style={[st.goalValue, { color: '#F43F5E' }]}>{workoutInput} days / wk</Text>
-                </View>
-                <View style={st.adjustControls}>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setWorkoutInput(prev => Math.max(1, prev - 1)); }}
-                  >
-                    <Ionicons name="remove" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                  <View style={st.adjustIndicator}>
-                    <Text style={[st.adjustSub, { color: colors.muted }]}>XP Reward: +300 XP</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[st.adjustBtn, { borderColor: colors.cardBorder }]}
-                    onPress={() => { triggerHaptic('selection'); setWorkoutInput(prev => Math.min(7, prev + 1)); }}
-                  >
-                    <Ionicons name="add" size={18} color={colors.text.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Save Button */}
-              <View style={st.modalSaveBtnWrap}>
-                <TouchableOpacity
-                  style={[st.modalSaveBtn, { backgroundColor: colors.lime }]}
-                  activeOpacity={0.85}
-                  onPress={handleSaveGoals}
-                >
-                  <Ionicons name="checkmark-circle" size={18} color={colors.white} />
-                  <Text style={st.modalSaveBtnTxt}>Apply Goal Changes</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </GlassCard>
-        </View>
-      </Modal>
+      <GoalCustomizer
+        visible={showGoalsModal}
+        onClose={closeGoalsModal}
+        onSave={handleSaveGoals}
+        stepsInput={stepsInput}
+        setStepsInput={setStepsInput}
+        waterInput={waterInput}
+        setWaterInput={setWaterInput}
+        calorieInput={calorieInput}
+        setCalorieInput={setCalorieInput}
+        sleepInput={sleepInput}
+        setSleepInput={setSleepInput}
+        workoutInput={workoutInput}
+        setWorkoutInput={setWorkoutInput}
+        isOz={isOz}
+      />
     </View>
   );
 }
@@ -717,79 +207,6 @@ const st = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 12,
     marginTop: 2,
-  },
-  questCard: {
-    marginBottom: 12,
-  },
-  questMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  questClickableRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  detailsContainer: {
-    flex: 1,
-    gap: 8,
-  },
-  metaTextRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  questTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  questSub: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  progressBarBg: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  completeCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  actionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   celebrationCard: {
     marginBottom: 12,
@@ -864,110 +281,5 @@ const st = StyleSheet.create({
   completedProgress: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'flex-end',
-  },
-  modalPane: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 24,
-    maxHeight: '85%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalHeaderTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  modalForm: {
-    maxHeight: 500,
-  },
-  goalEditCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-    backgroundColor: 'rgba(0,0,0,0.015)',
-  },
-  goalMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  goalMetaLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  goalIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  goalTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  goalValue: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  adjustControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  adjustBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  adjustIndicator: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  adjustSub: {
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  modalSaveBtnWrap: {
-    marginTop: 16,
-    marginBottom: 30,
-  },
-  modalSaveBtn: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 100,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    elevation: 4,
-  },
-  modalSaveBtnTxt: {
-    color: '#FFF',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });
