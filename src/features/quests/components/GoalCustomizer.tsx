@@ -1,9 +1,22 @@
+/**
+ * @component GoalCustomizer
+ * @module Features/Quests/Components
+ * @description Presentational modal sheet to customize step counters, water volume, calorie intakes, sleep targets, and active workouts.
+ * 
+ * @param {GoalCustomizerProps} props - (Inputs): Visual configuration properties, active input levels, callback change handlers, and save triggers.
+ * @process (Internal Logic):
+ *          - Performance: Wrapped in `React.memo` to skip Virtual DOM diffing unless active values or visibility change.
+ *          - Resolves theme-adaptive layouts using dynamic styling matrices.
+ * @returns {React.ReactElement} (Outputs): Smooth slide-up adjustment layout container.
+ */
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import { useTheme } from '@/constants/theme';
 import { triggerHaptic } from '@/utils/haptics';
+import { ThemeColors } from '@/theme/tokens';
 
 interface GoalCustomizerProps {
   visible: boolean;
@@ -21,6 +34,8 @@ interface GoalCustomizerProps {
   setWorkoutInput: React.Dispatch<React.SetStateAction<number>>;
   exerciseInput: number;
   setExerciseInput: React.Dispatch<React.SetStateAction<number>>;
+  goalsDurationInput: number;
+  setGoalsDurationInput: React.Dispatch<React.SetStateAction<number>>;
   isOz: boolean;
 }
 
@@ -40,9 +55,12 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
   setWorkoutInput,
   exerciseInput,
   setExerciseInput,
+  goalsDurationInput,
+  setGoalsDurationInput,
   isOz,
 }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -317,6 +335,91 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
               </View>
             </View>
 
+            {/* 7. Commitment Duration Goal */}
+            <View style={styles.goalEditCard}>
+              <View style={styles.goalMetaRow}>
+                <View style={styles.goalMetaLabelRow}>
+                  <View style={[styles.goalIconBox, { backgroundColor: '#818CF815' }]}>
+                    <Ionicons name="calendar-outline" size={18} color="#818CF8" />
+                  </View>
+                  <Text style={[styles.goalTitle, { color: colors.text.primary }]}>
+                    Challenge Period
+                  </Text>
+                </View>
+                <Text style={[styles.goalValue, { color: '#818CF8' }]}>
+                  {goalsDurationInput === 0 ? 'Ongoing' : `${goalsDurationInput} Days`}
+                </Text>
+              </View>
+
+              {/* Quick Pills for Duration */}
+              <View style={styles.durationPillsRow}>
+                {[
+                  { label: 'Ongoing', value: 0 },
+                  { label: '7 Days', value: 7 },
+                  { label: '30 Days', value: 30 },
+                  { label: 'Custom', value: -1 }
+                ].map((dur) => {
+                  const isCustomSelected = dur.value === -1 && goalsDurationInput !== 0 && goalsDurationInput !== 7 && goalsDurationInput !== 30;
+                  const isSelected = dur.value === -1 ? isCustomSelected : goalsDurationInput === dur.value;
+                  return (
+                    <TouchableOpacity
+                      key={dur.label}
+                      style={[
+                        styles.durationPill,
+                        { borderColor: colors.cardBorder },
+                        isSelected && { borderColor: colors.lime, backgroundColor: colors.lime + '15' }
+                      ]}
+                      onPress={() => {
+                        triggerHaptic('selection');
+                        if (dur.value === -1) {
+                          setGoalsDurationInput(14); // Default custom value
+                        } else {
+                          setGoalsDurationInput(dur.value);
+                        }
+                      }}
+                    >
+                      <Text style={[
+                        styles.durationPillText,
+                        { color: colors.text.secondary },
+                        isSelected && { color: colors.lime, fontWeight: '700' }
+                      ]}>
+                        {dur.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Custom Duration Adjuster */}
+              {goalsDurationInput !== 0 && goalsDurationInput !== 7 && goalsDurationInput !== 30 && (
+                <View style={styles.adjustControls}>
+                  <TouchableOpacity
+                    style={[styles.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => {
+                      triggerHaptic('selection');
+                      setGoalsDurationInput((prev) => Math.max(1, prev - 1));
+                    }}
+                  >
+                    <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                  <View style={styles.adjustIndicator}>
+                    <Text style={[styles.adjustSub, { color: colors.muted }]}>
+                      Configure Target Days
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.adjustBtn, { borderColor: colors.cardBorder }]}
+                    onPress={() => {
+                      triggerHaptic('selection');
+                      setGoalsDurationInput((prev) => Math.min(365, prev + 1));
+                    }}
+                  >
+                    <Ionicons name="add" size={18} color={colors.text.primary} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
             {/* Save Button */}
             <View style={styles.modalSaveBtnWrap}>
               <TouchableOpacity
@@ -324,8 +427,8 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
                 activeOpacity={0.85}
                 onPress={onSave}
               >
-                <Ionicons name="checkmark-circle" size={18} color={colors.white} />
-                <Text style={styles.modalSaveBtnTxt}>Apply Goal Changes</Text>
+                <Ionicons name="checkmark-circle" size={18} color={isDark ? '#0D0F0E' : '#FFFFFF'} />
+                <Text style={[styles.modalSaveBtnTxt, { color: isDark ? '#0D0F0E' : '#FFFFFF' }]}>Apply Goal Changes</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -335,7 +438,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
   );
 });
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -369,9 +472,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 12,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(46, 125, 94, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: colors.cardBorder,
   },
   goalMetaRow: {
     flexDirection: 'row',
@@ -409,9 +512,10 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 10,
     borderWidth: 1,
+    borderColor: colors.cardBorder,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(46, 125, 94, 0.05)',
   },
   adjustIndicator: {
     alignItems: 'center',
@@ -435,7 +539,24 @@ const styles = StyleSheet.create({
   modalSaveBtnTxt: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#000000',
+  },
+  durationPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  durationPill: {
+    flex: 1,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+  },
+  durationPillText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 

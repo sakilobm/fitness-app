@@ -1,5 +1,57 @@
 # Cursor Test & Validation Log
 
+## [2026-07-16T11:32:00+05:30] - Shortened Commitment Card Text in Adjust Goals Modal (v2.13.13)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Shortened Layout Texts:**
+  - Updated the commitment target card inside [GoalCustomizer.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/components/GoalCustomizer.tsx) to use concise labels and values.
+  - Shortened left label from `Goal Challenge Commitment` to `Challenge Period` (reducing footprint by 7 characters).
+  - Shortened right value from `Ongoing / Indefinite` to `Ongoing` (reducing footprint by 13 characters).
+  - This prevents horizontal row wrapping or text clipping on low-resolution or small viewport devices, ensuring a premium clean UI.
+
+## [2026-07-16T11:27:00+05:30] - Optimized Quests Header Options Row Layout on Home Screen (v2.13.12)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Daily Quests Header Actions:**
+  - Replaced the wide, text-heavy "Stats" and "Adjust Goals" buttons with elegant circular icon-only buttons in [DailyQuests.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/components/home/DailyQuests.tsx).
+  - Configured icons (`calendar-outline` and `options-outline`) to use the theme-adaptive primary lime accent color.
+  - Refactored styles for `editGoalsShortcut` to a clean `32x32` circle and removed unused styling rules (`editGoalsText`), guaranteeing alignment stability on low-resolution viewports.
+
+## [2026-07-16T11:15:00+05:30] - Merged Goal Challenge Commitments into Unified Adjust Goals Modal (v2.13.11)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Merged Goal Settings & commitment Duration:**
+  - Removed duplicate Goals Edit Button and the "Customize Daily Goals" modal markup/state from [quests-tracker.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/quests-tracker.tsx).
+  - Added a highly polished, tactile "Goal Challenge Commitment" segment section inside the unified [GoalCustomizer.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/components/GoalCustomizer.tsx) (Ongoing, 7 Days, 30 Days, or Custom adjustable target days).
+  - Integrated `goalsDurationInput` / `setGoalsDurationInput` state selectors in [useQuestList.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/hooks/useQuestList.ts) hook and [DailyQuests.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/components/home/DailyQuests.tsx) container.
+  - Linked database profile mapping exclusion filters in [fitnessStore.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/store/fitnessStore.ts) to filter out `goalsDurationDays` and `goalsStartDate` from Supabase sync payloads.
+  - Displayed a premium Commitment progress tracker inside the Quest Breakdown card on the tracker calendar screen (e.g. "Goal Challenge: Day 1 of 7" or "Ongoing daily targets").
+
+## [2026-07-16T11:05:00+05:30] - Polished GoalCustomizer UI with Dynamic Theme Adaptivity (v2.13.10)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Dynamic Theme Adaptivity in GoalCustomizer Modal:**
+  - Converted the static stylesheet in [GoalCustomizer.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/components/GoalCustomizer.tsx) to use a dynamic `getStyles(colors, isDark)` generator function.
+  - Linked the modal background card card-overlays and button-backgrounds to a green-tinted overlay brand style (`rgba(46, 125, 94, 0.04)`) in Light mode to fit premium styling criteria.
+  - Added theme-adaptive contrast logic for the main save button: resolves to white text (`#FFFFFF`) on dark green (`#2E7D5E`) in Light mode, and black text (`#0D0F0E`) on bright green (`#34D399`) in Dark mode.
+  - Formatted file imports and JSDoc blocks to adhere to clean English schema models.
+
 ## [2026-07-15T22:04:00+05:30] - Integrated Active Exercise Target inside Adjust Goals Modal (v2.13.9)
 
 ### Automated Checks

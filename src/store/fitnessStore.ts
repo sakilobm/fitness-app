@@ -538,6 +538,8 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
           delete dbUpdate.setupCompleted;
           delete dbUpdate.sleepGoal;
           delete dbUpdate.activeMinutesGoal;
+          delete dbUpdate.goalsDurationDays;
+          delete dbUpdate.goalsStartDate;
           delete dbUpdate.customFocusTitle;
           delete dbUpdate.customFocusDuration;
           delete dbUpdate.customFocusCalories;

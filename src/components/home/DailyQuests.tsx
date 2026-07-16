@@ -39,6 +39,8 @@ export default function DailyQuests() {
     setWorkoutInput,
     exerciseInput,
     setExerciseInput,
+    goalsDurationInput,
+    setGoalsDurationInput,
     isOz,
   } = useQuestList();
 
@@ -60,14 +62,13 @@ export default function DailyQuests() {
             </View>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
             <TouchableOpacity
               style={[st.editGoalsShortcut, { backgroundColor: colors.lime + '15', borderColor: colors.lime + '35' }]}
               activeOpacity={0.85}
               onPress={() => { triggerHaptic('selection'); router.push('/quests-tracker'); }}
             >
-              <Ionicons name="calendar-outline" size={13} color={colors.lime} style={{ marginRight: 2 }} />
-              <Text style={[st.editGoalsText, { color: colors.lime }]}>Stats</Text>
+              <Ionicons name="calendar-outline" size={15} color={colors.lime} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -75,9 +76,8 @@ export default function DailyQuests() {
               activeOpacity={0.85}
               onPress={openGoalsModal}
             >
-              {/* <Ionicons name="options-outline" size={13} color={colors.lime} style={{ marginRight: 2 }} /> */}
+              {/* <Ionicons name="options-outline" size={15} color={colors.lime} /> */}
               <FontAwesome6 name="edit" size={13} color={colors.lime} style={{ marginRight: 2 }} />
-              <Text style={[st.editGoalsText, { color: colors.lime }]}>Adjust Goals</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -158,6 +158,8 @@ export default function DailyQuests() {
         setWorkoutInput={setWorkoutInput}
         exerciseInput={exerciseInput}
         setExerciseInput={setExerciseInput}
+        goalsDurationInput={goalsDurationInput}
+        setGoalsDurationInput={setGoalsDurationInput}
         isOz={isOz}
       />
     </View>
@@ -185,16 +187,12 @@ const st = StyleSheet.create({
     gap: 8,
   },
   editGoalsShortcut: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 1,
-  },
-  editGoalsText: {
-    fontSize: 11,
-    fontWeight: '700',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 18,

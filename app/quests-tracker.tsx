@@ -63,50 +63,6 @@ export default function QuestsTrackerScreen() {
   const [selectedIcon, setSelectedIcon] = useState('trophy');
   const [selectedColor, setSelectedColor] = useState('#10B981');
 
-  // Goals modal state
-  const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [goalSteps, setGoalSteps] = useState(user.stepsGoal?.toString() || '10000');
-  const [goalWater, setGoalWater] = useState(user.waterGoal?.toString() || '2500');
-  const [goalCalories, setGoalCalories] = useState(user.calorieGoal?.toString() || '2000');
-  const [goalSleep, setGoalSleep] = useState(user.sleepGoal?.toString() || '8');
-  const [goalActive, setGoalActive] = useState(user.activeMinutesGoal?.toString() || '30');
-
-  const handleOpenGoalsModal = () => {
-    setGoalSteps(user.stepsGoal?.toString() || '10000');
-    setGoalWater(user.waterGoal?.toString() || '2500');
-    setGoalCalories(user.calorieGoal?.toString() || '2000');
-    setGoalSleep(user.sleepGoal?.toString() || '8');
-    setGoalActive(user.activeMinutesGoal?.toString() || '30');
-    setShowGoalsModal(true);
-  };
-
-  const handleSaveGoals = () => {
-    const stepsVal = parseInt(goalSteps, 10);
-    const waterVal = parseInt(goalWater, 10);
-    const caloriesVal = parseInt(goalCalories, 10);
-    const sleepVal = parseFloat(goalSleep);
-    const activeVal = parseInt(goalActive, 10);
-
-    if (isNaN(stepsVal) || stepsVal <= 0 ||
-        isNaN(waterVal) || waterVal <= 0 ||
-        isNaN(caloriesVal) || caloriesVal <= 0 ||
-        isNaN(sleepVal) || sleepVal <= 0 ||
-        isNaN(activeVal) || activeVal <= 0) {
-      Alert.alert('Invalid Goals', 'Please enter valid positive numbers for all goals.');
-      return;
-    }
-
-    triggerHaptic('success');
-    setUser({
-      stepsGoal: stepsVal,
-      waterGoal: waterVal,
-      calorieGoal: caloriesVal,
-      sleepGoal: sleepVal,
-      activeMinutesGoal: activeVal,
-    });
-    setShowGoalsModal(false);
-  };
-
   // Quick log progress state
   const [showLogModal, setShowLogModal] = useState(false);
   const [loggingQuest, setLoggingQuest] = useState<any | null>(null);
@@ -308,14 +264,6 @@ export default function QuestsTrackerScreen() {
           <Text style={styles.sectionTitle}>Quest Breakdown</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={styles.dateLabelBadge}>{selectedDate === todayStr ? 'Today' : selectedDate}</Text>
-            <TouchableOpacity
-              style={styles.editGoalsButton}
-              activeOpacity={0.8}
-              onPress={handleOpenGoalsModal}
-            >
-              <Ionicons name="settings-outline" size={12} color={colors.lime} />
-              <Text style={styles.editGoalsButtonText}>Edit Goals</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -334,6 +282,32 @@ export default function QuestsTrackerScreen() {
                   ? 'All 5 targets fully completed. You earned a total of +1,000 XP!'
                   : `Complete remaining targets to unlock additional XP rewards.`}
               </Text>
+
+              {/* Commitment Duration Display */}
+              {user.goalsDurationDays && user.goalsDurationDays > 0 ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
+                  <Ionicons name="calendar-outline" size={12} color={colors.lime} />
+                  <Text style={{ fontSize: 11, color: colors.lime, fontWeight: '700' }}>
+                    {(() => {
+                      const start = new Date(user.goalsStartDate || todayStr);
+                      start.setHours(0, 0, 0, 0);
+                      const current = new Date();
+                      current.setHours(0, 0, 0, 0);
+                      const diffTime = current.getTime() - start.getTime();
+                      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                      const currentDay = Math.min(user.goalsDurationDays, Math.max(1, diffDays));
+                      return `Goal Challenge: Day ${currentDay} of ${user.goalsDurationDays}`;
+                    })()}
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
+                  <Ionicons name="infinite-outline" size={12} color={colors.muted} />
+                  <Text style={{ fontSize: 11, color: colors.muted, fontWeight: '600' }}>
+                    Ongoing daily targets
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -752,114 +726,7 @@ export default function QuestsTrackerScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── Edit Daily Goals Modal ── */}
-      <Modal
-        visible={showGoalsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowGoalsModal(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalBackdrop}
-        >
-          <TouchableOpacity
-            style={styles.modalBackdropPressable}
-            activeOpacity={1}
-            onPress={() => setShowGoalsModal(false)}
-          />
-          <View style={[styles.modalCard, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}>
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitleText}>Customize Daily Goals</Text>
-              <TouchableOpacity
-                onPress={() => setShowGoalsModal(false)}
-                style={styles.modalCloseBtn}
-              >
-                <Ionicons name="close" size={20} color={colors.text.secondary} />
-              </TouchableOpacity>
-            </View>
 
-            <ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
-              <View>
-                <Text style={styles.modalInputLabel}>Steps Target (steps/day)</Text>
-                <TextInput
-                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
-                  keyboardType="numeric"
-                  placeholder="e.g. 10000"
-                  placeholderTextColor={colors.muted}
-                  value={goalSteps}
-                  onChangeText={setGoalSteps}
-                />
-              </View>
-
-              <View>
-                <Text style={styles.modalInputLabel}>Hydration Target ({user.volumeUnit === 'oz' ? 'oz/day' : 'ml/day'})</Text>
-                <TextInput
-                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
-                  keyboardType="numeric"
-                  placeholder="e.g. 2500"
-                  placeholderTextColor={colors.muted}
-                  value={goalWater}
-                  onChangeText={setGoalWater}
-                />
-              </View>
-
-              <View>
-                <Text style={styles.modalInputLabel}>Calorie Target (kcal/day)</Text>
-                <TextInput
-                  style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
-                  keyboardType="numeric"
-                  placeholder="e.g. 2000"
-                  placeholderTextColor={colors.muted}
-                  value={goalCalories}
-                  onChangeText={setGoalCalories}
-                />
-              </View>
-
-              <View style={styles.modalDoubleRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.modalInputLabel}>Sleep Target (hours)</Text>
-                  <TextInput
-                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
-                    keyboardType="numeric"
-                    placeholder="e.g. 8"
-                    placeholderTextColor={colors.muted}
-                    value={goalSleep}
-                    onChangeText={setGoalSleep}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.modalInputLabel}>Exercise Target (mins)</Text>
-                  <TextInput
-                    style={[styles.modalTextInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
-                    keyboardType="numeric"
-                    placeholder="e.g. 30"
-                    placeholderTextColor={colors.muted}
-                    value={goalActive}
-                    onChangeText={setGoalActive}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.modalButtonsRow}>
-                <TouchableOpacity
-                  style={[styles.modalBtn, styles.modalCancelBtn, { borderColor: colors.cardBorder }]}
-                  onPress={() => setShowGoalsModal(false)}
-                >
-                  <Text style={[styles.modalBtnText, { color: colors.text.primary }]}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalBtn, styles.modalSaveBtn, { backgroundColor: colors.lime }]}
-                  onPress={handleSaveGoals}
-                >
-                  <Text style={[styles.modalBtnText, { color: '#000000', fontWeight: '800' }]}>Save Goals</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
       {/* ── Log Progress Modal ── */}
       <Modal
@@ -1413,22 +1280,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.muted,
     textAlign: 'center',
   },
-  editGoalsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: colors.lime + '30',
-    backgroundColor: colors.lime + '10',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  editGoalsButtonText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.lime,
-  },
+
   durationPillsRow: {
     flexDirection: 'row',
     gap: 8,

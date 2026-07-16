@@ -49,6 +49,7 @@ export function useQuestList() {
   const [sleepInput, setSleepInput] = useState(8);
   const [workoutInput, setWorkoutInput] = useState(4);
   const [exerciseInput, setExerciseInput] = useState(30);
+  const [goalsDurationInput, setGoalsDurationInput] = useState(0);
 
   const openGoalsModal = useCallback(() => {
     triggerHaptic('selection');
@@ -58,11 +59,13 @@ export function useQuestList() {
     setSleepInput(user.sleepGoal || 8);
     setWorkoutInput(user.workoutGoal);
     setExerciseInput(user.activeMinutesGoal || 30);
+    setGoalsDurationInput(user.goalsDurationDays || 0);
     setShowGoalsModal(true);
   }, [user, isOz]);
 
   const handleSaveGoals = useCallback(() => {
     triggerHaptic('success');
+    const hasDurationChanged = user.goalsDurationDays !== goalsDurationInput;
     setUser({
       stepsGoal: stepsInput,
       waterGoal: isOz ? Math.round(ozToMl(waterInput)) : waterInput,
@@ -70,9 +73,13 @@ export function useQuestList() {
       sleepGoal: sleepInput,
       workoutGoal: workoutInput,
       activeMinutesGoal: exerciseInput,
+      goalsDurationDays: goalsDurationInput,
+      goalsStartDate: goalsDurationInput > 0
+        ? (hasDurationChanged ? todayISO : (user.goalsStartDate || todayISO))
+        : undefined,
     });
     setShowGoalsModal(false);
-  }, [stepsInput, waterInput, calorieInput, sleepInput, workoutInput, exerciseInput, isOz, setUser]);
+  }, [stepsInput, waterInput, calorieInput, sleepInput, workoutInput, exerciseInput, goalsDurationInput, isOz, setUser, user.goalsDurationDays, user.goalsStartDate, todayISO]);
 
   const closeGoalsModal = useCallback(() => {
     setShowGoalsModal(false);
@@ -381,6 +388,8 @@ export function useQuestList() {
     setWorkoutInput,
     exerciseInput,
     setExerciseInput,
+    goalsDurationInput,
+    setGoalsDurationInput,
     isOz,
   };
 }
