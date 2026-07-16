@@ -2,9 +2,27 @@ const fs = require('fs');
 const path = require('path');
 
 function loadEnvFile() {
-  const appEnv =
-    process.env.APP_ENV ||
-    (process.env.EAS_BUILD_PROFILE === 'production' ? 'production' : 'development');
+  let appEnv = process.env.APP_ENV;
+
+  if (!appEnv) {
+    const isProductionEnv =
+      process.env.NODE_ENV === 'production' ||
+      process.env.BABEL_ENV === 'production' ||
+      process.env.EAS_BUILD_PROFILE === 'production';
+
+    const hasReleaseOrExportArg = process.argv.some(arg => 
+      arg.toLowerCase().includes('release') || 
+      arg.toLowerCase() === 'export' || 
+      arg.toLowerCase() === 'build'
+    );
+
+    const isDevFalse = process.argv.some((arg, index, arr) => 
+      arg === '--dev' && arr[index + 1] === 'false'
+    );
+
+    appEnv = (isProductionEnv || hasReleaseOrExportArg || isDevFalse) ? 'production' : 'development';
+  }
+
   const envFilePath = path.resolve(__dirname, `.env.${appEnv}`);
 
   if (fs.existsSync(envFilePath)) {

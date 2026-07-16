@@ -1,5 +1,16 @@
 # Cursor Test & Validation Log
 
+## [2026-07-16T16:45:00+05:30] - Enhanced Dynamic Environment Selection in App Configuration (v2.13.22)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Dynamic Env Variable Resolution:**
+  - Patched `app.config.js` to look for standard production environmental profiles (`NODE_ENV === 'production'`, `BABEL_ENV === 'production'`) and check command argv lists for build, release, or export flags (including `--dev false`).
+  - This ensures that executing `npx expo export`, compiling a local release build, or exporting native targets dynamically maps and loads the `.env.production` files correctly without manually editing configuration parameters.
+
 ## [2026-07-16T15:30:00+05:30] - Automatically Collapse History Lists on Defocus (v2.13.21)
 
 ### Automated Checks
