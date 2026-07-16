@@ -7,17 +7,16 @@ import KeyboardSlideView from '@/components/ui/KeyboardSlideView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
-import StatBadge from '@/components/ui/StatBadge';
+import ProgressRing from '@/components/ui/ProgressRing';
 import SectionHeader from '@/components/ui/SectionHeader';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import PillButton from '@/components/ui/PillButton';
-import { Typography, Radius, Shadows, useTheme } from '@/constants/theme';
+import { Radius, useTheme } from '@/constants/theme';
 import { ThemeColors } from '@/theme';
-import { router } from 'expo-router';
 import { useWorkoutsScreen } from '@/features/workouts/hooks/useWorkoutsScreen';
 import { triggerHaptic } from '@/utils/haptics';
+import { useNavigation } from 'expo-router';
 
-const { width: W } = Dimensions.get('window');
 const WORKOUT_COLOR = '#F43F5E'; // rose color for workout tracker
 
 const WORKOUT_CATEGORIES = [
@@ -73,6 +72,16 @@ export default function WorkoutsScreen() {
     else closeAddModal();
   };
 
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setShowAllHistory(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const handleDeleteLog = (id: string) => {
     handleDeleteWorkout(id);
   };
@@ -105,52 +114,62 @@ export default function WorkoutsScreen() {
           />
         </View>
 
-        {/* Weekly Progress Rings / Stats Card */}
-        <GlassCard style={styles.statsCard} accentColor={WORKOUT_COLOR}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: colors.text.primary }]}>Weekly Workout Goal</Text>
-            <View style={[styles.badge, { backgroundColor: WORKOUT_COLOR + '20' }]}>
-              <Text style={[styles.badgeText, { color: WORKOUT_COLOR }]}>
-                {currentWeekWorkouts} / {workoutGoal} Days
+        {/* Weekly Workout Goal - Premium Hero Card */}
+        <GlassCard style={styles.premiumHeroCard} accentColor={WORKOUT_COLOR}>
+          <View style={styles.heroSplitRow}>
+            {/* Left: Beautiful progress ring */}
+            <View style={styles.heroLeftCol}>
+              <ProgressRing
+                size={96}
+                strokeWidth={8}
+                progress={workoutGoal > 0 ? currentWeekWorkouts / workoutGoal : 0}
+                color={WORKOUT_COLOR}
+              >
+                <View style={styles.ringContentBox}>
+                  <Text style={[styles.ringPercentTxt, { color: colors.text.primary }]}>
+                    {workoutGoal > 0 ? Math.round((currentWeekWorkouts / workoutGoal) * 100) : 0}%
+                  </Text>
+                  <Text style={[styles.ringFractionTxt, { color: colors.muted }]}>
+                    {currentWeekWorkouts}/{workoutGoal}d
+                  </Text>
+                </View>
+              </ProgressRing>
+            </View>
+
+            {/* Right: Premium copy and dynamic badges */}
+            <View style={styles.heroRightCol}>
+              <Text style={[styles.heroBadge, { color: WORKOUT_COLOR, backgroundColor: WORKOUT_COLOR + '18' }]}>
+                WEEKLY TARGET
+              </Text>
+              <Text style={[styles.heroCardTitle, { color: colors.text.primary }]}>Weekly Workout Goal</Text>
+              <Text style={[styles.heroCardSubtitle, { color: colors.text.secondary }]}>
+                {currentWeekWorkouts >= workoutGoal
+                  ? '🎉 Weekly goal achieved! Awesome consistency.'
+                  : `You've completed ${currentWeekWorkouts} of ${workoutGoal} days. Keep pushing!`}
               </Text>
             </View>
           </View>
 
-          {/* Spacing and bar progress */}
-          <View style={styles.goalProgressBg}>
-            <View
-              style={[
-                styles.goalProgressBar,
-                {
-                  backgroundColor: WORKOUT_COLOR,
-                  width: `${Math.min(100, Math.round((currentWeekWorkouts / workoutGoal) * 100))}%`,
-                }
-              ]}
-            />
-          </View>
-          <Text style={[styles.cardSubText, { color: colors.muted }]}>
-            {currentWeekWorkouts >= workoutGoal
-              ? '🎉 Weekly goal achieved! Awesome dedication.'
-              : `${workoutGoal - currentWeekWorkouts} more workout days left to meet your goal.`}
-          </Text>
+          {/* Divider */}
+          <View style={[styles.heroDivider, { backgroundColor: colors.cardBorder }]} />
 
-          {/* Grid Stats indicators */}
-          <View style={styles.statGrid}>
-            <StatBadge
-              label="Workouts"
-              value={`${totalWorkouts} logged`}
-              color={colors.lime}
-            />
-            <StatBadge
-              label="Burned"
-              value={`${totalCaloriesBurned.toLocaleString()} kcal`}
-              color={colors.amber}
-            />
-            <StatBadge
-              label="Avg Time"
-              value={`${avgWorkoutDuration} min`}
-              color="#38BDF8"
-            />
+          {/* Premium Bottom Stats Strip */}
+          <View style={styles.heroStatsStrip}>
+            {[
+              { label: 'Total Logged', value: `${totalWorkouts}`, icon: 'calendar-outline', color: '#10B981' },
+              { label: 'Burned', value: `${totalCaloriesBurned.toLocaleString()} kcal`, icon: 'flame-outline', color: '#F59E0B' },
+              { label: 'Avg Session', value: `${avgWorkoutDuration} min`, icon: 'timer-outline', color: '#38BDF8' }
+            ].map((stat, i) => (
+              <View key={i} style={styles.heroStatItem}>
+                <View style={[styles.heroStatIconBox, { backgroundColor: stat.color + '15' }]}>
+                  <Ionicons name={stat.icon as any} size={15} color={stat.color} />
+                </View>
+                <View style={styles.heroStatTextContainer}>
+                  <Text style={[styles.heroStatVal, { color: colors.text.primary }]}>{stat.value}</Text>
+                  <Text style={[styles.heroStatLbl, { color: colors.muted }]}>{stat.label}</Text>
+                </View>
+              </View>
+            ))}
           </View>
         </GlassCard>
 
@@ -179,9 +198,17 @@ export default function WorkoutsScreen() {
         </ScrollView>
 
         {/* Workout History */}
-        <SectionHeader title="Recent Workouts" accentColor={WORKOUT_COLOR} />
+        <SectionHeader
+          title="Recent Workouts"
+          accentColor={WORKOUT_COLOR}
+          action={workoutLogs.length > 3 ? (showAllHistory ? 'Show Less' : `See All (${workoutLogs.length})`) : undefined}
+          onAction={() => {
+            triggerHaptic('selection');
+            setShowAllHistory(prev => !prev);
+          }}
+        />
         {workoutLogs.length > 0 ? (
-          workoutLogs.map((log) => {
+          (showAllHistory ? workoutLogs : workoutLogs.slice(0, 3)).map((log) => {
             const cat = WORKOUT_CATEGORIES.find(c => c.type === log.type) || { icon: 'dumbbell', color: WORKOUT_COLOR };
             return (
               <GlassCard key={log.id} style={styles.historyCard}>
@@ -470,44 +497,87 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     padding: 16,
     marginBottom: 24,
   },
-  cardHeader: {
+  premiumHeroCard: {
+    padding: 16,
+    marginBottom: 24,
+  },
+  heroSplitRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 16,
   },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+  heroLeftCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badge: {
+  heroRightCol: {
+    flex: 1,
+    gap: 4,
+  },
+  heroBadge: {
+    fontSize: 9,
+    fontWeight: '800',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: Radius.sm,
+    alignSelf: 'flex-start',
+    letterSpacing: 0.5,
   },
-  badgeText: {
+  heroCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  heroCardSubtitle: {
     fontSize: 11,
-    fontWeight: '700',
+    lineHeight: 15,
   },
-  goalProgressBg: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+  heroDivider: {
+    height: 1,
     marginVertical: 12,
-    overflow: 'hidden',
+    opacity: 0.15,
   },
-  goalProgressBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  cardSubText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 16,
-  },
-  statGrid: {
+  heroStatsStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
+  },
+  heroStatItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  heroStatIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroStatTextContainer: {
+    flex: 1,
+  },
+  heroStatVal: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  heroStatLbl: {
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  ringContentBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringPercentTxt: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  ringFractionTxt: {
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 1,
   },
   templatesScroll: {
     marginHorizontal: -20,

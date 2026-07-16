@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
 } from 'react-native';
@@ -9,6 +9,9 @@ import { useTheme } from '@/constants/theme';
 import { useVitals } from '@/hooks/useVitals';
 import GlassCard from '@/components/ui/GlassCard';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import SectionHeader from '@/components/ui/SectionHeader';
+import { triggerHaptic } from '@/utils/haptics';
+import { useNavigation } from 'expo-router';
 import {
   VitalTypeSelector,
   VitalCard,
@@ -26,6 +29,19 @@ export default function VitalsScreen() {
 
   const [selected, setSelected] = useState<VitalType>('heartRate');
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    setShowAllHistory(false);
+  }, [selected]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setShowAllHistory(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const cfg = VITAL_CONFIG[selected];
 
@@ -151,8 +167,18 @@ export default function VitalsScreen() {
         {/* History */}
         {logs.length > 0 && (
           <Animated.View entering={FadeInDown.delay(240).springify().damping(20)}>
-            <Text style={[st.historyTitle, { color: colors.text.primary }]}>History</Text>
-            {logs.map((log, i) => (
+            <View style={{ paddingHorizontal: 16 }}>
+              <SectionHeader
+                title="Vitals History"
+                accentColor={cfg.color}
+                action={logs.length > 3 ? (showAllHistory ? 'Show Less' : `See All (${logs.length})`) : undefined}
+                onAction={() => {
+                  triggerHaptic('selection');
+                  setShowAllHistory(prev => !prev);
+                }}
+              />
+            </View>
+            {(showAllHistory ? logs : logs.slice(0, 3)).map((log, i) => (
               <VitalHistoryCard
                 key={log.id}
                 type={selected}

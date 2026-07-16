@@ -1,5 +1,41 @@
 # Cursor Test & Validation Log
 
+## [2026-07-16T15:30:00+05:30] - Automatically Collapse History Lists on Defocus (v2.13.21)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Automatic History Collapse on Defocus:**
+  - Implemented Expo Router blur event listeners via `useNavigation` in [sleep.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/(tabs)/sleep.tsx), [workouts.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/workouts.tsx), and [vitals.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/(tabs)/vitals.tsx).
+  - List state collapses `showAllHistory` back to `false` automatically when the screen defocuses (blurred), preventing memory leak and heavy re-rendering when the user returns to the dashboards.
+
+## [2026-07-16T14:30:00+05:30] - Added 'Show More' Toggle Actions to History Log Cards (v2.13.20)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **History List Slices & Collapsible Action Toggles:**
+  - **Sleep Screen:** Integrated `SectionHeader` with a collapsible action toggle (`Show Less` / `See All (X)`) in [sleep.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/(tabs)/sleep.tsx). Limits listing rendering load to 3 items unless expanded.
+  - **Workouts Screen:** Embedded a dynamic `action` / `onAction` toggle handler on the Recent Workouts header in [workouts.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/workouts.tsx) to restrict initial list rendering to 3 items.
+  - **Vitals Screen:** Added a dynamic collapsible toggle action resetting on selected vitals change inside [vitals.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/(tabs)/vitals.tsx).
+
+## [2026-07-16T13:40:00+05:30] - Redesigned Weekly Workout Goal Card to Premium Split-Ring Layout (v2.13.19)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Premium Split-Pane Workout Hero Card:**
+  - Replaced the simple horizontal progress bar layout card in [workouts.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/workouts.tsx) with a high-end split-pane Hero Card (`premiumHeroCard`).
+  - Added a large visual **`ProgressRing`** on the left side of the split layout to display animated goal percentages (e.g. `75%`) and workout count ratios (e.g. `3/4d`).
+  - Redesigned the right column to include target badges, bold titles, and dynamic motivation copy.
+  - Replaced the basic stat widgets at the bottom with a cohesive stats strip (`heroStatsStrip`) that shows logged counts, total calorie burns, and averages with micro-icons and clean value/label typography.
+
 ## [2026-07-16T13:35:00+05:30] - Corrected Full Body Workout Category Icon Name (v2.13.18)
 
 ### Automated Checks

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
@@ -9,6 +9,9 @@ import { useTheme } from '@/constants/theme';
 import { useSleepLogger } from '@/hooks/useSleepLogger';
 import GlassCard from '@/components/ui/GlassCard';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import SectionHeader from '@/components/ui/SectionHeader';
+import { triggerHaptic } from '@/utils/haptics';
+import { useNavigation } from 'expo-router';
 import {
   SleepHeroCard,
   SleepHypnogram,
@@ -33,6 +36,15 @@ export default function SleepScreen() {
   } = useSleepLogger();
 
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setShowAllHistory(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <View style={[st.safe, { backgroundColor: colors.bg }]}>
@@ -70,22 +82,20 @@ export default function SleepScreen() {
         {/* Hypnogram */}
         {lastNight && (
           <Animated.View entering={FadeInDown.delay(120).springify().damping(20)}>
-            <GlassCard style={st.card} accentColor="#6366F1">
+            <GlassCard style={st.card}>
               <Text style={[st.cardTitle, { color: colors.text.primary }]}>Sleep Stages</Text>
-              <Text style={[st.cardSub, { color: colors.muted }]}>
-                Last night · {formatDuration(lastNight.totalMin)}
-              </Text>
+              <Text style={[st.cardSub, { color: colors.muted }]}>Estimated sleep cycles</Text>
               <SleepHypnogram log={lastNight} colors={colors} />
             </GlassCard>
           </Animated.View>
         )}
 
-        {/* Weekly stats row */}
-        <Animated.View entering={FadeInDown.delay(180).springify().damping(20)} style={st.statsRow}>
+        {/* Quick Stats */}
+        <Animated.View style={st.statsRow} entering={FadeInDown.delay(180).springify().damping(20)}>
           <StatPill
             label="Avg Duration"
-            value={formatDuration(avgDurationMin)}
-            color="#38BDF8"
+            value={avgDurationMin > 0 ? formatDuration(avgDurationMin) : '—'}
+            color="#818CF8"
             colors={colors}
           />
           <StatPill
@@ -112,8 +122,18 @@ export default function SleepScreen() {
         {/* History */}
         {sleepLogs.length > 0 && (
           <Animated.View entering={FadeInDown.delay(300).springify().damping(20)}>
-            <Text style={[st.sectionTitle, { color: colors.text.primary }]}>History</Text>
-            {sleepLogs.map((log, i) => (
+            <View style={{ paddingHorizontal: 16 }}>
+              <SectionHeader
+                title="Sleep History"
+                accentColor="#818CF8"
+                action={sleepLogs.length > 3 ? (showAllHistory ? 'Show Less' : `See All (${sleepLogs.length})`) : undefined}
+                onAction={() => {
+                  triggerHaptic('selection');
+                  setShowAllHistory(prev => !prev);
+                }}
+              />
+            </View>
+            {(showAllHistory ? sleepLogs : sleepLogs.slice(0, 3)).map((log, i) => (
               <SleepLogCard
                 key={log.id}
                 log={log}
