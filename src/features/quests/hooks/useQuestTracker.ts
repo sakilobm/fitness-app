@@ -140,7 +140,7 @@ export function useQuestTracker() {
       { id: 'water', name: 'Hydration Target', icon: 'water', color: '#38BDF8', progress: water, target: waterGoal, unit: isOzUnit(user) ? 'oz' : 'ml', completed: water >= waterGoal },
       { id: 'calories', name: 'Calorie Intake', icon: 'nutrition', color: '#FB923C', progress: calories, target: calorieGoal, unit: 'kcal', completed: calories >= calorieGoal },
       { id: 'sleep', name: 'Rest & Recovery', icon: 'moon', color: '#818CF8', progress: sleep, target: sleepGoal, unit: 'min', completed: sleep >= sleepGoal },
-      { id: 'workouts', name: 'Active Exercise', icon: 'dumbbell', color: '#F43F5E', progress: active, target: activeGoal, unit: 'min', completed: active >= activeGoal }
+      { id: 'workouts', name: 'Active Exercise', icon: 'barbell', color: '#F43F5E', progress: active, target: activeGoal, unit: 'min', completed: active >= activeGoal }
     ];
 
     const completed = list.filter((q) => q.completed).length;

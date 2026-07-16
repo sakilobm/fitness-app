@@ -168,6 +168,37 @@ export default function QuestsTrackerScreen() {
     return `${today.getFullYear()}-${month}-${day}`;
   }, [today]);
 
+  const chartDaysData = useMemo(() => {
+    const days = [];
+    const dateObj = new Date(selectedDate);
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(dateObj);
+      d.setDate(d.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const dayStr = `${yyyy}-${mm}-${dd}`;
+      
+      const status = getQuestStatus(dayStr);
+      const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayLabel = dayNamesShort[d.getDay()];
+      
+      days.push({
+        date: dayStr,
+        label: dayLabel,
+        dayNum: d.getDate(),
+        completedCount: status.completedCount,
+        pct: (status.completedCount / 5) * 100,
+      });
+    }
+    return days;
+  }, [selectedDate, getQuestStatus]);
+
+  const averageCompletion = useMemo(() => {
+    const total = chartDaysData.reduce((sum, d) => sum + d.completedCount, 0);
+    return (total / 7).toFixed(1);
+  }, [chartDaysData]);
+
   return (
     <View style={[styles.rootContainer, { paddingTop: insets.top }]}>
       <View style={{ paddingHorizontal: 20, paddingBottom: 10 }}>
@@ -216,12 +247,16 @@ export default function QuestsTrackerScreen() {
 
               // Colors based on completion count
               let ringColor = 'rgba(0,0,0,0.06)';
+              let cellBg = 'transparent';
               if (status.completedCount === 5) {
                 ringColor = colors.lime;
+                cellBg = colors.lime + '12';
               } else if (status.completedCount >= 3) {
                 ringColor = '#38BDF8';
+                cellBg = isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(56, 189, 248, 0.06)';
               } else if (status.completedCount >= 1) {
                 ringColor = '#FB923C';
+                cellBg = isDark ? 'rgba(251, 146, 60, 0.12)' : 'rgba(251, 146, 60, 0.06)';
               }
 
               return (
@@ -229,6 +264,7 @@ export default function QuestsTrackerScreen() {
                   key={dayDate}
                   style={[
                     styles.dayCell,
+                    { backgroundColor: cellBg },
                     isSelected && styles.dayCellSelected,
                     isToday && styles.dayCellToday
                   ]}
@@ -253,6 +289,82 @@ export default function QuestsTrackerScreen() {
                       <View style={[styles.progressDotCircle, { backgroundColor: ringColor }]} />
                     )}
                   </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        {/* ── Weekly Trend Graph ────────────────────────────────────────── */}
+        <GlassCard style={styles.chartCard}>
+          <View style={styles.chartHeaderRow}>
+            <View>
+              <Text style={styles.chartTitle}>Weekly Consistency</Text>
+              <Text style={styles.chartSubtitle}>Quest completion trend for the week</Text>
+            </View>
+            <View style={styles.chartAverageBox}>
+              <Text style={styles.chartAverageVal}>{averageCompletion}</Text>
+              <Text style={styles.chartAverageLabel}>avg quests</Text>
+            </View>
+          </View>
+
+          <View style={styles.chartBarsRow}>
+            {chartDaysData.map((bar) => {
+              const isBarSelected = selectedDate === bar.date;
+              const barHeight = Math.max(8, bar.pct); // minimum visual height of 8% for 0 completed
+              
+              let barColor = colors.muted + '30';
+              if (bar.completedCount === 5) {
+                barColor = colors.lime;
+              } else if (bar.completedCount >= 3) {
+                barColor = '#38BDF8';
+              } else if (bar.completedCount >= 1) {
+                barColor = '#FB923C';
+              }
+
+              return (
+                <TouchableOpacity
+                  key={bar.date}
+                  style={styles.chartBarCol}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setSelectedDate(bar.date);
+                  }}
+                >
+                  <Text style={[
+                    styles.chartBarCount,
+                    isBarSelected && { color: colors.lime, fontWeight: '700' }
+                  ]}>
+                    {bar.completedCount}
+                  </Text>
+
+                  <View style={[
+                    styles.chartBarTrack,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' },
+                    isBarSelected && { borderColor: colors.lime + '40', borderWidth: 1 }
+                  ]}>
+                    <View style={[
+                      styles.chartBarFill,
+                      {
+                        height: `${barHeight}%`,
+                        backgroundColor: barColor,
+                      }
+                    ]} />
+                  </View>
+
+                  <Text style={[
+                    styles.chartBarLabel,
+                    isBarSelected && styles.chartBarLabelActive
+                  ]}>
+                    {bar.label}
+                  </Text>
+                  <Text style={[
+                    styles.chartBarNum,
+                    isBarSelected && { color: colors.lime, fontWeight: '700' }
+                  ]}>
+                    {bar.dayNum}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -657,7 +769,7 @@ export default function QuestsTrackerScreen() {
               {/* Icon Selector */}
               <Text style={styles.modalInputLabel}>Select Icon</Text>
               <View style={styles.iconSelectionGrid}>
-                {['trophy', 'dumbbell', 'walk', 'heart', 'water', 'flash', 'bookmarks', 'medical', 'fitness'].map((iconName) => {
+                {['trophy', 'barbell', 'walk', 'heart', 'water', 'flash', 'bookmarks', 'medical', 'fitness'].map((iconName) => {
                   const isSelected = selectedIcon === iconName;
                   return (
                     <TouchableOpacity
@@ -1315,5 +1427,83 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   quickPillText: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  chartCard: {
+    padding: 16,
+    marginTop: 16,
+  },
+  chartHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  chartTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.text.primary,
+  },
+  chartSubtitle: {
+    fontSize: 11,
+    color: colors.muted,
+    marginTop: 2,
+  },
+  chartAverageBox: {
+    alignItems: 'flex-end',
+  },
+  chartAverageVal: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.lime,
+  },
+  chartAverageLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: colors.muted,
+    textTransform: 'uppercase',
+  },
+  chartBarsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 140,
+    paddingTop: 10,
+    paddingHorizontal: 4,
+  },
+  chartBarCol: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  chartBarCount: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: colors.muted,
+  },
+  chartBarTrack: {
+    width: 14,
+    height: 80,
+    borderRadius: 7,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  chartBarFill: {
+    width: '100%',
+    borderRadius: 7,
+  },
+  chartBarLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.muted,
+    marginTop: 4,
+  },
+  chartBarLabelActive: {
+    color: colors.lime,
+    fontWeight: '700',
+  },
+  chartBarNum: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: colors.muted,
   },
 });

@@ -424,6 +424,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
   addCycleLog: (log) => {
     const entry: CycleLog = { ...log, id: `cycle_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
     set((s) => ({ cycleLogs: [entry, ...s.cycleLogs].sort((a, b) => b.date.localeCompare(a.date)) }));
+    get().checkAndUnlockBadges();
   },
   updateCycleLog: (id, patch) => {
     set((s) => ({ cycleLogs: s.cycleLogs.map((l) => (l.id === id ? { ...l, ...patch } : l)) }));
@@ -453,6 +454,17 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       user:      { ...s.user, xp: result.xp, level: result.level },
       xpHistory: [event, ...s.xpHistory].slice(0, 40),
     }));
+
+    // Async sync to Supabase database profiles table
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        try {
+          await supabase.from('profiles').update({ xp: result.xp, level: result.level }).eq('id', data.user.id);
+        } catch (e) {
+          console.warn('[addXP] Failed to update remote profile stats:', e);
+        }
+      }
+    }).catch(() => {});
 
     return { leveledUp: result.leveledUp, newLevel: result.level };
   },
@@ -1043,9 +1055,9 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
             waterGoal:    profile.water_goal     ?? state.user.waterGoal,
             stepsGoal:    profile.steps_goal     ?? state.user.stepsGoal,
             workoutGoal:  profile.workout_goal   ?? state.user.workoutGoal,
-            level:   profile.level  ?? state.user.level,
-            xp:      profile.xp     ?? state.user.xp,
-            streak:  profile.streak ?? state.user.streak,
+            level:   profile.level || state.user.level || 8,
+            xp:      profile.xp ?? state.user.xp ?? 850,
+            streak:  profile.streak ?? state.user.streak ?? 14,
             profilePic: profile.profile_pic ?? state.user.profilePic,
             weightUnit: profile.weight_unit || 'kg',
             volumeUnit: profile.volume_unit || 'ml',
@@ -1107,6 +1119,7 @@ export const useFitnessStore = create<FitnessState>()(persist((set, get) => ({
       createdAt: new Date().toISOString()
     };
     set((s) => ({ customQuests: [...s.customQuests, newQuest] }));
+    get().checkAndUnlockBadges();
   },
 
   updateCustomQuest: (id, updates) => {

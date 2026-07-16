@@ -1,5 +1,69 @@
 # Cursor Test & Validation Log
 
+## [2026-07-16T13:35:00+05:30] - Corrected Full Body Workout Category Icon Name (v2.13.18)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Full Body Workout Icon Name:**
+  - Replaced the invalid icon name `'human-muscle'` with the correct MaterialCommunityIcons identifier `'arm-flex'` in `WORKOUT_CATEGORIES` within [workouts.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/workouts.tsx). This ensures the Full Body category card displays a beautiful flexed muscle icon instead of a fallback question mark (`?`).
+
+## [2026-07-16T13:25:00+05:30] - Fixed Level & XP Database Syncing and Added Custom Feature Badges (v2.13.17)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Supabase Level & XP Persistence:**
+  - Added background async Supabase update execution inside `addXP` in [fitnessStore.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/store/fitnessStore.ts) to guarantee XP gains and level-up milestones are saved to the database immediately.
+  - Corrected database profile hydration inside `initializeFromSupabase` to safely fallback if PostgreSQL columns return `0` or `null` (`profile.level || state.user.level || 8`), resolving the missing level digit display bug on the Home screen.
+- **New Feature Badge Mappings:**
+  - Registered **Flow Finder** (log a menstrual cycle entry, vitals category, bronze tier) in [rewards.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/constants/rewards.ts).
+  - Registered **Challenge Creator** (create a custom challenge, consistency category, bronze tier) and **Quest Master** (create 3 custom challenges, consistency category, silver tier) in [rewards.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/constants/rewards.ts).
+  - Extended `RewardStats` calculation to compute `cycleLogCount` and `customQuestCount` during reward checks.
+  - Linked `checkAndUnlockBadges()` trigger executions to `addCycleLog` and `addCustomQuest` actions inside the store to check and reward badges instantly when actions are taken.
+
+## [2026-07-16T12:15:00+05:30] - Added Weekly Completion Trend Graph & Calendar Heatmap Overlays (v2.13.16)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Interactive Weekly Trend Graph:**
+  - Added a new, interactive "Weekly Consistency" bar chart widget (`chartCard`) in [quests-tracker.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/quests-tracker.tsx) that shows the quest completion rate (0 to 5) for the 7 days surrounding the selected date.
+  - Tapping on any bar in the graph triggers haptic feedback and selects that date, updating the calendar and daily quest breakdown automatically.
+  - Calculated and displayed weekly quest completion average indicators (e.g. `avg quests`).
+- **Calendar Heatmap UI Polishing:**
+  - Redesigned calendar day cells to render with a soft color heatmap tint representing quest completion consistency: perfect days (5/5 done) are tinted lime green, active days (3-4 done) are tinted light blue, and partial days (1-2 done) are tinted orange.
+  - Polished selection border thickness and today indicator backgrounds to make the calendar look exceptionally clean and premium.
+
+## [2026-07-16T12:08:00+05:30] - Resolved Ionicons Missing Workouts Icon Rendering Bug (v2.13.15)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Workout Icon Casing Mapping:**
+  - Swapped the invalid Ionicon identifier `dumbbell` with the correct name `barbell` in the quest list mapping inside [useQuestTracker.ts](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/hooks/useQuestTracker.ts).
+  - Updated the custom challenge creator icon selector grid list in [quests-tracker.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/app/quests-tracker.tsx) to map `'dumbbell'` to `'barbell'`, guaranteeing all workouts and active recovery custom targets display correct icons instead of a fallback question mark (`?`).
+
+## [2026-07-16T11:45:00+05:30] - Enabled Direct Numeric Keyboard Input for Custom Challenge Days (v2.13.14)
+
+### Automated Checks
+- **Command:** `npx tsc --noEmit`
+  - **Result:** Successfully completed with **0 errors**.
+
+### Changes Validated
+- **Direct Days Entry & Premium Card Accent Borders:**
+  - Added inline custom `TextInput` in the custom Challenge Period adjust row inside [GoalCustomizer.tsx](file:///c:/Users/sowbh/Desktop/App-Project-2026/Fitness-App/src/features/quests/components/GoalCustomizer.tsx) to allow direct keyboard typing of commitment days (max 365).
+  - Designed left colored accent borders (`borderLeftWidth: 4`) with specific vibrant color mappings on each card inside the modal to match premium style guidelines.
+  - Linked styles (`customInputContainer`, `customDaysInput`, `customDaysLabel`) inside getStyles to support responsive dimensions in dark and light modes.
+
 ## [2026-07-16T11:32:00+05:30] - Shortened Commitment Card Text in Adjust Goals Modal (v2.13.13)
 
 ### Automated Checks

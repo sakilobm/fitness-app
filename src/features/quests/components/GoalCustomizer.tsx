@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import GlassCard from '@/components/ui/GlassCard';
 import { useTheme } from '@/constants/theme';
@@ -80,7 +80,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.modalForm}>
             {/* 1. Steps Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#A3E635', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#A3E63515' }]}>
@@ -122,7 +122,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
             </View>
 
             {/* 2. Water Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#38BDF8', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#38BDF815' }]}>
@@ -168,7 +168,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
             </View>
 
             {/* 3. Calories Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#FB923C', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#FB923C15' }]}>
@@ -210,7 +210,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
             </View>
 
             {/* 4. Sleep Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#818CF8', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#818CF815' }]}>
@@ -252,7 +252,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
             </View>
 
             {/* 5. Daily Exercise Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#F43F5E', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#F43F5E15' }]}>
@@ -294,7 +294,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
             </View>
 
             {/* 6. Workouts Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#F43F5E', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#F43F5E15' }]}>
@@ -336,7 +336,7 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
             </View>
 
             {/* 7. Commitment Duration Goal */}
-            <View style={styles.goalEditCard}>
+            <View style={[styles.goalEditCard, { borderLeftColor: '#818CF8', borderLeftWidth: 4 }]}>
               <View style={styles.goalMetaRow}>
                 <View style={styles.goalMetaLabelRow}>
                   <View style={[styles.goalIconBox, { backgroundColor: '#818CF815' }]}>
@@ -402,11 +402,27 @@ const GoalCustomizer = React.memo<GoalCustomizerProps>(function GoalCustomizer({
                   >
                     <Ionicons name="remove" size={18} color={colors.text.primary} />
                   </TouchableOpacity>
-                  <View style={styles.adjustIndicator}>
-                    <Text style={[styles.adjustSub, { color: colors.muted }]}>
-                      Configure Target Days
-                    </Text>
+                  
+                  <View style={styles.customInputContainer}>
+                    <TextInput
+                      style={[styles.customDaysInput, { color: colors.text.primary, borderColor: colors.cardBorder }]}
+                      keyboardType="numeric"
+                      value={goalsDurationInput === 0 ? '' : goalsDurationInput.toString()}
+                      onChangeText={(val) => {
+                        const parsed = parseInt(val, 10);
+                        if (!val) {
+                          setGoalsDurationInput(0);
+                        } else if (!isNaN(parsed)) {
+                          setGoalsDurationInput(Math.min(365, Math.max(0, parsed)));
+                        }
+                      }}
+                      placeholder="Days"
+                      placeholderTextColor={colors.muted}
+                      selectTextOnFocus
+                    />
+                    <Text style={[styles.customDaysLabel, { color: colors.muted }]}>days</Text>
                   </View>
+
                   <TouchableOpacity
                     style={[styles.adjustBtn, { borderColor: colors.cardBorder }]}
                     onPress={() => {
@@ -556,6 +572,26 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   },
   durationPillText: {
     fontSize: 11,
+    fontWeight: '600',
+  },
+  customInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    justifyContent: 'center',
+  },
+  customDaysInput: {
+    width: 60,
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 10,
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '700',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+  },
+  customDaysLabel: {
+    fontSize: 12,
     fontWeight: '600',
   },
 });

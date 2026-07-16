@@ -68,6 +68,8 @@ export interface RewardStats {
   avgSleepScore:    number;
   maxDailySteps:    number;
   totalSteps:       number;
+  cycleLogCount:    number;
+  customQuestCount: number;
 }
 
 function ratio(value: number, target: number): number {
@@ -160,6 +162,23 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
     category: 'milestone', tier: 'platinum', icon: { lib: 'Ionicons', name: 'medal' }, xpReward: 400,
     check: (s) => ({ met: s.totalLogCount >= 100, progress: ratio(s.totalLogCount, 100) }),
   },
+  // Vitals Cycle Tracking Badge
+  {
+    id: 'flow_finder', label: 'Flow Finder', description: 'Log a cycle tracking entry.',
+    category: 'vitals', tier: 'bronze', icon: { lib: 'Ionicons', name: 'heart-half' }, xpReward: 50,
+    check: (s) => ({ met: s.cycleLogCount >= 1, progress: ratio(s.cycleLogCount, 1) }),
+  },
+  // Custom Challenges Badges
+  {
+    id: 'challenge_creator', label: 'Challenge Creator', description: 'Create a custom challenge.',
+    category: 'consistency', tier: 'bronze', icon: { lib: 'Ionicons', name: 'create' }, xpReward: 50,
+    check: (s) => ({ met: s.customQuestCount >= 1, progress: ratio(s.customQuestCount, 1) }),
+  },
+  {
+    id: 'quest_master', label: 'Quest Master', description: 'Create 3 custom challenges.',
+    category: 'consistency', tier: 'silver', icon: { lib: 'Ionicons', name: 'ribbon' }, xpReward: 100,
+    check: (s) => ({ met: s.customQuestCount >= 3, progress: ratio(s.customQuestCount, 3) }),
+  },
 ];
 
 export function createInitialBadges(): Badge[] {
@@ -194,6 +213,8 @@ export function computeRewardStats(state: {
   oxygenLogs:       unknown[];
   stepHistory:      { date: string; steps: number }[];
   stepsCount:       number;
+  cycleLogs?:       unknown[];
+  customQuests?:    unknown[];
 }): RewardStats {
   const mealLogCount   = state.meals.reduce((sum, m) => sum + m.items.length, 0);
   const vitalsLogCount =
@@ -226,6 +247,8 @@ export function computeRewardStats(state: {
     avgSleepScore:  avg(state.sleepLogs.map((l) => l.score)),
     maxDailySteps,
     totalSteps,
+    cycleLogCount:  state.cycleLogs ? state.cycleLogs.length : 0,
+    customQuestCount: state.customQuests ? state.customQuests.length : 0,
   };
 }
 

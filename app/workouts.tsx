@@ -21,7 +21,7 @@ const { width: W } = Dimensions.get('window');
 const WORKOUT_COLOR = '#F43F5E'; // rose color for workout tracker
 
 const WORKOUT_CATEGORIES = [
-  { type: 'Full Body', icon: 'human-muscle', lib: 'MCI', color: '#10B981', desc: 'Total body conditioning & compound movements' },
+  { type: 'Full Body', icon: 'arm-flex', lib: 'MCI', color: '#10B981', desc: 'Total body conditioning & compound movements' },
   { type: 'Leg Day', icon: 'run', lib: 'MCI', color: '#3B82F6', desc: 'Quads, hamstrings, glutes & calves workout' },
   { type: 'Push Day', icon: 'weight-lifter', lib: 'MCI', color: '#8B5CF6', desc: 'Chest, shoulders & triceps exercises' },
   { type: 'Pull Day', icon: 'arrow-collapse-up', lib: 'MCI', color: '#EC4899', desc: 'Back, biceps & rear delts training' },
